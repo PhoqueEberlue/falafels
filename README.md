@@ -1,3 +1,3 @@
 # falafels
 
-Towards falafels 🧆 (Federated Learning Frugality and Efficiency via Simulation)
+Towards Federated Learning Frugality and Efficiency via Simulation (falafels 🧆).
