@@ -1,4 +1,3 @@
-#include <cstdlib>
 #include <cstring>
 #include <simgrid/plugins/energy.h>
 #include <simgrid/forward.h>
@@ -18,14 +17,14 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_falafels, "Messages specific for this example")
 
 static void node(std::vector<std::string> args)
 {
-    auto host_name = simgrid::s4u::this_actor::get_host()->get_cname();
+    auto host_name = simgrid::s4u::this_actor::get_host()->get_name();
 
     // Index 0 of args is the current function name
     auto node_type = args[1];
     auto start_nodes_plain = args[2];
 
     XBT_INFO("---------- Launching new node ----------");
-    XBT_INFO("Host name  : %s", host_name);
+    XBT_INFO("Host name  : %s", host_name.c_str());
     XBT_INFO("Node type  : %s", node_type.c_str());
     XBT_INFO("Start nodes: %s", start_nodes_plain.c_str());
     XBT_INFO("----------------------------------------");

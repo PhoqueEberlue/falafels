@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.28.3)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(falafels)
 
@@ -17,7 +18,6 @@ set(falafels_files
         src/utils.hpp
         src/utils.cpp
         src/protocol.hpp
-        src/protocol.cpp
 )
 
 add_executable(main 

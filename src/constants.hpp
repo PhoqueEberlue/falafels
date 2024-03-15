@@ -6,11 +6,11 @@ namespace constants
 
     namespace aggregator
     {
-        const uint64_t AGGREGATION_FLOPS = 100000;
+        const uint64_t AGGREGATION_FLOPS = 10000000;
     } 
 
     namespace trainer 
     {
-        const uint64_t LOCAL_EPOCH_FLOPS = 100000;
+        const uint64_t LOCAL_EPOCH_FLOPS = 10000000;
     }
 }
