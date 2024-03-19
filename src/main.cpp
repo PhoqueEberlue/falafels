@@ -1,4 +1,5 @@
 #include <cstring>
+#include <memory>
 #include <simgrid/plugins/energy.h>
 #include <simgrid/forward.h>
 #include <simgrid/s4u.hpp>
@@ -9,39 +10,68 @@
 #include <vector>
 #include <xbt/log.h>
 
-#include "node.hpp"
-#include "utils.hpp"
+#include "./node/node.hpp"
+#include "./node/roles/aggregator.hpp"
+#include "./node/roles/trainer.hpp"
+#include "./node/roles/proxy.hpp"
+#include "./node/network_managers/decentralized_nm.hpp"
+#include "./node/network_managers/centralized_nm.hpp"
+#include "./node/network_managers/nm.hpp"
+#include "protocol.hpp"
+#include "./utils/utils.hpp"
 #include "constants.hpp"
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_falafels, "Messages specific for this example");
 
-static void node(std::vector<std::string> args)
+
+static void run_node(Node *node)
 {
-    auto host_name = simgrid::s4u::this_actor::get_host()->get_name();
+    node->run();
+}
 
-    // Index 0 of args is the current function name
-    auto node_type = args[1];
-    auto start_nodes_plain = args[2];
+static void main_scenario(simgrid::s4u::Engine *e)
+{
+    // Node info definition for tremblay boostrap nodes
+    auto node_info_tremblay = new NodeInfo { .name = "Tremblay", .role = NodeRole::Aggregator };
+    auto node_info_jupiter = new NodeInfo { .name = "Jupiter", .role = NodeRole::Trainer };
+    auto node_info_fafard = new NodeInfo { .name = "Fafard", .role = NodeRole::Trainer };
 
-    XBT_INFO("---------- Launching new node ----------");
-    XBT_INFO("Host name  : %s", host_name.c_str());
-    XBT_INFO("Node type  : %s", node_type.c_str());
-    XBT_INFO("Start nodes: %s", start_nodes_plain.c_str());
-    XBT_INFO("----------------------------------------");
+    // Defining Tremblay node
+    auto bootstrap_nodes_tremblay = new std::vector<NodeInfo*>{ node_info_jupiter, node_info_fafard };
+    Node *node_tremblay = new Node();
 
-    // start_nodes.
-    auto start_nodes_vec = split_string(start_nodes_plain, ' ');
+    Role *role_tremblay = new Aggregator();
+    NetworkManager *network_manager_tremblay = new CentralizedNetworkManager(bootstrap_nodes_tremblay, "Tremblay");
 
-    if (strcmp(node_type.c_str(), "aggregator") == 0)
-    {
-        auto node = std::make_unique<Aggregator>(host_name, start_nodes_vec);
-        node->run();
-    } 
-    else if (strcmp(node_type.c_str(), "trainer") == 0)
-    {
-        auto node = std::make_unique<Trainer>(host_name, start_nodes_vec);
-        node->run();
-    }
+    node_tremblay->set_role(role_tremblay);
+    node_tremblay->get_role()->set_network_manager(network_manager_tremblay);
+
+    auto actor_tremblay = simgrid::s4u::Actor::create("Tremblay", e->host_by_name("Tremblay"), &run_node, node_tremblay);
+
+    // Defining Jupiter node
+    auto bootstrap_nodes_jupiter = new std::vector<NodeInfo*> {};
+    auto node_jupiter = new Node();
+
+    auto role_jupiter = new Trainer();
+    NetworkManager *network_manager_jupiter = new CentralizedNetworkManager(bootstrap_nodes_jupiter, "Jupiter");
+
+    node_jupiter->set_role(role_jupiter);
+    node_jupiter->get_role()->set_network_manager(network_manager_jupiter);
+
+    auto actor_jupiter = simgrid::s4u::Actor::create("Jupiter", e->host_by_name("Jupiter"), &run_node, node_jupiter);
+
+    // Defining Fafard node
+    auto bootstrap_nodes_fafard = new std::vector<NodeInfo*> {};
+    Node *node_fafard = new Node;
+
+    Role *role_fafard = new Trainer();
+    NetworkManager *network_manager_fafard = new CentralizedNetworkManager(bootstrap_nodes_fafard, "Fafard");
+
+    node_fafard->set_role(role_fafard);
+    node_fafard->get_role()->set_network_manager(network_manager_fafard);
+
+    auto actor_fafard = simgrid::s4u::Actor::create("Fafard", e->host_by_name("Fafard"), &run_node, node_fafard);
+
 }
 
 int main(int argc, char* argv[])
@@ -51,15 +81,13 @@ int main(int argc, char* argv[])
 
     simgrid::s4u::Engine e(&argc, argv);
     
-    xbt_assert(argc > 2, "Usage: %s platform_file deployment_file\n", argv[0]);
-
-    /* Register the function to launch the nodes */
-    e.register_function("node", &node);
+    // xbt_assert(argc > 2, "Usage: %s platform_file deployment_file\n", argv[0]);
 
     /* Load the platform description and then deploy the application */
     e.load_platform(argv[1]);
-    e.load_deployment(argv[2]);
+    // e.load_deployment(argv[2]);
 
+    main_scenario(&e);
     /* Run the simulation */
     e.run();
 

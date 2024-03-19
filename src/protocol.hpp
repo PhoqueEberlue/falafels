@@ -1,10 +1,27 @@
-#include <cstdio>
+#ifndef FALAFELS_PROTOCOL_HPP
+#define FALAFELS_PROTOCOL_HPP
+
 #include <string>
 #include <xbt/log.h>
 
-struct packet 
+typedef std::string node_name;
+
+enum class NodeRole {
+    Aggregator,
+    Trainer,
+    Proxy
+};
+
+
+struct NodeInfo
 {
-    enum operation
+    node_name name;
+    NodeRole role;
+};
+
+struct Packet 
+{
+    enum Operation
     { 
         SEND_GLOBAL_MODEL, 
         SEND_LOCAL_MODEL,
@@ -15,14 +32,16 @@ struct packet
 };
 
 // It would be interesting to generate this function with a generative macro
-static const char* operation_to_str(packet::operation op)
+static const char* operation_to_str(Packet::Operation op)
 {
     switch (op) {
-        case packet::operation::SEND_GLOBAL_MODEL:
+        case Packet::Operation::SEND_GLOBAL_MODEL:
             return "SEND_GLOBAL_MODEL";
-        case packet::operation::SEND_LOCAL_MODEL:
+        case Packet::Operation::SEND_LOCAL_MODEL:
             return "SEND_LOCAL_MODEL";
-        case packet::operation::KILL_TRAINER:
+        case Packet::Operation::KILL_TRAINER:
             return "KILL_TRAINER";
     }
 }
+
+#endif // !FALAFELS_PROTOCOL_HPP

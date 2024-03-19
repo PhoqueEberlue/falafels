@@ -1,4 +1,7 @@
-#include "node.hpp"
+#include <vector>
+#include <string>
+
+#include "../node/node.hpp"
 
 // Yeeted from stackoverflow 🙃
 std::vector<std::string> split_string(const std::string &txt, char ch)
