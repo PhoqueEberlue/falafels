@@ -2,7 +2,7 @@
 #ifndef FALAFELS_AGGREGATOR_HPP
 #define FALAFELS_AGGREGATOR_HPP
 
-#include "role.hpp"
+#include "../role.hpp"
 
 class Aggregator : public Role 
 {

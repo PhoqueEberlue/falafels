@@ -2,7 +2,7 @@
 #ifndef FALAFELS_PROXY_HPP
 #define FALAFELS_PROXY_HPP
 
-#include "role.hpp"
+#include "../role.hpp"
 
 class Proxy : public Role 
 {
@@ -14,4 +14,4 @@ class Proxy : public Role
         NodeRole get_role_name() { return NodeRole::Proxy; };
 };
 
-#endif //! FALAFELS_PROXY_HPP
+#endif // !FALAFELS_PROXY_HPP

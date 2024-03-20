@@ -2,7 +2,7 @@
 #ifndef FALAFELS_TRAINER_HPP
 #define FALAFELS_TRAINER_HPP
 
-#include "role.hpp"
+#include "../role.hpp"
 
 class Trainer : public Role 
 {

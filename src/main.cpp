@@ -11,9 +11,9 @@
 #include <xbt/log.h>
 
 #include "./node/node.hpp"
-#include "./node/roles/aggregator.hpp"
-#include "./node/roles/trainer.hpp"
-#include "./node/roles/proxy.hpp"
+#include "./node/roles/aggregator/aggregator.hpp"
+#include "./node/roles/trainer/trainer.hpp"
+#include "./node/roles/proxy/proxy.hpp"
 #include "./node/network_managers/decentralized_nm.hpp"
 #include "./node/network_managers/centralized_nm.hpp"
 #include "./node/network_managers/nm.hpp"

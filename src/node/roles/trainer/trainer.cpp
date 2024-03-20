@@ -1,4 +1,4 @@
-#include "../../constants.hpp"
+#include "../../../constants.hpp"
 #include "trainer.hpp"
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_trainer, "Messages specific for this example");
@@ -7,11 +7,12 @@ Trainer::Trainer() {}
 
 void Trainer::run()
 {
-    Packet *p = this->get_network_manager()->get();
+    auto nm = this->get_network_manager();
+    Packet *p = nm->get();
 
     while (p->op != Packet::Operation::KILL_TRAINER)
     {
-        XBT_INFO("Received message: %s", operation_to_str(p->op));
+        XBT_INFO("%s <- %s", nm->get_my_host_name().c_str(), operation_to_str(p->op));
 
         if (p->op == Packet::Operation::SEND_GLOBAL_MODEL)
         {
@@ -23,15 +24,15 @@ void Trainer::run()
             // Retrieving src's mailbox
             auto source_mailbox = simgrid::s4u::Mailbox::by_name(p->src);
 
-            Packet *res_p = new Packet { .op=Packet::Operation::SEND_LOCAL_MODEL, .src=this->get_network_manager()->get_my_host_name() };
+            Packet *res_p = new Packet { .op=Packet::Operation::SEND_LOCAL_MODEL, .src=nm->get_my_host_name() };
 
-            XBT_INFO("Sending local model to: %s", p->src.c_str());
+            XBT_INFO("%s -> %s", operation_to_str(res_p->op), p->src.c_str());
             source_mailbox->put(res_p, constants::MODEL_SIZE_BYTES);
         }
 
         // Delete current packet and wait for another one 
         delete p;
-        p = this->get_network_manager()->get();
+        p = nm->get();
     }
 
     // Delete kill packet 

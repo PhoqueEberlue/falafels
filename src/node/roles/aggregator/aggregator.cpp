@@ -5,8 +5,8 @@
 #include <xbt/log.h>
 
 #include "aggregator.hpp"
-#include "../../protocol.hpp"
-#include "../../constants.hpp"
+#include "../../../protocol.hpp"
+#include "../../../constants.hpp"
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_aggregator, "Messages specific for this example");
 
@@ -39,7 +39,7 @@ void Aggregator::send_global_model()
         // Sadly we cannot use smart pointers in mailbox->put because it takes a void* as parameter...
         Packet *p = new Packet { .op=Packet::Operation::SEND_GLOBAL_MODEL, .src=this->get_network_manager()->get_my_host_name() };
 
-        XBT_INFO("Sending '%s' to %s", operation_to_str(p->op), node_name.c_str());
+        XBT_INFO("%s -> %s", operation_to_str(p->op), node_name.c_str());
 
         mailbox->put(p, constants::MODEL_SIZE_BYTES);
     }
@@ -47,10 +47,11 @@ void Aggregator::send_global_model()
 
 void Aggregator::wait_local_models()
 {
-    for (auto node_name: this->get_network_manager()->get_node_names_filter(trainer_filter))
+    auto nm = this->get_network_manager();
+    for (auto node_name: nm->get_node_names_filter(trainer_filter))
     {
-        Packet *p = this->get_network_manager()->get();
-        XBT_INFO("Received message: %s", operation_to_str(p->op));
+        Packet *p = nm->get();
+        XBT_INFO("%s <- %s", nm->get_my_host_name().c_str(), operation_to_str(p->op));
 
         if (p->op == Packet::Operation::SEND_LOCAL_MODEL)
         {
@@ -71,7 +72,7 @@ void Aggregator::send_kills()
 
         Packet *p = new Packet { .op=Packet::Operation::KILL_TRAINER, .src=this->get_network_manager()->get_my_host_name() };
 
-        XBT_INFO("Sending '%s' to %s", operation_to_str(p->op), node_name.c_str());
+        XBT_INFO("%s -> %s", operation_to_str(p->op), node_name.c_str());
 
         mailbox->put(p, sizeof(*p));
     }
