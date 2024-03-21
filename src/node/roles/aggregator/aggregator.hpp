@@ -6,9 +6,9 @@
 
 class Aggregator : public Role 
 {
-    private:
-        // what functions are essential??
-        // virtual void aggregate() = 0;
+    protected:
+        void aggregate();
+        // TODO: what functions are in common with every aggregators??
         // virtual void send_global_model();
         // virtual void wait_local_models();
         // virtual void send_kills();
