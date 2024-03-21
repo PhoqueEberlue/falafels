@@ -1,60 +1,60 @@
 <?xml version='1.0'?>
 <!DOCTYPE platform SYSTEM "https://simgrid.org/simgrid.dtd">
 <platform version="4.1">
-  <zone id="zone0" routing="Full">
-    <!-- Defining hosts -->
-    <host id="Tremblay" speed="98.095Mf" core="8">
-      <prop id="wattage_per_state" value="100.0:120.0:200.0" />
-      <prop id="wattage_off" value="10" />
-    </host>
-    <host id="Jupiter" speed="76.296Mf">
-      <prop id="wattage_per_state" value="100.0:120.0:200.0" />
-      <prop id="wattage_off" value="10" />
-    </host>
-    <host id="Fafard" speed="76.296Mf">
-      <prop id="wattage_per_state" value="100.0:120.0:200.0" />
-      <prop id="wattage_off" value="10" />
-    </host>
-    
-    <!-- Defining links -->
-    <link id="1" bandwidth="41.279125MBps" latency="59.904us">
-      <prop id="wattage_range" value="100.0:200.0" />
-      <prop id="wattage_off" value="10" />
-    </link>
+    <zone id="zone0" routing="Full">
+        <!-- Defining hosts -->
+        <host id="Thornmail" speed="98.095Mf" core="8">
+            <prop id="wattage_per_state" value="100.0:120.0:200.0" />
+            <prop id="wattage_off" value="10" />
+        </host>
+        <host id="Celestial Opposition" speed="76.296Mf">
+            <prop id="wattage_per_state" value="100.0:120.0:200.0" />
+            <prop id="wattage_off" value="10" />
+        </host>
+        <host id="Jak'Sho, The Protean" speed="76.296Mf">
+            <prop id="wattage_per_state" value="100.0:120.0:200.0" />
+            <prop id="wattage_off" value="10" />
+        </host>
 
-    <link id="2" bandwidth="34.285625MBps" latency="514.433us">
-      <prop id="wattage_range" value="100.0:200.0" />
-      <prop id="wattage_off" value="10" />
-    </link>
+        <!-- Defining links -->
+        <link id="1" bandwidth="41.279125MBps" latency="59.904us">
+            <prop id="wattage_range" value="100.0:200.0" />
+            <prop id="wattage_off" value="10" />
+        </link>
 
-    <link id="3" bandwidth="11.618875MBps" latency="189.98us">
-      <prop id="wattage_range" value="100.0:200.0" />
-      <prop id="wattage_off" value="10" />
-    </link>
+        <link id="2" bandwidth="34.285625MBps" latency="514.433us">
+            <prop id="wattage_range" value="100.0:200.0" />
+            <prop id="wattage_off" value="10" />
+        </link>
 
-    <link id="loopback" bandwidth="498MBps" latency="15us" sharing_policy="FATPIPE">
-      <prop id="wattage_range" value="100.0:200.0" />
-      <prop id="wattage_off" value="10" />
-    </link>
+        <link id="3" bandwidth="11.618875MBps" latency="189.98us">
+            <prop id="wattage_range" value="100.0:200.0" />
+            <prop id="wattage_off" value="10" />
+        </link>
 
-    <route src="Tremblay" dst="Tremblay">
-      <link_ctn id="loopback"/>
-    </route>
-    <route src="Jupiter" dst="Jupiter">
-      <link_ctn id="loopback"/>
-    </route>
-    <route src="Fafard" dst="Fafard">
-      <link_ctn id="loopback"/>
-    </route>
+        <link id="loopback" bandwidth="498MBps" latency="15us" sharing_policy="FATPIPE">
+            <prop id="wattage_range" value="100.0:200.0" />
+            <prop id="wattage_off" value="10" />
+        </link>
 
-    <route src="Tremblay" dst="Jupiter">
-      <link_ctn id="1"/>
-    </route>
-    <route src="Tremblay" dst="Fafard">
-      <link_ctn id="2"/>
-    </route>
-    <route src="Jupiter" dst="Fafard">
-      <link_ctn id="3"/>
-    </route>
-  </zone>
+        <route src="Thornmail" dst="Thornmail">
+            <link_ctn id="loopback" />
+        </route>
+        <route src="Celestial Opposition" dst="Celestial Opposition">
+            <link_ctn id="loopback" />
+        </route>
+        <route src="Jak'Sho, The Protean" dst="Jak'Sho, The Protean">
+            <link_ctn id="loopback" />
+        </route>
+
+        <route src="Thornmail" dst="Jak'Sho, The Protean">
+            <link_ctn id="1" />
+        </route>
+        <route src="Thornmail" dst="Celestial Opposition">
+            <link_ctn id="2" />
+        </route>
+        <route src="Celestial Opposition" dst="Jak'Sho, The Protean">
+            <link_ctn id="3" />
+        </route>
+    </zone>
 </platform>
