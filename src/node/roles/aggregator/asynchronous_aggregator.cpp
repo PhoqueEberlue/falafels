@@ -8,20 +8,21 @@
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_asynchronous_aggregator, "Messages specific for this example");
 
-bool trainer_filter(NodeInfo *node_info)
+static bool trainer_filter(NodeInfo *node_info)
 {
     return node_info->role == NodeRole::Trainer;
 }
 
 AsynchronousAggregator::AsynchronousAggregator()
 {
-    // At start we suppose that every trainer nodes are available
-    available_trainers = this->get_network_manager()->get_node_names_filter(trainer_filter);
-    total_number_clients = available_trainers.size();
 }
 
 void AsynchronousAggregator::run()
 {
+    // At start we suppose that every trainer nodes are available
+    available_trainers = this->get_network_manager()->get_node_names_filter(trainer_filter);
+    total_number_clients = available_trainers.size();
+
     while (simgrid::s4u::Engine::get_instance()->get_clock() < 2)
     {
         this->send_global_model_to_available_trainers();
@@ -68,6 +69,8 @@ void AsynchronousAggregator::wait_local_models()
         // Note that here we don't check that the local models come from different trainers
         if (p->op == Packet::Operation::SEND_LOCAL_MODEL)
         {
+            // Add the sender to the available trainers list
+            this->available_trainers.push_back(p->src);
             number_local_models += 1;
         }
     }

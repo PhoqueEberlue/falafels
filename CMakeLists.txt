@@ -23,9 +23,12 @@ set(falafels_files
     src/node/network_managers/decentralized_nm.hpp
     src/node/network_managers/nm.hpp
 
+    src/node/roles/aggregator/aggregator.cpp
+    src/node/roles/aggregator/aggregator.hpp
+    src/node/roles/aggregator/asynchronous_aggregator.cpp
+    src/node/roles/aggregator/asynchronous_aggregator.hpp
     src/node/roles/aggregator/simple_aggregator.cpp
     src/node/roles/aggregator/simple_aggregator.hpp
-    src/node/roles/aggregator/aggregator.hpp
 
     src/node/roles/proxy/proxy.cpp
     src/node/roles/proxy/proxy.hpp

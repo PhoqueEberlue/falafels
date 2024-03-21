@@ -3,9 +3,9 @@
     <node name="Thornmail">
         <role>
             <aggregator>
-                <simple>
+                <asynchronous>
                     <args></args>
-                </simple>
+                </asynchronous>
             </aggregator>
         </role>
         <network-manager>

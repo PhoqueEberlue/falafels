@@ -4,6 +4,7 @@
 #include <xbt/log.h>
 
 #include "node/network_managers/nm.hpp"
+#include "node/roles/aggregator/asynchronous_aggregator.hpp"
 #include "node/roles/aggregator/simple_aggregator.hpp"
 #include "node/roles/trainer/trainer.hpp"
 #include "node/roles/proxy/proxy.hpp"
@@ -44,6 +45,24 @@ NetworkManager *create_network_manager(xml_node *network_manager_elem, node_name
     return network_manager;
 }
 
+Aggregator *create_aggregator(xml_node *aggregator_elem)
+{
+    Aggregator *role;
+
+    if (strcmp(aggregator_elem->name(), "simple") == 0)
+    {
+        role = new SimpleAggregator();
+        XBT_INFO("With role: SimpleAggregator");
+    }
+    else if (strcmp(aggregator_elem->name(), "asynchronous") == 0)
+    {
+        role = new AsynchronousAggregator();
+        XBT_INFO("With role: Asynchronous");
+    }
+
+    return role; 
+}
+
 Role *create_role(xml_node *role_elem)
 {
     Role *role;
@@ -52,20 +71,20 @@ Role *create_role(xml_node *role_elem)
 
     if (strcmp(role_type_elem.name(), "aggregator") == 0)
     {
-        // TODO: Handle different types of aggregators
-        role = new SimpleAggregator();
+        xml_node aggregator_elem = role_type_elem.first_child();
+        role = create_aggregator(&aggregator_elem);
     }
     else if (strcmp(role_type_elem.name(), "trainer") == 0)
     {
         role = new Trainer();
+        XBT_INFO("With role: Trainer");
     }
     else if (strcmp(role_type_elem.name(), "proxy") == 0)
     {
         // TODO
         // role = new Proxy();
+        // XBT_INFO("With role: Proxy");
     }
-
-    XBT_INFO("With role: %s", role_type_elem.name());
 
     return role;
 }

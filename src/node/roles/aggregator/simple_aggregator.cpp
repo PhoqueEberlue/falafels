@@ -11,7 +11,7 @@ SimpleAggregator::SimpleAggregator()
 {
 }
 
-bool trainer_filter(NodeInfo *node_info)
+static bool trainer_filter(NodeInfo *node_info)
 {
     return node_info->role == NodeRole::Trainer;
 }
