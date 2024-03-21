@@ -3,8 +3,7 @@
 #include <vector>
 
 
-CentralizedNetworkManager::CentralizedNetworkManager(std::vector<NodeInfo*> *nodes, node_name name) {
-    this->set_boostrap_nodes(nodes);
+CentralizedNetworkManager::CentralizedNetworkManager(node_name name) {
     this->my_node_name = name;
     // Initializing our mailbox
     this->mailbox = simgrid::s4u::Mailbox::by_name(name);
@@ -16,7 +15,7 @@ std::vector<node_name> CentralizedNetworkManager::get_node_names_filter(std::fun
 {
     std::vector<node_name> result = {};
 
-    for(auto node_info : *this->get_boostrap_nodes()) {
+    for(auto node_info : *this->get_bootstrap_nodes()) {
         if (filter(node_info)) {
             result.push_back(node_info->name);
         }
@@ -25,10 +24,10 @@ std::vector<node_name> CentralizedNetworkManager::get_node_names_filter(std::fun
     return result;
 }
 
-void CentralizedNetworkManager::send(Packet *packet, node_name name) {
+void CentralizedNetworkManager::put(Packet *packet, node_name name, uint64_t simulated_size_in_bytes) {
     auto receiver_mailbox = simgrid::s4u::Mailbox::by_name(name);
 
-    receiver_mailbox->put(packet, sizeof(*packet));
+    receiver_mailbox->put(packet, simulated_size_in_bytes);
 }
 
 Packet *CentralizedNetworkManager::get() {

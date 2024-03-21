@@ -12,7 +12,7 @@ class Role
         Role(){}
         virtual ~Role(){}
         virtual void run() = 0;
-        virtual NodeRole get_role_name() = 0;
+        virtual NodeRole get_role_type() = 0;
         void set_network_manager(NetworkManager *nm) { network_manager = nm; }
         NetworkManager *get_network_manager() { return network_manager; }
 };

@@ -8,11 +8,11 @@ class DecentralizedNetworkManager : public NetworkManager
 {
     private:
         ~DecentralizedNetworkManager();
-        void send(Packet*, node_name);
+        void put(Packet*, node_name, uint64_t simulated_size_in_bytes);
         Packet *get();
         std::vector<node_name> get_node_names_filter(std::function<NodeInfo*(bool)>);
     public:
-        DecentralizedNetworkManager(std::vector<NodeInfo*>*, node_name);
+        DecentralizedNetworkManager(node_name);
         void run();
 };
 

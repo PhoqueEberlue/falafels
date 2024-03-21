@@ -11,7 +11,7 @@ class Proxy : public Role
     public:
         Proxy();
         void run();
-        NodeRole get_role_name() { return NodeRole::Proxy; };
+        NodeRole get_role_type() { return NodeRole::Proxy; };
 };
 
 #endif // !FALAFELS_PROXY_HPP

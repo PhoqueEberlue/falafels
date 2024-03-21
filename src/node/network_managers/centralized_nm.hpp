@@ -8,11 +8,11 @@ class CentralizedNetworkManager : public NetworkManager
 {
     private:
         ~CentralizedNetworkManager();
-        void send(Packet*, node_name);
+        void put(Packet*, node_name, uint64_t simulated_size_in_bytes);
         Packet *get();
         std::vector<node_name> get_node_names_filter(std::function<bool(NodeInfo*)>);
     public:
-        CentralizedNetworkManager(std::vector<NodeInfo*>*, node_name);
+        CentralizedNetworkManager(node_name);
         void run();
 };
 

@@ -11,7 +11,7 @@ class Trainer : public Role
     public:
         Trainer();
         void run();
-        NodeRole get_role_name() { return NodeRole::Trainer; };
+        NodeRole get_role_type() { return NodeRole::Trainer; };
 };
 
 #endif //! FALAFELS_TRAINER_HPP

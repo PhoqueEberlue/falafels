@@ -16,6 +16,7 @@ class Node
         void run() { this->role->run(); }
         void set_role(Role *r) { role = r; }
         Role *get_role() { return role; }
+        NodeInfo *get_node_info();
 };
 
 #endif // !FALAFELS_NODE_HPP
