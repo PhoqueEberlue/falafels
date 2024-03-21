@@ -1,0 +1,45 @@
+<?xml version='1.0'?>
+<deployment version="0.1">
+    <node name="Thornmail">
+        <role>
+            <aggregator>
+                <simple>
+                    <args></args>
+                </simple>
+            </aggregator>
+        </role>
+        <network-manager>
+            <centralized>
+                <args></args>
+            </centralized>
+            <bootstrap-nodes>
+                <node>Celestial Opposition</node>
+                <node>Jak'Sho, The Protean</node>
+            </bootstrap-nodes>
+        </network-manager>
+    </node>
+    <node name="Celestial Opposition">
+        <role>
+            <trainer>
+                <args></args>
+            </trainer>
+        </role>
+        <network-manager>
+            <centralized>
+                <args></args>
+            </centralized>
+        </network-manager>
+    </node>
+    <node name="Jak'Sho, The Protean">
+        <role>
+            <trainer>
+                <args></args>
+            </trainer>
+        </role>
+        <network-manager>
+            <centralized>
+                <args></args>
+            </centralized>
+        </network-manager>
+    </node>
+</deployment>
