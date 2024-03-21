@@ -22,8 +22,9 @@ int main(int argc, char* argv[])
 
     /* Load the platform description and then deploy the application */
     e.load_platform(argv[1]);
-    // e.load_deployment(argv[2]);
 
+    // Using our own deployment function instead of simgrid's one
+    // e.load_deployment(argv[2]);
     load_config(argv[2], &e); 
 
     /* Run the simulation */

@@ -10,7 +10,7 @@
 #include "node/network_managers/centralized_nm.hpp"
 #include "node/network_managers/decentralized_nm.hpp"
 #include "config_loader.hpp"
-#include "pugixml/pugixml.hpp"
+#include "../pugixml/pugixml.hpp"
  
  
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_falafels_config, "Messages specific for this example");
@@ -74,8 +74,6 @@ Node *create_node(xml_node *node_elem, node_name name)
 {
     XBT_INFO("------------------------------");
     XBT_INFO("Creating node: %s", name.c_str());
-    // Creating falafels node
-    Node *node = new Node();
 
     xml_node role_elem = node_elem->first_child();
     Role *role = create_role(&role_elem);
@@ -83,29 +81,27 @@ Node *create_node(xml_node *node_elem, node_name name)
     xml_node network_manager_elem = role_elem.next_sibling(); 
     NetworkManager *network_manager = create_network_manager(&network_manager_elem, name);
 
-    role->set_network_manager(network_manager);
-    node->set_role(role);
-
-    return node;
+    // Returning new falafels node
+    return new Node(role, network_manager);
 }
 
+/* Load falafels deployment file */
 void load_config(const char* file_path, simgrid::s4u::Engine *e)
 {
     xml_document doc;
     xml_parse_result result = doc.load_file(file_path);
 
-    xbt_assert(result != 0, "Error while loading xml file");
+    xbt_assert(result != 0, "Error while loading falafels xml file");
 
-    xml_node root = doc.child("deployment");
+    xml_node root           = doc.child("deployment");
+    auto nodes_map          = new std::unordered_map<node_name, Node*>();
 
-    auto nodes_map = new std::unordered_map<node_name, Node*>();
-
-    // Loop through each node of the document to instanciate nodes
+    // Loop through each (xml) node of the document to instanciate (simulated) nodes
     for (xml_node node_elem: root.children("node"))
     {
         node_name name = node_elem.attribute("name").as_string();
+        Node *node     = create_node(&node_elem, name);
 
-        Node *node = create_node(&node_elem, name);
         nodes_map->insert({name, node});
     }
 
