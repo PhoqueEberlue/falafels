@@ -1,0 +1,6 @@
+<?xml version='1.0'?>
+<root version="0.1">
+    <aggregators number="2" type="simple"/>
+    <trainers number="15" type="simple"/>
+</root>
+

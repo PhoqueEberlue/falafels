@@ -12,7 +12,7 @@ void Trainer::run()
 
     while (p->op != Packet::Operation::KILL_TRAINER)
     {
-        XBT_INFO("%s <- %s", nm->get_my_node_name().c_str(), operation_to_str(p->op));
+        XBT_INFO("%s <--%s--- %s", nm->get_my_node_name().c_str(), operation_to_str(p->op), p->src.c_str());
 
         if (p->op == Packet::Operation::SEND_GLOBAL_MODEL)
         {
@@ -26,7 +26,7 @@ void Trainer::run()
 
             Packet *res_p = new Packet { .op=Packet::Operation::SEND_LOCAL_MODEL, .src=nm->get_my_node_name() };
 
-            XBT_INFO("%s -> %s", operation_to_str(res_p->op), p->src.c_str());
+            XBT_INFO("%s ---%s--> %s", nm->get_my_node_name().c_str(), operation_to_str(res_p->op), p->src.c_str());
             source_mailbox->put(res_p, constants::MODEL_SIZE_BYTES);
         }
 
@@ -35,7 +35,7 @@ void Trainer::run()
         p = nm->get();
     }
 
-    XBT_INFO("%s <- %s", nm->get_my_node_name().c_str(), operation_to_str(p->op));
+    XBT_INFO("%s <--%s--- %s", nm->get_my_node_name().c_str(), operation_to_str(p->op), p->src.c_str());
     // Delete kill packet 
     delete p;
 

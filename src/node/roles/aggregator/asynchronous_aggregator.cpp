@@ -45,7 +45,7 @@ void AsynchronousAggregator::send_global_model_to_available_trainers()
     {   
         p = new Packet { .op=Packet::Operation::SEND_GLOBAL_MODEL, .src=nm->get_my_node_name() };
 
-        XBT_INFO("%s -> %s", operation_to_str(p->op), node_name.c_str());
+        XBT_INFO("%s ---%s--> %s", p->src.c_str(), operation_to_str(p->op), node_name.c_str());
 
         nm->put(p, node_name, constants::MODEL_SIZE_BYTES);
     }
@@ -64,7 +64,7 @@ void AsynchronousAggregator::wait_local_models()
     while (number_local_models < this->total_number_clients * this->proportion_threshold)
     {
         p = nm->get();
-        XBT_INFO("%s <- %s", nm->get_my_node_name().c_str(), operation_to_str(p->op));
+        XBT_INFO("%s <--%s--- %s", nm->get_my_node_name().c_str(), operation_to_str(p->op), p->src.c_str());
 
         // Note that here we don't check that the local models come from different trainers
         if (p->op == Packet::Operation::SEND_LOCAL_MODEL)
@@ -87,7 +87,7 @@ void AsynchronousAggregator::send_kills()
     {
         p = new Packet { .op=Packet::Operation::KILL_TRAINER, .src=nm->get_my_node_name() };
 
-        XBT_INFO("%s -> %s", operation_to_str(p->op), node_name.c_str());
+        XBT_INFO("%s ---%s--> %s", p->src.c_str(), operation_to_str(p->op), node_name.c_str());
 
         nm->put(p, node_name, sizeof(*p));
     }

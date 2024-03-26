@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="3.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+    <xsl:output method="xml" doctype-public="XSLT-compat" encoding="UTF-8" indent="yes" />
+
+
+    <xsl:template match="aggregators">
+
+        <xsl:call-template name="node_template">
+            <xsl:with-param name="node" select="."/>
+        </xsl:call-template>
+
+    </xsl:template>
+
+    <xsl:template match="trainers">
+
+        <xsl:call-template name="node_template">
+            <xsl:with-param name="node" select="."/>
+        </xsl:call-template>
+
+    </xsl:template>
+
+    <xsl:template name="node_template">
+        <xsl:param name="node"/>
+
+        <xsl:for-each select="1 to @number">
+
+            <node name="ui">
+                <role>
+                    <xsl:choose>
+                        <xsl:when test="$node='aggregators'">
+                            <aggregator>
+
+                            <xsl:choose>
+                                <xsl:when test="$node/@type='simple'"><simple></simple></xsl:when>
+                                <xsl:when test="$node/@type='asynchronous'"><asynchronous></asynchronous></xsl:when>
+                            </xsl:choose>
+
+                            </aggregator>
+                        </xsl:when>
+
+                        <xsl:when test="$node='trainers'">
+                            <simple></simple>
+                        </xsl:when>
+                    </xsl:choose>
+
+                </role>
+                <network-manager>
+                    <centralized>
+                        <args></args>
+                    </centralized>
+                    <bootstrap-nodes>
+                        <node>Celestial Opposition</node>
+                        <node>Jak'Sho, The Protean</node>
+                    </bootstrap-nodes>
+                </network-manager>
+            </node>
+
+        </xsl:for-each>
+
+    </xsl:template>
+
+</xsl:stylesheet>
