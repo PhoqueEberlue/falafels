@@ -1,3 +1,6 @@
+#ifndef CONSTANTS_HPP
+#define CONSTANTS_HPP
+
 #include <cstdint>
 
 namespace constants
@@ -14,3 +17,5 @@ namespace constants
         const uint64_t LOCAL_EPOCH_FLOPS = 10000000;
     }
 }
+
+#endif // !CONSTANTS_HPP

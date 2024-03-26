@@ -47,7 +47,7 @@ void SimpleAggregator::send_global_model()
 
         XBT_INFO("%s -> %s", operation_to_str(p->op), node_name.c_str());
 
-        nm->put(p, node_name, constants::MODEL_SIZE_BYTES);
+        nm->put(p, node_name, compute_packet_size(p));
 
         this->number_client_training += 1;
     }

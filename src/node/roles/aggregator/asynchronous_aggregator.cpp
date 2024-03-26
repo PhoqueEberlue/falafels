@@ -50,7 +50,7 @@ void AsynchronousAggregator::send_global_model_to_available_trainers()
 
         XBT_INFO("%s ---%s--> %s", p->src.c_str(), operation_to_str(p->op), node_name.c_str());
 
-        nm->put(p, node_name, constants::MODEL_SIZE_BYTES);
+        nm->put(p, node_name, compute_packet_size(p));
     }
 
     // The trainers are not available anymore, clearing them
