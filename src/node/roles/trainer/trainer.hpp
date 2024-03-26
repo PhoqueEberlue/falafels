@@ -3,11 +3,12 @@
 #define FALAFELS_TRAINER_HPP
 
 #include "../role.hpp"
+#include <cstdint>
 
 class Trainer : public Role 
 {
     private:
-        void train();
+        void train(uint8_t number_local_epochs);
         void send_local_model(node_name dest);
     public:
         Trainer();

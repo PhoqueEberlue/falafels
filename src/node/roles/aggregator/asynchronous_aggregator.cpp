@@ -44,7 +44,9 @@ void AsynchronousAggregator::send_global_model_to_available_trainers()
 
     for (std::string node_name: this->available_trainers)
     {   
-        p = new Packet { .op=Packet::Operation::SEND_GLOBAL_MODEL, .src=nm->get_my_node_name() };
+        auto args = new std::unordered_map<std::string, std::string>();
+        args->insert({ "number_local_epochs", std::to_string(this->number_local_epochs) });
+        p = new Packet { .op=Packet::Operation::SEND_GLOBAL_MODEL, .src=nm->get_my_node_name(), .args=args };
 
         XBT_INFO("%s ---%s--> %s", p->src.c_str(), operation_to_str(p->op), node_name.c_str());
 

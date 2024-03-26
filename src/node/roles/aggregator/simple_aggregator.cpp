@@ -39,8 +39,11 @@ void SimpleAggregator::send_global_model()
 
     for (std::string node_name: nm->get_node_names_filter(trainer_filter))
     {   
+        auto args = new std::unordered_map<std::string, std::string>();
+        args->insert({ "number_local_epochs", std::to_string(this->number_local_epochs) });
+
         // Sadly we cannot use smart pointers in mailbox->put because it takes a void* as parameter...
-        p = new Packet { .op=Packet::Operation::SEND_GLOBAL_MODEL, .src=nm->get_my_node_name() };
+        p = new Packet { .op=Packet::Operation::SEND_GLOBAL_MODEL, .src=nm->get_my_node_name(), .args=args };
 
         XBT_INFO("%s -> %s", operation_to_str(p->op), node_name.c_str());
 
