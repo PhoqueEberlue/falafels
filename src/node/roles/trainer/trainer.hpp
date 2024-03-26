@@ -8,6 +8,7 @@ class Trainer : public Role
 {
     private:
         void train();
+        void send_local_model(node_name dest);
     public:
         Trainer();
         void run();

@@ -3,11 +3,12 @@
 #define FALAFELS_AGGREGATOR_HPP
 
 #include "../role.hpp"
+#include <cstdint>
 
 class Aggregator : public Role 
 {
     protected:
-        void aggregate();
+        void aggregate(uint64_t number_models);
         // TODO: what functions are in common with every aggregator??
         // virtual void send_global_model();
         // virtual void wait_local_models();

@@ -21,8 +21,8 @@ void SimpleAggregator::run()
     while (simgrid::s4u::Engine::get_instance()->get_clock() < 2)
     {
         this->send_global_model();
-        this->wait_local_models();
-        this->aggregate();
+        uint64_t number_local_models = this->wait_local_models();
+        this->aggregate(number_local_models);
     } 
 
     this->send_kills();
@@ -50,7 +50,7 @@ void SimpleAggregator::send_global_model()
     }
 }
 
-void SimpleAggregator::wait_local_models()
+uint64_t SimpleAggregator::wait_local_models()
 {
     uint64_t number_local_models = 0;
     double flops                 = constants::aggregator::AGGREGATION_FLOPS;
@@ -71,6 +71,8 @@ void SimpleAggregator::wait_local_models()
     }
     
     XBT_INFO("Retrieved %lu local models out of %lu", number_local_models, this->number_client_training);
+
+    return number_local_models;
 }
 
 void SimpleAggregator::send_kills()

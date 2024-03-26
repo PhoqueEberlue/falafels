@@ -16,7 +16,7 @@ private:
     /** list of trainers node_name that finished their job (to the current node's knowledge) */
     std::vector<node_name> available_trainers;
     void send_global_model_to_available_trainers();
-    void wait_local_models();
+    uint64_t wait_local_models();
     void send_kills();
 public:
     AsynchronousAggregator();

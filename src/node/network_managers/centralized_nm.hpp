@@ -9,7 +9,10 @@ class CentralizedNetworkManager : public NetworkManager
     private:
         ~CentralizedNetworkManager();
         void put(Packet*, node_name, uint64_t simulated_size_in_bytes);
+        bool put_timeout(Packet *packet, node_name name, uint64_t simulated_size_in_bytes, uint64_t timeout);
         Packet *get();
+
+
         std::vector<node_name> get_node_names_filter(std::function<bool(NodeInfo*)>);
     public:
         CentralizedNetworkManager(node_name);

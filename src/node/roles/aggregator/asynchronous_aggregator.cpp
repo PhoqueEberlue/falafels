@@ -1,4 +1,5 @@
 #include <simgrid/s4u/Engine.hpp>
+#include <simgrid/s4u/Mailbox.hpp>
 #include <vector>
 #include <xbt/log.h>
 
@@ -26,8 +27,8 @@ void AsynchronousAggregator::run()
     while (simgrid::s4u::Engine::get_instance()->get_clock() < 2)
     {
         this->send_global_model_to_available_trainers();
-        this->wait_local_models();
-        this->aggregate();
+        uint64_t number_local_models = this->wait_local_models();
+        this->aggregate(number_local_models);
     } 
 
     this->send_kills();
@@ -54,7 +55,7 @@ void AsynchronousAggregator::send_global_model_to_available_trainers()
     this->available_trainers.clear();
 }
 
-void AsynchronousAggregator::wait_local_models()
+uint64_t AsynchronousAggregator::wait_local_models()
 {
     uint64_t number_local_models = 0;
     auto nm = this->get_network_manager();
@@ -73,9 +74,13 @@ void AsynchronousAggregator::wait_local_models()
             this->available_trainers.push_back(p->src);
             number_local_models += 1;
         }
+        
+        delete p;
     }
     
     XBT_INFO("Enough local models: %lu out of %i with proportion threshold of %f", number_local_models, this->total_number_clients, this->proportion_threshold);
+
+    return number_local_models;
 }
 
 void AsynchronousAggregator::send_kills()

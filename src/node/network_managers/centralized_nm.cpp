@@ -1,7 +1,10 @@
 #include "centralized_nm.hpp"
 #include <simgrid/s4u/Mailbox.hpp>
+#include <simgrid/Exception.hpp>
 #include <vector>
+#include <xbt/log.h>
 
+XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_centralized_nm, "Messages specific for this example");
 
 CentralizedNetworkManager::CentralizedNetworkManager(node_name name) {
     this->my_node_name = name;
@@ -16,7 +19,8 @@ std::vector<node_name> CentralizedNetworkManager::get_node_names_filter(std::fun
     std::vector<node_name> result = {};
 
     for(auto node_info : *this->get_bootstrap_nodes()) {
-        if (filter(node_info)) {
+        if (filter(node_info))
+        {
             result.push_back(node_info->name);
         }
     }
@@ -28,6 +32,22 @@ void CentralizedNetworkManager::put(Packet *packet, node_name name, uint64_t sim
     auto receiver_mailbox = simgrid::s4u::Mailbox::by_name(name);
 
     receiver_mailbox->put(packet, simulated_size_in_bytes);
+}
+
+bool CentralizedNetworkManager::put_timeout(Packet *packet, node_name name, uint64_t simulated_size_in_bytes, uint64_t timeout)
+{
+    auto receiver_mailbox = simgrid::s4u::Mailbox::by_name(name);
+
+    try 
+    {
+        receiver_mailbox->put(packet, simulated_size_in_bytes, timeout);
+        return true;
+    } 
+    catch (simgrid::TimeoutException) 
+    {
+        XBT_INFO("Timeout, couldn't send message from %s to %s", this->get_my_node_name().c_str(), name.c_str());
+        return false;
+    }
 }
 
 Packet *CentralizedNetworkManager::get() {
