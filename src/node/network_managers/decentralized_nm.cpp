@@ -4,7 +4,8 @@
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_decentralized_nm, "Messages specific for this example");
 
-DecentralizedNetworkManager::DecentralizedNetworkManager(node_name name) {
+DecentralizedNetworkManager::DecentralizedNetworkManager(node_name name)
+{
     this->my_node_name = name;
     // Initializing our mailbox
     this->mailbox = simgrid::s4u::Mailbox::by_name(name);
@@ -39,6 +40,7 @@ bool DecentralizedNetworkManager::put_timeout(Packet *packet, node_name name, ui
     }
 }
 
-Packet *DecentralizedNetworkManager::get() {
+Packet *DecentralizedNetworkManager::get()
+{
     return this->mailbox->get<Packet>();
 }

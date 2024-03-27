@@ -18,7 +18,8 @@ NodeInfo *Node::get_node_info()
     return new NodeInfo { .name=this->role->get_network_manager()->get_my_node_name(), .role=this->role->get_role_type() }; 
 }
 
-void Node::set_role(Role *r) { 
+void Node::set_role(Role *r)
+{ 
     // if we are changing to a new role
     if (!this->role)
     {

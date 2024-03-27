@@ -9,7 +9,8 @@
 
 typedef std::string node_name;
 
-enum class NodeRole {
+enum class NodeRole
+{
     Aggregator,
     Trainer,
     Proxy

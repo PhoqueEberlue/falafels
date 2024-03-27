@@ -6,7 +6,8 @@
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_centralized_nm, "Messages specific for this example");
 
-CentralizedNetworkManager::CentralizedNetworkManager(node_name name) {
+CentralizedNetworkManager::CentralizedNetworkManager(node_name name)
+{
     this->my_node_name = name;
     // Initializing our mailbox
     this->mailbox = simgrid::s4u::Mailbox::by_name(name);
@@ -18,7 +19,8 @@ std::vector<node_name> CentralizedNetworkManager::get_node_names_filter(std::fun
 {
     std::vector<node_name> result = {};
 
-    for(auto node_info : *this->get_bootstrap_nodes()) {
+    for(auto node_info : *this->get_bootstrap_nodes())
+    {
         if (filter(node_info))
         {
             result.push_back(node_info->name);
@@ -50,6 +52,7 @@ bool CentralizedNetworkManager::put_timeout(Packet *packet, node_name name, uint
     }
 }
 
-Packet *CentralizedNetworkManager::get() {
+Packet *CentralizedNetworkManager::get()
+{
     return this->mailbox->get<Packet>();
 }
