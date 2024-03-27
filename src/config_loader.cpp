@@ -52,6 +52,7 @@ NetworkManager *create_network_manager(xml_node *network_manager_elem, node_name
 Aggregator *create_aggregator(xml_node *aggregator_elem)
 {
     Aggregator *role;
+    xml_node args = aggregator_elem->child("args");
 
     if (strcmp(aggregator_elem->name(), "simple") == 0)
     {
@@ -60,8 +61,10 @@ Aggregator *create_aggregator(xml_node *aggregator_elem)
     }
     else if (strcmp(aggregator_elem->name(), "asynchronous") == 0)
     {
-        role = new AsynchronousAggregator();
-        XBT_INFO("With role: Asynchronous");
+        float proportion_threshold = args.child("proportion_threshold").attribute("value").as_float();
+        role = new AsynchronousAggregator(proportion_threshold);
+        XBT_INFO("With role: AsynchronousAggregator");
+        XBT_INFO("Param: proportion_threshold=%f", proportion_threshold);
     }
 
     return role; 

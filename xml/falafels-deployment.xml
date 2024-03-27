@@ -7,11 +7,12 @@
     </constants>
 
     <nodes>
-        <node name="Thornmail">
+        <node name="Rammus">
             <role>
                 <aggregator>
                     <asynchronous>
                         <args>
+                            <proportion_threshold value="0.5"/>
                         </args>
                     </asynchronous>
                 </aggregator>
@@ -21,12 +22,12 @@
                     <args></args>
                 </centralized>
                 <bootstrap-nodes>
-                    <node>Celestial Opposition</node>
-                    <node>Jak'Sho, The Protean</node>
+                    <node>Zeri</node>
+                    <node>Smolder</node>
                 </bootstrap-nodes>
             </network-manager>
         </node>
-        <node name="Celestial Opposition">
+        <node name="Zeri">
             <role>
                 <trainer>
                     <args></args>
@@ -38,7 +39,7 @@
                 </centralized>
             </network-manager>
         </node>
-        <node name="Jak'Sho, The Protean">
+        <node name="Smolder">
             <role>
                 <trainer>
                     <args></args>

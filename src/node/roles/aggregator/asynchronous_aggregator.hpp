@@ -19,7 +19,7 @@ private:
     uint64_t wait_local_models();
     void send_kills();
 public:
-    AsynchronousAggregator();
+    AsynchronousAggregator(float proportion_threshold);
     void run();
 };
 

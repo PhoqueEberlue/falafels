@@ -3,15 +3,15 @@
 <platform version="4.1">
     <zone id="zone0" routing="Full">
         <!-- Defining hosts -->
-        <host id="Thornmail" speed="98.095Mf" core="8">
+        <host id="Rammus" speed="98.095Mf" core="8">
             <prop id="wattage_per_state" value="100.0:120.0:200.0" />
             <prop id="wattage_off" value="10" />
         </host>
-        <host id="Celestial Opposition" speed="76.296Mf">
+        <host id="Zeri" speed="76.296Mf">
             <prop id="wattage_per_state" value="100.0:120.0:200.0" />
             <prop id="wattage_off" value="10" />
         </host>
-        <host id="Jak'Sho, The Protean" speed="76.296Mf">
+        <host id="Smolder" speed="76.296Mf">
             <prop id="wattage_per_state" value="100.0:120.0:200.0" />
             <prop id="wattage_off" value="10" />
         </host>
@@ -37,23 +37,23 @@
             <prop id="wattage_off" value="10" />
         </link>
 
-        <route src="Thornmail" dst="Thornmail">
+        <route src="Rammus" dst="Rammus">
             <link_ctn id="loopback" />
         </route>
-        <route src="Celestial Opposition" dst="Celestial Opposition">
+        <route src="Zeri" dst="Zeri">
             <link_ctn id="loopback" />
         </route>
-        <route src="Jak'Sho, The Protean" dst="Jak'Sho, The Protean">
+        <route src="Smolder" dst="Smolder">
             <link_ctn id="loopback" />
         </route>
 
-        <route src="Thornmail" dst="Jak'Sho, The Protean">
+        <route src="Rammus" dst="Smolder">
             <link_ctn id="1" />
         </route>
-        <route src="Thornmail" dst="Celestial Opposition">
+        <route src="Rammus" dst="Zeri">
             <link_ctn id="2" />
         </route>
-        <route src="Celestial Opposition" dst="Jak'Sho, The Protean">
+        <route src="Zeri" dst="Smolder">
             <link_ctn id="3" />
         </route>
     </zone>

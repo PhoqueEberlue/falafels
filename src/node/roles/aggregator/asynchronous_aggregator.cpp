@@ -13,8 +13,9 @@ static bool trainer_filter(NodeInfo *node_info)
     return node_info->role == NodeRole::Trainer;
 }
 
-AsynchronousAggregator::AsynchronousAggregator()
+AsynchronousAggregator::AsynchronousAggregator(float proportion_threshold)
 {
+    this->proportion_threshold = proportion_threshold;
 }
 
 void AsynchronousAggregator::run()
