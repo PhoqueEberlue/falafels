@@ -152,23 +152,23 @@ constexpr unsigned int str2int(const char* str, int h = 0)
     return !str[h] ? 5381 : (str2int(str, h+1) * 33) ^ str[h];
 }
 
-void set_constant(const char_t *name, xml_attribute value)
+void set_constant(const char_t *name, xml_attribute *value)
 {
     // If the value is empty ingore constant
-    if (value.empty())
+    if (value->empty())
         return;
 
-    XBT_INFO("Set %s=%s", name, value.as_string());
+    XBT_INFO("Set %s=%s", name, value->as_string());
 
     switch (str2int(name)) {
         case str2int("MODEL_SIZE_BYTES"):
-            Constants::MODEL_SIZE_BYTES = value.as_int();
+            Constants::MODEL_SIZE_BYTES = value->as_int();
             break;
         case str2int("GLOBAL_MODEL_AGGREGATING_FLOPS"):
-            Constants::GLOBAL_MODEL_AGGREGATING_FLOPS = value.as_double();
+            Constants::GLOBAL_MODEL_AGGREGATING_FLOPS = value->as_double();
             break;
         case str2int("LOCAL_MODEL_TRAINING_FLOPS"):
-            Constants::LOCAL_MODEL_TRAINING_FLOPS = value.as_double();
+            Constants::LOCAL_MODEL_TRAINING_FLOPS = value->as_double();
             break;
     }
 }
@@ -179,8 +179,11 @@ void init_constants(xml_node *constants_elem)
 
     for (xml_node constant: constants_elem->children())
     {
-        set_constant(constant.name(), constant.attribute("value"));
+        xml_attribute attribute = constant.attribute("value");
+        set_constant(constant.name(), &attribute);
     }
+
+    XBT_INFO("-------------------------");
 }
 
 /* Load falafels deployment file */
@@ -206,4 +209,3 @@ void load_config(const char* file_path, simgrid::s4u::Engine *e)
         auto actor = simgrid::s4u::Actor::create(name, e->host_by_name(name), &node_runner, node);
     }
 }
-
