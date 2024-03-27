@@ -55,7 +55,7 @@ static const uint64_t compute_packet_size(Packet *p)
 
     // Add the model size if its a send model operation
     if (p->op == Packet::SEND_GLOBAL_MODEL || p->op == Packet::SEND_LOCAL_MODEL)
-        result += constants::MODEL_SIZE_BYTES;
+        result += Constants::MODEL_SIZE_BYTES;
 
     if (p->args)
     {

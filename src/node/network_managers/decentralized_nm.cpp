@@ -17,19 +17,19 @@ std::vector<node_name> DecentralizedNetworkManager::get_node_names_filter(std::f
     return std::vector<node_name>();
 }
 
-void DecentralizedNetworkManager::put(Packet *packet, node_name name, uint64_t simulated_size_in_bytes) {
+void DecentralizedNetworkManager::put(Packet *packet, node_name name) {
     auto receiver_mailbox = simgrid::s4u::Mailbox::by_name(name);
 
-    receiver_mailbox->put(packet, simulated_size_in_bytes);
+    receiver_mailbox->put(packet, compute_packet_size(packet));
 }
 
-bool DecentralizedNetworkManager::put_timeout(Packet *packet, node_name name, uint64_t simulated_size_in_bytes, uint64_t timeout)
+bool DecentralizedNetworkManager::put_timeout(Packet *packet, node_name name, uint64_t timeout)
 {
     auto receiver_mailbox = simgrid::s4u::Mailbox::by_name(name);
 
     try 
     {
-        receiver_mailbox->put(packet, simulated_size_in_bytes, timeout);
+        receiver_mailbox->put(packet, compute_packet_size(packet), timeout);
         return true;
     } 
     catch (simgrid::TimeoutException) 

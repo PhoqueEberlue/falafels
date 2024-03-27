@@ -10,7 +10,7 @@ Trainer::Trainer() {}
 
 void Trainer::train(uint8_t number_local_epochs) 
 {
-    double flops = constants::trainer::LOCAL_EPOCH_FLOPS;
+    double flops = Constants::LOCAL_MODEL_TRAINING_FLOPS;
 
     XBT_INFO("Starting local training with flops value per epoch: %f", flops);
     for (int i = 0; i < number_local_epochs; i++)
@@ -28,7 +28,7 @@ void Trainer::send_local_model(node_name dest)
 
     XBT_INFO("%s ---%s--> %s", nm->get_my_node_name().c_str(), operation_to_str(res_p->op), dest.c_str());
 
-    nm->put_timeout(res_p, dest, constants::MODEL_SIZE_BYTES, 10);
+    nm->put_timeout(res_p, dest, 10);
 }
 
 void Trainer::run()

@@ -17,8 +17,8 @@ class NetworkManager
     public:
         NetworkManager(){}
         virtual ~NetworkManager(){}
-        virtual void put(Packet*, node_name, uint64_t simulated_size_in_bytes) = 0;
-        virtual bool put_timeout(Packet *packet, node_name name, uint64_t simulated_size_in_bytes, uint64_t timeout) = 0;
+        virtual void put(Packet*, node_name) = 0;
+        virtual bool put_timeout(Packet *packet, node_name name, uint64_t timeout) = 0;
 
         virtual Packet *get() = 0;
         virtual std::vector<node_name> get_node_names_filter(std::function<bool(NodeInfo*)>) = 0;

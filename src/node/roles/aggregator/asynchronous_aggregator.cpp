@@ -5,7 +5,6 @@
 
 #include "asynchronous_aggregator.hpp"
 #include "../../../protocol.hpp"
-#include "../../../constants.hpp"
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_asynchronous_aggregator, "Messages specific for this example");
 
@@ -50,7 +49,7 @@ void AsynchronousAggregator::send_global_model_to_available_trainers()
 
         XBT_INFO("%s ---%s--> %s", p->src.c_str(), operation_to_str(p->op), node_name.c_str());
 
-        nm->put(p, node_name, compute_packet_size(p));
+        nm->put(p, node_name);
     }
 
     // The trainers are not available anymore, clearing them
@@ -96,6 +95,6 @@ void AsynchronousAggregator::send_kills()
 
         XBT_INFO("%s ---%s--> %s", p->src.c_str(), operation_to_str(p->op), node_name.c_str());
 
-        nm->put(p, node_name, sizeof(*p));
+        nm->put(p, node_name);
     }
 }

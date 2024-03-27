@@ -1,3 +1,5 @@
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <vector>
 #include <xbt/asserts.h>
@@ -12,6 +14,7 @@
 #include "node/network_managers/decentralized_nm.hpp"
 #include "config_loader.hpp"
 #include "../pugixml/pugixml.hpp"
+#include "constants.hpp"
  
  
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_falafels_config, "Messages specific for this example");
@@ -104,19 +107,14 @@ Node *create_node(xml_node *node_elem, node_name name)
     return new Node(role, network_manager);
 }
 
-/* Load falafels deployment file */
-void load_config(const char* file_path, simgrid::s4u::Engine *e)
+std::unordered_map<node_name, Node*> *create_nodes(xml_node *nodes_elem)
 {
-    xml_document doc;
-    xml_parse_result result = doc.load_file(file_path);
+    XBT_INFO("Creating falafels nodes...");
 
-    xbt_assert(result != 0, "Error while loading falafels xml file");
-
-    xml_node root           = doc.child("deployment");
-    auto nodes_map          = new std::unordered_map<node_name, Node*>();
+    auto nodes_map = new std::unordered_map<node_name, Node*>();
 
     // Loop through each (xml) node of the document to instanciate (simulated) nodes
-    for (xml_node node_elem: root.children("node"))
+    for (xml_node node_elem: nodes_elem->children("node"))
     {
         node_name name = node_elem.attribute("name").as_string();
         Node *node     = create_node(&node_elem, name);
@@ -125,7 +123,7 @@ void load_config(const char* file_path, simgrid::s4u::Engine *e)
     }
 
     // Loop a second time to set boostrap nodes
-    for (xml_node node_elem: root.children("node"))
+    for (xml_node node_elem: nodes_elem->children("node"))
     {
         node_name name = node_elem.attribute("name").as_string();
         auto bootstrap_nodes = new std::vector<NodeInfo*>(); 
@@ -143,6 +141,64 @@ void load_config(const char* file_path, simgrid::s4u::Engine *e)
         // Set boostrap nodes
         nodes_map->at(name)->get_role()->get_network_manager()->set_bootstrap_nodes(bootstrap_nodes); 
     } 
+
+    return nodes_map;
+}
+
+
+// Trick to evaluate string at compile time. This permits us to use string comparison in switch statement.
+constexpr unsigned int str2int(const char* str, int h = 0)
+{
+    return !str[h] ? 5381 : (str2int(str, h+1) * 33) ^ str[h];
+}
+
+void set_constant(const char_t *name, xml_attribute value)
+{
+    // If the value is empty ingore constant
+    if (value.empty())
+        return;
+
+    XBT_INFO("Set %s=%s", name, value.as_string());
+
+    switch (str2int(name)) {
+        case str2int("MODEL_SIZE_BYTES"):
+            Constants::MODEL_SIZE_BYTES = value.as_int();
+            break;
+        case str2int("GLOBAL_MODEL_AGGREGATING_FLOPS"):
+            Constants::GLOBAL_MODEL_AGGREGATING_FLOPS = value.as_double();
+            break;
+        case str2int("LOCAL_MODEL_TRAINING_FLOPS"):
+            Constants::LOCAL_MODEL_TRAINING_FLOPS = value.as_double();
+            break;
+    }
+}
+
+void init_constants(xml_node *constants_elem)
+{
+    XBT_INFO("Initializing constants...");
+
+    for (xml_node constant: constants_elem->children())
+    {
+        set_constant(constant.name(), constant.attribute("value"));
+    }
+}
+
+/* Load falafels deployment file */
+void load_config(const char* file_path, simgrid::s4u::Engine *e)
+{
+    xml_document doc;
+    xml_parse_result result = doc.load_file(file_path);
+
+    xbt_assert(result != 0, "Error while loading falafels xml file");
+
+    xml_node root_elem = doc.child("deployment");
+    xml_node nodes_elem = root_elem.child("nodes");
+    xml_node constants_elem = root_elem.child("constants");
+
+    init_constants(&constants_elem);
+
+    auto nodes_map = create_nodes(&nodes_elem);  
+
 
     for (auto [name, node] : *nodes_map)
     {

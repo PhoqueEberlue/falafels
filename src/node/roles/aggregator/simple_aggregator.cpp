@@ -3,7 +3,6 @@
 
 #include "simple_aggregator.hpp"
 #include "../../../protocol.hpp"
-#include "../../../constants.hpp"
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_simple_aggregator, "Messages specific for this example");
 
@@ -47,7 +46,7 @@ void SimpleAggregator::send_global_model()
 
         XBT_INFO("%s -> %s", operation_to_str(p->op), node_name.c_str());
 
-        nm->put(p, node_name, compute_packet_size(p));
+        nm->put(p, node_name);
 
         this->number_client_training += 1;
     }
@@ -56,7 +55,6 @@ void SimpleAggregator::send_global_model()
 uint64_t SimpleAggregator::wait_local_models()
 {
     uint64_t number_local_models = 0;
-    double flops                 = constants::aggregator::AGGREGATION_FLOPS;
     auto nm                      = this->get_network_manager();
     Packet *p;
 
@@ -89,6 +87,6 @@ void SimpleAggregator::send_kills()
 
         XBT_INFO("%s -> %s", operation_to_str(p->op), node_name.c_str());
 
-        nm->put(p, node_name, sizeof(*p));
+        nm->put(p, node_name);
     }
 }
