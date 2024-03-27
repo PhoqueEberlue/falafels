@@ -1,45 +1,54 @@
 <?xml version='1.0'?>
 <deployment version="0.1">
-    <node name="Thornmail">
-        <role>
-            <aggregator>
-                <asynchronous>
+    <constants>
+        <MODEL_SIZE_BYTES value="2000"/>
+        <GLOBAL_MODEL_AGGREGATING_FLOPS value="1000000.0"/>
+        <LOCAL_MODEL_TRAINING_FLOPS value="1000000.0"/>
+    </constants>
+
+    <nodes>
+        <node name="Thornmail">
+            <role>
+                <aggregator>
+                    <asynchronous>
+                        <args>
+                        </args>
+                    </asynchronous>
+                </aggregator>
+            </role>
+            <network-manager>
+                <centralized>
                     <args></args>
-                </asynchronous>
-            </aggregator>
-        </role>
-        <network-manager>
-            <centralized>
-                <args></args>
-            </centralized>
-            <bootstrap-nodes>
-                <node>Celestial Opposition</node>
-                <node>Jak'Sho, The Protean</node>
-            </bootstrap-nodes>
-        </network-manager>
-    </node>
-    <node name="Celestial Opposition">
-        <role>
-            <trainer>
-                <args></args>
-            </trainer>
-        </role>
-        <network-manager>
-            <centralized>
-                <args></args>
-            </centralized>
-        </network-manager>
-    </node>
-    <node name="Jak'Sho, The Protean">
-        <role>
-            <trainer>
-                <args></args>
-            </trainer>
-        </role>
-        <network-manager>
-            <centralized>
-                <args></args>
-            </centralized>
-        </network-manager>
-    </node>
+                </centralized>
+                <bootstrap-nodes>
+                    <node>Celestial Opposition</node>
+                    <node>Jak'Sho, The Protean</node>
+                </bootstrap-nodes>
+            </network-manager>
+        </node>
+        <node name="Celestial Opposition">
+            <role>
+                <trainer>
+                    <args></args>
+                </trainer>
+            </role>
+            <network-manager>
+                <centralized>
+                    <args></args>
+                </centralized>
+            </network-manager>
+        </node>
+        <node name="Jak'Sho, The Protean">
+            <role>
+                <trainer>
+                    <args></args>
+                </trainer>
+            </role>
+            <network-manager>
+                <centralized>
+                    <args></args>
+                </centralized>
+            </network-manager>
+        </node>
+    </nodes>
 </deployment>
