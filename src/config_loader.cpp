@@ -15,6 +15,7 @@
 #include "config_loader.hpp"
 #include "../pugixml/pugixml.hpp"
 #include "constants.hpp"
+#include "utils/utils.hpp"
  
  
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_falafels_config, "Messages specific for this example");
@@ -143,13 +144,6 @@ std::unordered_map<node_name, Node*> *create_nodes(xml_node *nodes_elem)
     } 
 
     return nodes_map;
-}
-
-
-// Trick to evaluate string at compile time. This permits us to use string comparison in switch statement.
-constexpr unsigned int str2int(const char* str, int h = 0)
-{
-    return !str[h] ? 5381 : (str2int(str, h+1) * 33) ^ str[h];
 }
 
 void set_constant(const char_t *name, xml_attribute *value)
