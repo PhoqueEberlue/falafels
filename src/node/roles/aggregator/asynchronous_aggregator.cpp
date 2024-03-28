@@ -63,9 +63,22 @@ uint64_t AsynchronousAggregator::wait_local_models()
     auto nm = this->get_network_manager();
     Packet *p;
 
-    // While we don't have enough local models
-    while (number_local_models < this->total_number_clients * this->proportion_threshold)
+    while (true)
     {
+        // When proportion threshold is set to 0, wait for at least one model
+        if (this->proportion_threshold == 0.0)
+        {
+            if (number_local_models == 1)
+                break;
+
+        } 
+        // Else wait for the proportion threshold to be met
+        else 
+        {
+            if (number_local_models >= this->total_number_clients * this->proportion_threshold)
+                break;
+        }
+
         p = nm->get();
         XBT_INFO("%s <--%s--- %s", nm->get_my_node_name().c_str(), operation_to_str(p->op), p->src.c_str());
 
