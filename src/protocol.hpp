@@ -47,7 +47,7 @@ struct Packet
  * - The "real" memory used in the structure
  * - The simulated memory, such as MODEL_SIZE_BYTES
  *
- * @param Packet pointer
+ * @param p Packet pointer
  * @return The simulated size in bytes.
  */
 static const uint64_t compute_packet_size(Packet *p)
@@ -70,7 +70,12 @@ static const uint64_t compute_packet_size(Packet *p)
 }
 
 
-// It would be interesting to generate this function with a generative macro
+/**
+ * Format an operation as text with nice colors
+ *
+ * @param op the operation
+ * @return formated text;
+ */
 static const char* operation_to_str(Packet::Operation op)
 {
     switch (op) {

@@ -28,6 +28,12 @@ void node_runner(Node *node)
     node->run();
 }
 
+/**
+ * Create a network manager with the correct type.
+ * @param network_manager_elem XML element that contains network manager informations.
+ * @param name Name of the Node that will be associated to this network manager.
+ * @return A pointer to the created NetworkManager.
+ */
 NetworkManager *create_network_manager(xml_node *network_manager_elem, node_name name)
 {
     NetworkManager *network_manager;
@@ -49,6 +55,11 @@ NetworkManager *create_network_manager(xml_node *network_manager_elem, node_name
     return network_manager;
 }
 
+/**
+ * Create an aggregator with the correct type.
+ * @param aggregator_elem XML element that contains aggregator informations.
+ * @return A pointer to the created aggregator.
+ */
 Aggregator *create_aggregator(xml_node *aggregator_elem)
 {
     Aggregator *role;
@@ -70,6 +81,11 @@ Aggregator *create_aggregator(xml_node *aggregator_elem)
     return role; 
 }
 
+/**
+ * Create a role to be asociated for a Node.
+ * @param role_elem XML element that contains role informations.
+ * @return A pointer to the created Role.
+ */
 Role *create_role(xml_node *role_elem)
 {
     Role *role;
@@ -96,6 +112,12 @@ Role *create_role(xml_node *role_elem)
     return role;
 }
 
+/**
+ * Create a single node with its respectful configuration.
+ * @param node_elem XML element that contains node informations.
+ * @param name The name of the current node.
+ * @return A pointer to the created Node.
+ */
 Node *create_node(xml_node *node_elem, node_name name)
 {
     XBT_INFO("------------------------------");
@@ -111,6 +133,11 @@ Node *create_node(xml_node *node_elem, node_name name)
     return new Node(role, network_manager);
 }
 
+/**
+ * Create nodes with their respectful configuration.
+ * @param nodes_elem XML element that contains the list of nodes.
+ * @return An unordered map with node_name as key and a pointer to the given Node.
+ */
 std::unordered_map<node_name, Node*> *create_nodes(xml_node *nodes_elem)
 {
     XBT_INFO("Creating falafels nodes...");
@@ -149,6 +176,11 @@ std::unordered_map<node_name, Node*> *create_nodes(xml_node *nodes_elem)
     return nodes_map;
 }
 
+/**
+ * Set a constant in the Constant Class
+ * @param name Constant's name
+ * @param value Constant's value
+ */
 void set_constant(const char_t *name, xml_attribute *value)
 {
     // If the value is empty ingore constant
@@ -170,6 +202,10 @@ void set_constant(const char_t *name, xml_attribute *value)
     }
 }
 
+/**
+ * Loop through constant elem and set each constant.
+ * @param constants_elem The element containing constant children
+ */
 void init_constants(xml_node *constants_elem)
 {
     XBT_INFO("Initializing constants...");
@@ -183,7 +219,6 @@ void init_constants(xml_node *constants_elem)
     XBT_INFO("-------------------------");
 }
 
-/* Load falafels deployment file */
 void load_config(const char* file_path, simgrid::s4u::Engine *e)
 {
     xml_document doc;

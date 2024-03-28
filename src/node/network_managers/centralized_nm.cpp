@@ -30,7 +30,8 @@ std::vector<node_name> CentralizedNetworkManager::get_node_names_filter(std::fun
     return result;
 }
 
-void CentralizedNetworkManager::put(Packet *packet, node_name name) {
+void CentralizedNetworkManager::put(Packet *packet, node_name name)
+{
     auto receiver_mailbox = simgrid::s4u::Mailbox::by_name(name);
 
     receiver_mailbox->put(packet, compute_packet_size(packet));
