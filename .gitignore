@@ -1,3 +1,4 @@
+# ------ C++ ------
 # Prerequisites
 *.d
 
@@ -34,3 +35,5 @@
 # Build folder
 build/
 
+# ------ Rust ------
+target/
