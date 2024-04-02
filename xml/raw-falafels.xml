@@ -1,0 +1,23 @@
+<?xml version='1.0'?>
+<raw version="0.1">
+    <constants>
+        <constant name="MODEL_SIZE_BYTES" value=""/>
+        <constant name="GLOBAL_MODEL_AGGREGATING_FLOPS" value=""/>
+        <constant name="LOCAL_MODEL_TRAINING_FLOPS" value=""/>
+    </constants>
+
+    <aggregators number="1" type="simple">
+        <arg name="" value=""/>
+        <network-manager type="centralized">
+            <arg name="" value=""/>
+        </network-manager>
+    </aggregators>
+
+    <trainers number="15" type="simple" network_manager="centralized">
+        <network-manager type="centralized">
+            <arg name="" value=""/>
+        </network-manager>
+    </trainers>
+
+</raw>
+
