@@ -80,9 +80,10 @@ impl Fryer {
 
             let mut network_manager = rf.aggregators.network_manager.clone();
 
-            let args = &mut network_manager.args.as_mut().unwrap();
-
-            
+            // Inserts a new array into the Option if its value is None, then returns a mutable
+            // reference to the contained value.
+            let args = network_manager.args.get_or_insert_with(|| Vec::<common::Arg>::new());
+                        
             // For each trainer node, append its name to the current aggregator
             for node in &ff.nodes.list {
                 args.push(common::Arg { name: "bootstrap-node".to_string(), value: node.name.clone() });
@@ -93,7 +94,6 @@ impl Fryer {
                 role,
                 network_manager,
             };
-
 
             ff.nodes.list.push(aggregator_node);
         }
