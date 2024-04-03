@@ -14,9 +14,12 @@ pub struct Zone {
     pub id: String,
     #[serde(rename = "@routing")]
     pub routing: String,
-    pub host: Vec<Host>,
-    pub link: Vec<Link>,
-    pub route: Vec<Route>,
+    #[serde(rename = "host")]
+    pub hosts: Vec<Host>,
+    #[serde(rename = "link")]
+    pub links: Vec<Link>,
+    #[serde(rename = "route")]
+    pub routes: Vec<Route>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -25,9 +28,10 @@ pub struct Host {
     pub id: String,
     #[serde(rename = "@speed")]
     pub speed: String,
-    #[serde(rename = "@core")]
+    #[serde(rename = "@core", skip_serializing_if = "Option::is_none")]
     pub core: Option<String>,
-    pub prop: Vec<Prop>,
+    #[serde(rename = "prop")]
+    pub props: Vec<Prop>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -46,9 +50,10 @@ pub struct Link {
     pub bandwidth: String,
     #[serde(rename = "@latency")]
     pub latency: String,
-    #[serde(rename = "@sharing_policy")]
+    #[serde(rename = "@sharing_policy", skip_serializing_if = "Option::is_none")]
     pub sharing_policy: Option<String>,
-    pub prop: Vec<Prop>,
+    #[serde(rename = "prop")]
+    pub props: Vec<Prop>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

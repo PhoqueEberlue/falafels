@@ -45,7 +45,7 @@ pub struct Aggregator {
     #[serde(rename = "@type")]
     pub aggregator_type: AggregatorType,
 
-    #[serde(rename = "arg")]
+    #[serde(rename = "arg", skip_serializing_if = "Option::is_none")]
     pub args: Option<Vec<Arg>>,
 }
 
@@ -54,6 +54,6 @@ pub struct Trainer {
     #[serde(rename = "@type")]
     pub trainer_type: TrainerType,
     
-    #[serde(rename = "arg")]
+    #[serde(rename = "arg", skip_serializing_if = "Option::is_none")]
     pub args: Option<Vec<Arg>>,
 }
