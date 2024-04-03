@@ -105,7 +105,7 @@ impl Fryer {
 
     pub fn write_fried_falafels(&self, path: &str, ff: &fried::FriedFalafels) {
         println!("Writing the fried falafels to `{}`...", path);
-        let mut result_buffer = String::new();
+        let mut result_buffer = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
 
         let mut serializer = quick_xml::se::Serializer::new(&mut result_buffer);
         serializer.expand_empty_elements(false);

@@ -18,7 +18,9 @@ impl Platformer {
 
     pub fn write_platform(&self, path: &str, platform: &Platform) {
         println!("Writing the simgrid platform file to `{}`...", path);
-        let mut result_buffer = String::new();
+        let mut result_buffer = String::from(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE platform SYSTEM \"https://simgrid.org/simgrid.dtd\">\n"
+        );
 
         let mut serializer = quick_xml::se::Serializer::new(&mut result_buffer);
         serializer.expand_empty_elements(false);
