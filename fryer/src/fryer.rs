@@ -26,6 +26,8 @@ impl Fryer {
     }
 
     pub fn load_raw_falafels(&mut self, file_path: &str) -> raw::RawFalafels {
+        println!("Loading raw falafels at `{}`... 📰", file_path);
+
         let content = String::from_utf8(fs::read(file_path).unwrap()).unwrap();
 
         match from_str(&content) {
@@ -35,6 +37,7 @@ impl Fryer {
     } 
 
     pub fn fry(&mut self, rf: &raw::RawFalafels) -> fried::FriedFalafels {
+        println!("Frying those falafels... 🧑🍳");
 
         if let Some(names_list) = &self.names_list {
             // Total number of nodes
@@ -95,10 +98,13 @@ impl Fryer {
             ff.nodes.list.push(aggregator_node);
         }
 
+        println!("Falafels ready! 🧆");
+
         ff
     }
 
-    pub fn write_fried_falafels(&self, file_path: &str, ff: &fried::FriedFalafels) {
+    pub fn write_fried_falafels(&self, path: &str, ff: &fried::FriedFalafels) {
+        println!("Writing the fried falafels to `{}`...", path);
         let mut result_buffer = String::new();
 
         let mut serializer = quick_xml::se::Serializer::new(&mut result_buffer);
@@ -107,7 +113,7 @@ impl Fryer {
 
         ff.serialize(serializer).unwrap();
 
-        fs::write(file_path, result_buffer).unwrap();
+        fs::write(path, result_buffer).unwrap();
     }
 }
 
