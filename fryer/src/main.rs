@@ -1,4 +1,5 @@
 use fryer::Fryer;
+use platformer::Platformer;
 
 mod structures;
 mod fryer;
@@ -12,4 +13,9 @@ fn main() {
     let fried_falafels = fryer.fry(&raw_falafels);
 
     fryer.write_fried_falafels("../xml/fried-falafels.xml", &fried_falafels);
+
+    let mut platformer = Platformer::new();
+    let platform = platformer.create_star_topology(&fried_falafels);
+
+    platformer.write_platform("../xml/simgrid-platform.xml", &platform);
 }
