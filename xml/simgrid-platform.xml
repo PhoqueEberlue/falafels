@@ -1,60 +1,225 @@
-<?xml version='1.0' encoding="UTF-8"?>
-<!DOCTYPE platform SYSTEM "https://simgrid.org/simgrid.dtd">
 <platform version="4.1">
-    <zone id="zone0" routing="Full">
-        <!-- Defining hosts -->
-        <host id="Rammus" speed="98.095Mf" core="8">
-            <prop id="wattage_per_state" value="100.0:120.0:200.0" />
-            <prop id="wattage_off" value="10" />
+    <zone id="zone1" routing="Full">
+        <host id="Morgana" speed="98.095Mf">
+            <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
         </host>
-        <host id="Zeri" speed="76.296Mf">
-            <prop id="wattage_per_state" value="100.0:120.0:200.0" />
-            <prop id="wattage_off" value="10" />
+        <host id="Maokai" speed="98.095Mf">
+            <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
         </host>
-        <host id="Smolder" speed="76.296Mf">
-            <prop id="wattage_per_state" value="100.0:120.0:200.0" />
-            <prop id="wattage_off" value="10" />
+        <host id="Tryndamere" speed="98.095Mf">
+            <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
         </host>
-
-        <!-- Defining links -->
-        <link id="1" bandwidth="41.279125MBps" latency="59.904us">
-            <prop id="wattage_range" value="100.0:200.0" />
-            <prop id="wattage_off" value="10" />
-        </link>
-
-        <link id="2" bandwidth="34.285625MBps" latency="514.433us">
-            <prop id="wattage_range" value="100.0:200.0" />
-            <prop id="wattage_off" value="10" />
-        </link>
-
-        <link id="3" bandwidth="11.618875MBps" latency="189.98us">
-            <prop id="wattage_range" value="100.0:200.0" />
-            <prop id="wattage_off" value="10" />
-        </link>
-
+        <host id="Nautilus" speed="98.095Mf">
+            <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </host>
+        <host id="Darius" speed="98.095Mf">
+            <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </host>
+        <host id="Camille" speed="98.095Mf">
+            <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </host>
+        <host id="Skarner" speed="98.095Mf">
+            <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </host>
+        <host id="Vayne" speed="98.095Mf">
+            <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </host>
+        <host id="Kindred" speed="98.095Mf">
+            <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </host>
+        <host id="Syndra" speed="98.095Mf">
+            <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </host>
+        <host id="Shen" speed="98.095Mf">
+            <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </host>
+        <host id="Naafiri" speed="98.095Mf">
+            <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </host>
+        <host id="Hecarim" speed="98.095Mf">
+            <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </host>
+        <host id="Jayce" speed="98.095Mf">
+            <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </host>
+        <host id="Nocturne" speed="98.095Mf">
+            <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </host>
+        <host id="Viktor" speed="98.095Mf">
+            <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </host>
         <link id="loopback" bandwidth="498MBps" latency="15us" sharing_policy="FATPIPE">
-            <prop id="wattage_range" value="100.0:200.0" />
-            <prop id="wattage_off" value="10" />
+            <prop id="wattage_range" value="100.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
         </link>
-
-        <route src="Rammus" dst="Rammus">
-            <link_ctn id="loopback" />
+        <link id="1" bandwidth="11.618875MBps" latency="189.98us">
+            <prop id="wattage_range" value="100.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </link>
+        <link id="2" bandwidth="11.618875MBps" latency="189.98us">
+            <prop id="wattage_range" value="100.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </link>
+        <link id="3" bandwidth="11.618875MBps" latency="189.98us">
+            <prop id="wattage_range" value="100.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </link>
+        <link id="4" bandwidth="11.618875MBps" latency="189.98us">
+            <prop id="wattage_range" value="100.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </link>
+        <link id="5" bandwidth="11.618875MBps" latency="189.98us">
+            <prop id="wattage_range" value="100.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </link>
+        <link id="6" bandwidth="11.618875MBps" latency="189.98us">
+            <prop id="wattage_range" value="100.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </link>
+        <link id="7" bandwidth="11.618875MBps" latency="189.98us">
+            <prop id="wattage_range" value="100.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </link>
+        <link id="8" bandwidth="11.618875MBps" latency="189.98us">
+            <prop id="wattage_range" value="100.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </link>
+        <link id="9" bandwidth="11.618875MBps" latency="189.98us">
+            <prop id="wattage_range" value="100.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </link>
+        <link id="10" bandwidth="11.618875MBps" latency="189.98us">
+            <prop id="wattage_range" value="100.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </link>
+        <link id="11" bandwidth="11.618875MBps" latency="189.98us">
+            <prop id="wattage_range" value="100.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </link>
+        <link id="12" bandwidth="11.618875MBps" latency="189.98us">
+            <prop id="wattage_range" value="100.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </link>
+        <link id="13" bandwidth="11.618875MBps" latency="189.98us">
+            <prop id="wattage_range" value="100.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </link>
+        <link id="14" bandwidth="11.618875MBps" latency="189.98us">
+            <prop id="wattage_range" value="100.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </link>
+        <link id="15" bandwidth="11.618875MBps" latency="189.98us">
+            <prop id="wattage_range" value="100.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </link>
+        <route src="Morgana" dst="Morgana">
+            <link_ctn id="loopback"/>
         </route>
-        <route src="Zeri" dst="Zeri">
-            <link_ctn id="loopback" />
+        <route src="Maokai" dst="Maokai">
+            <link_ctn id="loopback"/>
         </route>
-        <route src="Smolder" dst="Smolder">
-            <link_ctn id="loopback" />
+        <route src="Tryndamere" dst="Tryndamere">
+            <link_ctn id="loopback"/>
         </route>
-
-        <route src="Rammus" dst="Smolder">
-            <link_ctn id="1" />
+        <route src="Nautilus" dst="Nautilus">
+            <link_ctn id="loopback"/>
         </route>
-        <route src="Rammus" dst="Zeri">
-            <link_ctn id="2" />
+        <route src="Darius" dst="Darius">
+            <link_ctn id="loopback"/>
         </route>
-        <route src="Zeri" dst="Smolder">
-            <link_ctn id="3" />
+        <route src="Camille" dst="Camille">
+            <link_ctn id="loopback"/>
+        </route>
+        <route src="Skarner" dst="Skarner">
+            <link_ctn id="loopback"/>
+        </route>
+        <route src="Vayne" dst="Vayne">
+            <link_ctn id="loopback"/>
+        </route>
+        <route src="Kindred" dst="Kindred">
+            <link_ctn id="loopback"/>
+        </route>
+        <route src="Syndra" dst="Syndra">
+            <link_ctn id="loopback"/>
+        </route>
+        <route src="Shen" dst="Shen">
+            <link_ctn id="loopback"/>
+        </route>
+        <route src="Naafiri" dst="Naafiri">
+            <link_ctn id="loopback"/>
+        </route>
+        <route src="Hecarim" dst="Hecarim">
+            <link_ctn id="loopback"/>
+        </route>
+        <route src="Jayce" dst="Jayce">
+            <link_ctn id="loopback"/>
+        </route>
+        <route src="Nocturne" dst="Nocturne">
+            <link_ctn id="loopback"/>
+        </route>
+        <route src="Viktor" dst="Viktor">
+            <link_ctn id="loopback"/>
+        </route>
+        <route src="Morgana" dst="Viktor">
+            <link_ctn id="1"/>
+        </route>
+        <route src="Maokai" dst="Viktor">
+            <link_ctn id="2"/>
+        </route>
+        <route src="Tryndamere" dst="Viktor">
+            <link_ctn id="3"/>
+        </route>
+        <route src="Nautilus" dst="Viktor">
+            <link_ctn id="4"/>
+        </route>
+        <route src="Darius" dst="Viktor">
+            <link_ctn id="5"/>
+        </route>
+        <route src="Camille" dst="Viktor">
+            <link_ctn id="6"/>
+        </route>
+        <route src="Skarner" dst="Viktor">
+            <link_ctn id="7"/>
+        </route>
+        <route src="Vayne" dst="Viktor">
+            <link_ctn id="8"/>
+        </route>
+        <route src="Kindred" dst="Viktor">
+            <link_ctn id="9"/>
+        </route>
+        <route src="Syndra" dst="Viktor">
+            <link_ctn id="10"/>
+        </route>
+        <route src="Shen" dst="Viktor">
+            <link_ctn id="11"/>
+        </route>
+        <route src="Naafiri" dst="Viktor">
+            <link_ctn id="12"/>
+        </route>
+        <route src="Hecarim" dst="Viktor">
+            <link_ctn id="13"/>
+        </route>
+        <route src="Jayce" dst="Viktor">
+            <link_ctn id="14"/>
+        </route>
+        <route src="Nocturne" dst="Viktor">
+            <link_ctn id="15"/>
         </route>
     </zone>
 </platform>

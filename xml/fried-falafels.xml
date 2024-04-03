@@ -5,147 +5,117 @@
         <constant name="LOCAL_MODEL_TRAINING_FLOPS" value=""/>
     </constants>
     <nodes>
-        <node name="Heimerdinger">
-            <trainer type="simple">
-                <arg/>
-            </trainer>
+        <node name="Morgana">
+            <trainer type="simple"/>
             <network-manager type="centralized">
                 <arg name="" value=""/>
             </network-manager>
         </node>
-        <node name="Nidalee">
-            <trainer type="simple">
-                <arg/>
-            </trainer>
+        <node name="Maokai">
+            <trainer type="simple"/>
             <network-manager type="centralized">
                 <arg name="" value=""/>
             </network-manager>
         </node>
-        <node name="Corki">
-            <trainer type="simple">
-                <arg/>
-            </trainer>
+        <node name="Tryndamere">
+            <trainer type="simple"/>
             <network-manager type="centralized">
                 <arg name="" value=""/>
             </network-manager>
         </node>
-        <node name="Seraphine">
-            <trainer type="simple">
-                <arg/>
-            </trainer>
+        <node name="Nautilus">
+            <trainer type="simple"/>
             <network-manager type="centralized">
                 <arg name="" value=""/>
             </network-manager>
         </node>
-        <node name="Janna">
-            <trainer type="simple">
-                <arg/>
-            </trainer>
+        <node name="Darius">
+            <trainer type="simple"/>
             <network-manager type="centralized">
                 <arg name="" value=""/>
             </network-manager>
         </node>
-        <node name="Lissandra">
-            <trainer type="simple">
-                <arg/>
-            </trainer>
+        <node name="Camille">
+            <trainer type="simple"/>
             <network-manager type="centralized">
                 <arg name="" value=""/>
             </network-manager>
         </node>
-        <node name="Senna">
-            <trainer type="simple">
-                <arg/>
-            </trainer>
+        <node name="Skarner">
+            <trainer type="simple"/>
             <network-manager type="centralized">
                 <arg name="" value=""/>
             </network-manager>
         </node>
-        <node name="Rek&apos;Sai">
-            <trainer type="simple">
-                <arg/>
-            </trainer>
+        <node name="Vayne">
+            <trainer type="simple"/>
             <network-manager type="centralized">
                 <arg name="" value=""/>
             </network-manager>
         </node>
-        <node name="Nunu &amp; Willump">
-            <trainer type="simple">
-                <arg/>
-            </trainer>
+        <node name="Kindred">
+            <trainer type="simple"/>
             <network-manager type="centralized">
                 <arg name="" value=""/>
             </network-manager>
         </node>
-        <node name="Qiyana">
-            <trainer type="simple">
-                <arg/>
-            </trainer>
+        <node name="Syndra">
+            <trainer type="simple"/>
             <network-manager type="centralized">
                 <arg name="" value=""/>
             </network-manager>
         </node>
-        <node name="Aphelios">
-            <trainer type="simple">
-                <arg/>
-            </trainer>
+        <node name="Shen">
+            <trainer type="simple"/>
             <network-manager type="centralized">
                 <arg name="" value=""/>
             </network-manager>
         </node>
-        <node name="Swain">
-            <trainer type="simple">
-                <arg/>
-            </trainer>
+        <node name="Naafiri">
+            <trainer type="simple"/>
             <network-manager type="centralized">
                 <arg name="" value=""/>
             </network-manager>
         </node>
-        <node name="Kalista">
-            <trainer type="simple">
-                <arg/>
-            </trainer>
+        <node name="Hecarim">
+            <trainer type="simple"/>
             <network-manager type="centralized">
                 <arg name="" value=""/>
             </network-manager>
         </node>
-        <node name="K&apos;Sante">
-            <trainer type="simple">
-                <arg/>
-            </trainer>
+        <node name="Jayce">
+            <trainer type="simple"/>
             <network-manager type="centralized">
                 <arg name="" value=""/>
             </network-manager>
         </node>
-        <node name="Smolder">
-            <trainer type="simple">
-                <arg/>
-            </trainer>
+        <node name="Nocturne">
+            <trainer type="simple"/>
             <network-manager type="centralized">
                 <arg name="" value=""/>
             </network-manager>
         </node>
-        <node name="Master Yi">
+        <node name="Viktor">
             <aggregator type="simple">
                 <arg name="" value=""/>
             </aggregator>
             <network-manager type="centralized">
                 <arg name="" value=""/>
-                <arg name="bootstrap-node" value="Heimerdinger"/>
-                <arg name="bootstrap-node" value="Nidalee"/>
-                <arg name="bootstrap-node" value="Corki"/>
-                <arg name="bootstrap-node" value="Seraphine"/>
-                <arg name="bootstrap-node" value="Janna"/>
-                <arg name="bootstrap-node" value="Lissandra"/>
-                <arg name="bootstrap-node" value="Senna"/>
-                <arg name="bootstrap-node" value="Rek&apos;Sai"/>
-                <arg name="bootstrap-node" value="Nunu &amp; Willump"/>
-                <arg name="bootstrap-node" value="Qiyana"/>
-                <arg name="bootstrap-node" value="Aphelios"/>
-                <arg name="bootstrap-node" value="Swain"/>
-                <arg name="bootstrap-node" value="Kalista"/>
-                <arg name="bootstrap-node" value="K&apos;Sante"/>
-                <arg name="bootstrap-node" value="Smolder"/>
+                <arg name="bootstrap-node" value="Morgana"/>
+                <arg name="bootstrap-node" value="Maokai"/>
+                <arg name="bootstrap-node" value="Tryndamere"/>
+                <arg name="bootstrap-node" value="Nautilus"/>
+                <arg name="bootstrap-node" value="Darius"/>
+                <arg name="bootstrap-node" value="Camille"/>
+                <arg name="bootstrap-node" value="Skarner"/>
+                <arg name="bootstrap-node" value="Vayne"/>
+                <arg name="bootstrap-node" value="Kindred"/>
+                <arg name="bootstrap-node" value="Syndra"/>
+                <arg name="bootstrap-node" value="Shen"/>
+                <arg name="bootstrap-node" value="Naafiri"/>
+                <arg name="bootstrap-node" value="Hecarim"/>
+                <arg name="bootstrap-node" value="Jayce"/>
+                <arg name="bootstrap-node" value="Nocturne"/>
             </network-manager>
         </node>
     </nodes>
