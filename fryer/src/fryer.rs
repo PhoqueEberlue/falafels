@@ -6,8 +6,6 @@ use std::fs;
 use rand::{self, Rng};
 
 pub struct Fryer {
-    raw_falafels: Option<raw::RawFalafels>,
-    fried_falafels: Option<fried::FriedFalafels>,
     names_list: Option<NamesList>,
 }
 
@@ -15,8 +13,6 @@ impl Fryer {
     /// Create a new Fryer, Optionnaly pass a file path containing names to be used for node naming
     pub fn new(optional_list_path: Option<&str>) -> Fryer {
         let mut fryer = Fryer {
-            raw_falafels: None,
-            fried_falafels: None,
             names_list: None
         }; 
 
@@ -29,20 +25,16 @@ impl Fryer {
         fryer
     }
 
-    pub fn load_raw_falafels(&mut self, file_path: &str) {
+    pub fn load_raw_falafels(&mut self, file_path: &str) -> raw::RawFalafels {
         let content = String::from_utf8(fs::read(file_path).unwrap()).unwrap();
 
-        self.raw_falafels = match from_str(&content) {
+        match from_str(&content) {
             Ok(raw_falafels) => raw_falafels,
             Err(e) => panic!("Error while parsing source falafels file: {}", e),
-        };
+        }
     } 
 
-    pub fn fry(&mut self) {
-        // Borrow RawFalafels
-        let rf = self.raw_falafels.as_ref()
-            .expect("You must load_raw_falafels() in the fryer before attempting to fry...");
-
+    pub fn fry(&mut self, rf: &raw::RawFalafels) -> fried::FriedFalafels {
 
         if let Some(names_list) = &self.names_list {
             // Total number of nodes
@@ -103,13 +95,10 @@ impl Fryer {
             ff.nodes.list.push(aggregator_node);
         }
 
-        self.fried_falafels = Some(ff);
+        ff
     }
 
-    pub fn write_fried_falafels(&self, file_path: &str) {
-        let ff = &self.fried_falafels.as_ref()
-            .expect("You must fry() the raw-falafels before writing the fried-falafels file...");
-
+    pub fn write_fried_falafels(&self, file_path: &str, ff: &fried::FriedFalafels) {
         let mut result_buffer = String::new();
 
         let mut serializer = quick_xml::se::Serializer::new(&mut result_buffer);

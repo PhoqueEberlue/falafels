@@ -9,7 +9,7 @@ fn main() {
 
     let raw_falafels = fryer.load_raw_falafels("../xml/raw-falafels.xml");
 
-    let fried_falafels = fryer.fry();
+    let fried_falafels = fryer.fry(&raw_falafels);
 
-    fryer.write_fried_falafels("../xml/fried-falafels.xml");
+    fryer.write_fried_falafels("../xml/fried-falafels.xml", &fried_falafels);
 }
