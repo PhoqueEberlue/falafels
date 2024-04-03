@@ -1,5 +1,3 @@
-#include <cstdio>
-#include <cstdlib>
 #include <cstring>
 #include <vector>
 #include <xbt/asserts.h>
@@ -38,19 +36,19 @@ NetworkManager *create_network_manager(xml_node *network_manager_elem, node_name
 {
     NetworkManager *network_manager;
 
-    xml_node nm_type = network_manager_elem->first_child();
+    auto nm_type = network_manager_elem->attribute("type").as_string();
 
-    if (strcmp(nm_type.name(), "centralized") == 0)
+    if (strcmp(nm_type, "centralized") == 0)
     {
         network_manager = new CentralizedNetworkManager(name);
     }
-    else if (strcmp(nm_type.name(), "decentralized") == 0)
+    else if (strcmp(nm_type, "decentralized") == 0)
     {
         // TODO
         // network_manager = new DecentralizedNetworkManager(name);
     }
 
-    XBT_INFO("With %s network manager", nm_type.name());
+    XBT_INFO("With %s network manager", nm_type);
 
     return network_manager;
 }
@@ -60,17 +58,19 @@ NetworkManager *create_network_manager(xml_node *network_manager_elem, node_name
  * @param aggregator_elem XML element that contains aggregator informations.
  * @return A pointer to the created aggregator.
  */
-Aggregator *create_aggregator(xml_node *aggregator_elem)
+Aggregator *create_aggregator(xml_node *role_elem)
 {
     Aggregator *role;
-    xml_node args = aggregator_elem->child("args");
 
-    if (strcmp(aggregator_elem->name(), "simple") == 0)
+    xml_node args = role_elem->child("args");
+    auto aggregator_type = role_elem->attribute("type").as_string();
+
+    if (strcmp(aggregator_type, "simple") == 0)
     {
         role = new SimpleAggregator();
         XBT_INFO("With role: SimpleAggregator");
     }
-    else if (strcmp(aggregator_elem->name(), "asynchronous") == 0)
+    else if (strcmp(aggregator_type, "asynchronous") == 0)
     {
         float proportion_threshold = args.child("proportion_threshold").attribute("value").as_float();
         role = new AsynchronousAggregator(proportion_threshold);
@@ -90,19 +90,16 @@ Role *create_role(xml_node *role_elem)
 {
     Role *role;
 
-    xml_node role_type_elem = role_elem->first_child();
-
-    if (strcmp(role_type_elem.name(), "aggregator") == 0)
+    if (strcmp(role_elem->name(), "aggregator") == 0)
     {
-        xml_node aggregator_elem = role_type_elem.first_child();
-        role = create_aggregator(&aggregator_elem);
+        role = create_aggregator(role_elem);
     }
-    else if (strcmp(role_type_elem.name(), "trainer") == 0)
+    else if (strcmp(role_elem->name(), "trainer") == 0)
     {
         role = new Trainer();
         XBT_INFO("With role: Trainer");
     }
-    else if (strcmp(role_type_elem.name(), "proxy") == 0)
+    else if (strcmp(role_elem->name(), "proxy") == 0)
     {
         // TODO
         // role = new Proxy();
@@ -181,15 +178,15 @@ std::unordered_map<node_name, Node*> *create_nodes(xml_node *nodes_elem)
  * @param name Constant's name
  * @param value Constant's value
  */
-void set_constant(const char_t *name, xml_attribute *value)
+void set_constant(const xml_attribute *name, xml_attribute *value)
 {
     // If the value is empty ingore constant
     if (value->empty())
         return;
 
-    XBT_INFO("Set %s=%s", name, value->as_string());
+    XBT_INFO("Set %s=%s", name->as_string(), value->as_string());
 
-    switch (str2int(name)) {
+    switch (str2int(name->as_string())) {
         case str2int("MODEL_SIZE_BYTES"):
             Constants::MODEL_SIZE_BYTES = value->as_int();
             break;
@@ -212,8 +209,9 @@ void init_constants(xml_node *constants_elem)
 
     for (xml_node constant: constants_elem->children())
     {
-        xml_attribute attribute = constant.attribute("value");
-        set_constant(constant.name(), &attribute);
+        xml_attribute name = constant.attribute("name");
+        xml_attribute value = constant.attribute("value");
+        set_constant(&name, &value);
     }
 
     XBT_INFO("-------------------------");
@@ -226,7 +224,7 @@ void load_config(const char* file_path, simgrid::s4u::Engine *e)
 
     xbt_assert(result != 0, "Error while loading falafels xml file");
 
-    xml_node root_elem = doc.child("deployment");
+    xml_node root_elem = doc.child("fried");
     xml_node nodes_elem = root_elem.child("nodes");
     xml_node constants_elem = root_elem.child("constants");
 
