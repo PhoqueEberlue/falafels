@@ -4,6 +4,7 @@
 
 #include "../role.hpp"
 #include <cstdint>
+#include <unordered_map>
 
 class Trainer : public Role 
 {
@@ -11,7 +12,7 @@ private:
     void train(uint8_t number_local_epochs);
     void send_local_model(node_name dest);
 public:
-    Trainer();
+    Trainer(std::unordered_map<std::string, std::string> *args);
     void run();
     NodeRole get_role_type() { return NodeRole::Trainer; };
 };

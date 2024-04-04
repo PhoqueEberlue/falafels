@@ -6,8 +6,10 @@
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_simple_aggregator, "Messages specific for this example");
 
-SimpleAggregator::SimpleAggregator()
+SimpleAggregator::SimpleAggregator(std::unordered_map<std::string, std::string> *args)
 {
+    // No arguments yet
+    delete args;
 }
 
 static bool trainer_filter(NodeInfo *node_info)

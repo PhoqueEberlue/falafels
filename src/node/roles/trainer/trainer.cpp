@@ -1,12 +1,17 @@
 #include "../../../constants.hpp"
 #include <cstdint>
 #include <cstdlib>
+#include <unordered_map>
 #include <xbt/log.h>
 #include "trainer.hpp"
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_trainer, "Messages specific for this example");
 
-Trainer::Trainer() {}
+Trainer::Trainer(std::unordered_map<std::string, std::string> *args) 
+{
+    // No arguments yet
+    delete args;
+}
 
 void Trainer::train(uint8_t number_local_epochs) 
 {

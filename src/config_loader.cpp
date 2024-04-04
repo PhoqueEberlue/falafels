@@ -1,4 +1,6 @@
 #include <cstring>
+#include <memory>
+#include <unordered_map>
 #include <vector>
 #include <xbt/asserts.h>
 #include <xbt/log.h>
@@ -24,6 +26,23 @@ void node_runner(Node *node)
 {
     XBT_INFO("Node: %s", node->get_role()->get_network_manager()->get_my_node_name().c_str());
     node->run();
+}
+
+/**
+ * Parse arguments in the form of a list of args elements such as: <arg name="" value=""/>
+ * @param iterator over the arg elements
+ * @return A pointer to a unordered map containing key, values as strings.
+ */
+std::unordered_map<std::string, std::string> *parse_arguments(xml_object_range<xml_node_iterator> *args)
+{
+    auto res = new std::unordered_map<std::string, std::string>();
+
+    for (auto arg: *args)
+    {
+        res->insert({arg.attribute("name").as_string(), arg.attribute("value").as_string()});
+    }
+    
+    return res;
 }
 
 /**
@@ -58,24 +77,20 @@ NetworkManager *create_network_manager(xml_node *network_manager_elem, node_name
  * @param aggregator_elem XML element that contains aggregator informations.
  * @return A pointer to the created aggregator.
  */
-Aggregator *create_aggregator(xml_node *role_elem)
+Aggregator *create_aggregator(xml_node *role_elem, std::unordered_map<std::string, std::string> *args)
 {
     Aggregator *role;
-
-    xml_node args = role_elem->child("args");
     auto aggregator_type = role_elem->attribute("type").as_string();
 
     if (strcmp(aggregator_type, "simple") == 0)
     {
-        role = new SimpleAggregator();
         XBT_INFO("With role: SimpleAggregator");
+        role = new SimpleAggregator(args);
     }
     else if (strcmp(aggregator_type, "asynchronous") == 0)
     {
-        float proportion_threshold = args.child("proportion_threshold").attribute("value").as_float();
-        role = new AsynchronousAggregator(proportion_threshold);
         XBT_INFO("With role: AsynchronousAggregator");
-        XBT_INFO("Param: proportion_threshold=%f", proportion_threshold);
+        role = new AsynchronousAggregator(args);
     }
 
     return role; 
@@ -90,19 +105,22 @@ Role *create_role(xml_node *role_elem)
 {
     Role *role;
 
+    auto args_iter = role_elem->children();
+    auto args = parse_arguments(&args_iter);
+
     if (strcmp(role_elem->name(), "aggregator") == 0)
     {
-        role = create_aggregator(role_elem);
+        role = create_aggregator(role_elem, args);
     }
     else if (strcmp(role_elem->name(), "trainer") == 0)
     {
-        role = new Trainer();
+        role = new Trainer(args);
         XBT_INFO("With role: Trainer");
     }
     else if (strcmp(role_elem->name(), "proxy") == 0)
     {
         // TODO
-        // role = new Proxy();
+        // role = new Proxy(args);
         // XBT_INFO("With role: Proxy");
     }
 

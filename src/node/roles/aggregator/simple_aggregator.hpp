@@ -12,7 +12,7 @@ private:
     uint64_t wait_local_models();
     void send_kills();
 public:
-    SimpleAggregator();
+    SimpleAggregator(std::unordered_map<std::string, std::string> *args);
     void run();
 };
 

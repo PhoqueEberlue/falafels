@@ -19,7 +19,7 @@ private:
     uint64_t wait_local_models();
     void send_kills();
 public:
-    AsynchronousAggregator(float proportion_threshold);
+    AsynchronousAggregator(std::unordered_map<std::string, std::string> *args);
     void run();
 };
 

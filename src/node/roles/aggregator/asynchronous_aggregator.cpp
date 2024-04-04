@@ -1,10 +1,12 @@
 #include <simgrid/s4u/Engine.hpp>
 #include <simgrid/s4u/Mailbox.hpp>
+#include <unordered_map>
 #include <vector>
 #include <xbt/log.h>
 
 #include "asynchronous_aggregator.hpp"
 #include "../../../protocol.hpp"
+#include "../../../utils/utils.hpp"
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_asynchronous_aggregator, "Messages specific for this example");
 
@@ -13,9 +15,20 @@ static bool trainer_filter(NodeInfo *node_info)
     return node_info->role == NodeRole::Trainer;
 }
 
-AsynchronousAggregator::AsynchronousAggregator(float proportion_threshold)
+AsynchronousAggregator::AsynchronousAggregator(std::unordered_map<std::string, std::string> *args)
 {
-    this->proportion_threshold = proportion_threshold;
+    for (auto &[key, value]: *args)
+    {
+        switch (str2int(key.c_str()))
+        {
+            case str2int("proportion_threshold"):
+                XBT_INFO("proportion_threshold=%s", value.c_str());
+                this->proportion_threshold = std::stof(value);
+                break;
+        }
+    }
+
+    delete args;
 }
 
 void AsynchronousAggregator::run()
