@@ -45,3 +45,11 @@ pub enum TrainerType {
     #[serde(rename = "simple")]
     Simple,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Prop {
+    #[serde(rename = "@id")]
+    pub id: String,
+    #[serde(rename = "@value")]
+    pub value: String,
+}

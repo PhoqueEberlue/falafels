@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use crate::structures::common::{Constants, Arg, NetworkManager, AggregatorType, TrainerType};
+use super::common::{Constants, Arg, NetworkManager, AggregatorType, TrainerType};
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename = "fried")]

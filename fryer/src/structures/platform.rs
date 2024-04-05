@@ -1,4 +1,9 @@
+/// Rewrite of the simgrid platform XML definition using serde.
+/// See https://simgrid.org/doc/latest/XML_reference.html for full specification
+/// Not everything is available yet.
+
 use serde::{Serialize, Deserialize};
+use super::common::Prop;
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename = "platform")]
@@ -40,16 +45,10 @@ pub struct Host {
     pub speed: String,
     #[serde(rename = "@core", skip_serializing_if = "Option::is_none")]
     pub core: Option<String>,
+    #[serde(rename = "@pstate", skip_serializing_if = "Option::is_none")]
+    pub pstate: Option<String>,
     #[serde(rename = "prop")]
     pub props: Vec<Prop>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Prop {
-    #[serde(rename = "@id")]
-    pub id: String,
-    #[serde(rename = "@value")]
-    pub value: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
