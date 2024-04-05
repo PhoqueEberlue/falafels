@@ -32,7 +32,7 @@ impl Fryer {
 
         match from_str(&content) {
             Ok(raw_falafels) => raw_falafels,
-            Err(e) => panic!("Error while parsing source falafels file: {}", e),
+            Err(e) => panic!("Error while parsing raw falafels file: {}", e),
         }
     } 
 

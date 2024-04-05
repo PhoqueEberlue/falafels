@@ -1,19 +1,34 @@
 use core::panic;
 use std::fs;
+use std::str::Split;
 
 use serde::Serialize;
-use crate::structures::fried::{self, FriedFalafels};
-use crate::structures::platform::{Host, Link, LinkContainer, Platform, Prop, Route, Router, Zone };
+use crate::structures::fried::{FriedFalafels, RoleEnum};
+use crate::structures::raw::{HostProfile, LinkProfile, RawFalafels};
+use crate::structures::platform::{Host, Link, LinkContainer, Platform, Route, Router, Zone};
+use crate::structures::common::Prop;
 
-
-pub struct Platformer {
-    // pub config: Config
+pub struct Platformer<'a> {
+    pub rf: &'a RawFalafels,
+    pub ff: &'a FriedFalafels,
     link_count: u32,
+
+    // Defining cycle iterators for allocating evenly the profiles
+    trainer_profile_iter: std::iter::Cycle<Split<'a, &'a str>>,
+    aggregator_profile_iter: std::iter::Cycle<Split<'a, &'a str>>,
 }
 
-impl Platformer {
-    pub fn new() -> Platformer {
-        Platformer { link_count: 0 }
+impl<'a> Platformer<'a> {
+    pub fn new(raw_falafels: &'a RawFalafels, fried_falafels: &'a FriedFalafels) -> Platformer<'a> {
+
+        // Create our profile iterators by spliting the "profiles" field by the comma symbol
+        let tpi = raw_falafels.trainers.host_profiles.split(",").cycle();
+        let api = raw_falafels.aggregators.host_profiles.split(",").cycle();
+
+        Platformer { 
+            rf: raw_falafels, ff: fried_falafels, link_count: 0, 
+            trainer_profile_iter: tpi, aggregator_profile_iter: api,
+        }
     }
 
     pub fn write_platform(&self, path: &str, platform: &Platform) {
@@ -26,14 +41,16 @@ impl Platformer {
         serializer.expand_empty_elements(false);
         serializer.indent(' ', 4);
 
-        platform.serialize(serializer).unwrap();
+        let _ = platform.serialize(serializer)
+            .map_err(|e| panic!("Error while serializing simgrid platform file: {e}"));
 
-        fs::write(path, result_buffer).unwrap();
+        let _ = fs::write(path, result_buffer)
+            .map_err(|e| panic!("Couldn't write simgrid platform file: {e}"));
 
     }
 
-    pub fn create_star_topology(&mut self, fried_falafels: &FriedFalafels) -> Platform {
-        let number_nodes = fried_falafels.nodes.list.len(); // N
+    pub fn create_star_topology(&mut self) -> Platform {
+        let number_nodes = self.ff.nodes.list.len(); // N
         let zone_name = "zone1";
         let router_name = format!("{}-router", zone_name);
 
@@ -54,16 +71,18 @@ impl Platformer {
         routers.push(self.create_router(router_name.clone()));
 
         // Create one loopback link to be used for every host.
-        links.push(self.create_loopback_link());
+        // links.push(self.create_loopback_link());
 
-        for node in &fried_falafels.nodes.list {
+        for node in &self.ff.nodes.list {
+
+            let profile = self.pick_profile(&node.role);
             // Creating host for the current node
             hosts.push(
-                self.create_host(node.name.to_string(), None, None)
-            );
+                Platformer::create_host(node.name.clone(), profile)
+            ); 
 
             // Adding route that references the loopback link to the current node
-            routes.push(self.create_route(node.name.to_string(), node.name.to_string(), "loopback".to_string()));
+            // routes.push(self.create_route(node.name.to_string(), node.name.to_string(), "loopback".to_string()));
 
             // Adding link and route to the router of the current zone
             links.push(self.create_link());
@@ -77,7 +96,8 @@ impl Platformer {
 
         let zone = Zone {
             id: zone_name.to_string(),
-            routing: "Full".to_string(),
+            // Using shortest path algorithm
+            routing: "Floyd".to_string(),
             hosts, links, routes, routers
         };
 
@@ -88,6 +108,30 @@ impl Platformer {
         }
     }
 
+    /// Get a profile by its name
+    fn get_profile(&self, profile_name: &str) -> &HostProfile {
+        for profile in &self.rf.profiles.host_profiles {
+            if profile.name == profile_name {
+                return &profile;
+            }
+        }
+        panic!("HostProfile named `{}` not found in raw-falafels file", profile_name);
+    }
+
+    /// Pick a profile depending on the
+    fn pick_profile(&mut self, role: &RoleEnum) -> &HostProfile { 
+        match role {
+            RoleEnum::Trainer(_) => {
+                let profile_name = self.trainer_profile_iter.next().unwrap();
+                self.get_profile(profile_name)
+            }
+            RoleEnum::Aggregator(_) => {
+                let profile_name = self.aggregator_profile_iter.next().unwrap();
+                self.get_profile(profile_name)
+            }
+        }
+    }
+
     fn create_router(&self, name: String) -> Router {
         Router {
             id: name,
@@ -95,13 +139,14 @@ impl Platformer {
         }
     }
 
-    fn create_host(&self, name: String, speed: Option<String>, core: Option<String>) -> Host {
-        let speed = speed.unwrap_or(String::from("98.095Mf"));
-
-        let prop_watt_state = Prop { id: "wattage_per_state".to_string(), value: "100.0:120.0:200.0".to_string() };
-        let prop_watt_off = Prop { id: "wattage_off".to_string(), value: "10".to_string() };
-
-        Host { id: name, speed, core, props: vec![prop_watt_state, prop_watt_off] }
+    fn create_host(name: String, profile: &HostProfile) -> Host {
+        Host { 
+            id: name, 
+            speed: profile.speed.clone(), 
+            core: profile.core.clone(), 
+            pstate: profile.pstate.clone(),
+            props: profile.props.clone()
+        }
     }
 
     fn create_loopback_link(&self) -> Link {

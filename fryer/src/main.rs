@@ -14,8 +14,9 @@ fn main() {
 
     fryer.write_fried_falafels("../xml/fried-falafels.xml", &fried_falafels);
 
-    let mut platformer = Platformer::new();
-    let platform = platformer.create_star_topology(&fried_falafels);
+    let mut platformer = Platformer::new(&raw_falafels, &fried_falafels);
+
+    let platform = platformer.create_star_topology();
 
     platformer.write_platform("../xml/simgrid-platform.xml", &platform);
 }
