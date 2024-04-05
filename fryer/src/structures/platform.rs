@@ -14,12 +14,22 @@ pub struct Zone {
     pub id: String,
     #[serde(rename = "@routing")]
     pub routing: String,
+    #[serde(rename = "router")]
+    pub routers: Vec<Router>,
     #[serde(rename = "host")]
     pub hosts: Vec<Host>,
     #[serde(rename = "link")]
     pub links: Vec<Link>,
     #[serde(rename = "route")]
     pub routes: Vec<Route>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Router {
+    #[serde(rename = "@id")]
+    pub id: String,
+    #[serde(rename = "@coordinates", skip_serializing_if = "Option::is_none")]
+    pub coordinates: Option<String>
 }
 
 #[derive(Debug, Serialize, Deserialize)]

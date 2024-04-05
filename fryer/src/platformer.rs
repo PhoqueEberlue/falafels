@@ -3,7 +3,7 @@ use std::fs;
 
 use serde::Serialize;
 use crate::structures::fried::{self, FriedFalafels};
-use crate::structures::platform::{Host, Link, LinkContainer, Platform, Prop, Route, Zone };
+use crate::structures::platform::{Host, Link, LinkContainer, Platform, Prop, Route, Router, Zone };
 
 
 pub struct Platformer {
@@ -34,7 +34,8 @@ impl Platformer {
 
     pub fn create_star_topology(&mut self, fried_falafels: &FriedFalafels) -> Platform {
         let number_nodes = fried_falafels.nodes.list.len(); // N
-        let mut aggregator_name: Option<&str> = None; 
+        let zone_name = "zone1";
+        let router_name = format!("{}-router", zone_name);
 
         // Each node will be given one host, so we should define N hosts
         let mut hosts = Vec::<Host>::with_capacity(number_nodes);
@@ -47,6 +48,11 @@ impl Platformer {
         // node to the aggregator = N + N - 1
         let mut routes = Vec::<Route>::with_capacity(number_nodes * 2 - 1);
 
+        // Only one router in a star architecture
+        let mut routers = Vec::<Router>::with_capacity(1);
+
+        routers.push(self.create_router(router_name.clone()));
+
         // Create one loopback link to be used for every host.
         links.push(self.create_loopback_link());
 
@@ -56,33 +62,23 @@ impl Platformer {
                 self.create_host(node.name.to_string(), None, None)
             );
 
-            // Adding route referencing loopback link to the current node
+            // Adding route that references the loopback link to the current node
             routes.push(self.create_route(node.name.to_string(), node.name.to_string(), "loopback".to_string()));
 
-            match &node.role {
-                fried::RoleEnum::Aggregator(_) => { aggregator_name = Some(&node.name) }
-                _ => {}
-            }
-        }
-
-        let aggregator_name = match aggregator_name {
-            Some(n) => n,
-            None => panic!("No aggregator node have been found in the fried-falafels file.")
-        };
-
-        for node in &fried_falafels.nodes.list {
-            // Only add route to the aggregator if its a Trainer
-            if let fried::RoleEnum::Trainer(_) = node.role {
-                links.push(self.create_link());
-                let link_id = self.link_count;
-                routes.push(self.create_route(node.name.to_string(), aggregator_name.to_string(), link_id.to_string()));
-            }
+            // Adding link and route to the router of the current zone
+            links.push(self.create_link());
+            let link_id = self.link_count;
+            routes.push(
+                self.create_route(node.name.to_string(), 
+                router_name.clone(), 
+                link_id.to_string())
+            );
         }
 
         let zone = Zone {
-            id: "zone1".to_string(),
+            id: zone_name.to_string(),
             routing: "Full".to_string(),
-            hosts, links, routes
+            hosts, links, routes, routers
         };
 
         Platform {
@@ -92,6 +88,12 @@ impl Platformer {
         }
     }
 
+    fn create_router(&self, name: String) -> Router {
+        Router {
+            id: name,
+            coordinates: None
+        }
+    }
 
     fn create_host(&self, name: String, speed: Option<String>, core: Option<String>) -> Host {
         let speed = speed.unwrap_or(String::from("98.095Mf"));

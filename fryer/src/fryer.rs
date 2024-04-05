@@ -143,7 +143,7 @@ impl NamesList {
         }
     }
 
-    /// Randomly pick a name for a node and remove it from the list to prevent it from being picket
+    /// Randomly pick a name for a node and remove it from the list to prevent it from being picked
     /// again.
     fn pick_name(&mut self) -> String {
         let mut generator = rand::thread_rng();
