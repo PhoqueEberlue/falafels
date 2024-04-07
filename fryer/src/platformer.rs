@@ -12,22 +12,12 @@ pub struct Platformer<'a> {
     pub rf: &'a RawFalafels,
     pub ff: &'a FriedFalafels,
     link_count: u32,
-
-    // Defining cycle iterators for allocating evenly the profiles
-    trainer_profile_iter: std::iter::Cycle<Split<'a, &'a str>>,
-    aggregator_profile_iter: std::iter::Cycle<Split<'a, &'a str>>,
 }
 
 impl<'a> Platformer<'a> {
     pub fn new(raw_falafels: &'a RawFalafels, fried_falafels: &'a FriedFalafels) -> Platformer<'a> {
-
-        // Create our profile iterators by spliting the "profiles" field by the comma symbol
-        let tpi = raw_falafels.trainers.host_profiles.split(",").cycle();
-        let api = raw_falafels.aggregators.host_profiles.split(",").cycle();
-
         Platformer { 
             rf: raw_falafels, ff: fried_falafels, link_count: 0, 
-            trainer_profile_iter: tpi, aggregator_profile_iter: api,
         }
     }
 
@@ -72,20 +62,36 @@ impl<'a> Platformer<'a> {
 
         // Create one loopback link to be used for every host.
         // links.push(self.create_loopback_link());
+        
+        let mut profile_handler_host = ProfilesHandler::new(
+            &self.rf.trainers.host_profiles, 
+            &self.rf.aggregators.host_profiles, 
+            &self.rf.profiles.host_profiles
+        );
+
+        let mut profile_handler_link = ProfilesHandler::new(
+            &self.rf.trainers.link_profiles, 
+            &self.rf.aggregators.link_profiles, 
+            &self.rf.profiles.link_profiles
+        );
 
         for node in &self.ff.nodes.list {
 
-            let profile = self.pick_profile(&node.role);
+            let (host_profile, link_profile) = (
+                profile_handler_host.pick_profile(&node.role),
+                profile_handler_link.pick_profile(&node.role)
+            );
+                
             // Creating host for the current node
             hosts.push(
-                Platformer::create_host(node.name.clone(), profile)
+                Platformer::create_host(node.name.clone(), host_profile)
             ); 
 
             // Adding route that references the loopback link to the current node
             // routes.push(self.create_route(node.name.to_string(), node.name.to_string(), "loopback".to_string()));
 
             // Adding link and route to the router of the current zone
-            links.push(self.create_link());
+            links.push(self.create_link(link_profile));
             let link_id = self.link_count;
             routes.push(
                 self.create_route(node.name.to_string(), 
@@ -106,31 +112,7 @@ impl<'a> Platformer<'a> {
             version: "4.1".to_string(),
             zone,
         }
-    }
-
-    /// Get a profile by its name
-    fn get_profile(&self, profile_name: &str) -> &HostProfile {
-        for profile in &self.rf.profiles.host_profiles {
-            if profile.name == profile_name {
-                return &profile;
-            }
-        }
-        panic!("HostProfile named `{}` not found in raw-falafels file", profile_name);
-    }
-
-    /// Pick a profile depending on the
-    fn pick_profile(&mut self, role: &RoleEnum) -> &HostProfile { 
-        match role {
-            RoleEnum::Trainer(_) => {
-                let profile_name = self.trainer_profile_iter.next().unwrap();
-                self.get_profile(profile_name)
-            }
-            RoleEnum::Aggregator(_) => {
-                let profile_name = self.aggregator_profile_iter.next().unwrap();
-                self.get_profile(profile_name)
-            }
-        }
-    }
+    } 
 
     fn create_router(&self, name: String) -> Router {
         Router {
@@ -166,20 +148,17 @@ impl<'a> Platformer<'a> {
         }
     }
 
-    fn create_link(&mut self) -> Link {
+    fn create_link(&mut self, profile: &LinkProfile) -> Link {
         // Increment link count
         self.link_count += 1;
         let link_id = self.link_count;
 
-        let prop_watt_range = Prop { id: "wattage_range".to_string(), value: "100.0:200.0".to_string() };
-        let prop_watt_off = Prop { id: "wattage_off".to_string(), value: "10".to_string() };
-
         Link { 
             id: link_id.to_string(), 
-            bandwidth: "11.618875MBps".to_string(), 
-            latency: "189.98us".to_string(), 
-            sharing_policy: None,
-            props: vec![prop_watt_range, prop_watt_off] 
+            bandwidth: profile.bandwidth.clone(),
+            latency: profile.latency.clone(), 
+            sharing_policy: profile.sharing_policy.clone(),
+            props: profile.props.clone()
         }
     }
 
@@ -188,6 +167,66 @@ impl<'a> Platformer<'a> {
             src, dst,
             link_ctn: LinkContainer { id: link_id }
 
+        }
+    }
+}
+
+pub trait HasProfileName {
+    fn get_name(&self) -> &String;
+}
+
+impl HasProfileName for HostProfile {
+    fn get_name(&self) -> &String {
+        &self.name
+    }
+}
+
+impl HasProfileName for LinkProfile {
+    fn get_name(&self) -> &String {
+        &self.name
+    }
+}
+
+struct ProfilesHandler<'a, T: HasProfileName> {
+    // Defining cycle iterators to evenly allocate the profiles
+    profiles_iter_trainers: std::iter::Cycle<Split<'a, &'a str>>,
+    profiles_iter_aggregators: std::iter::Cycle<Split<'a, &'a str>>,
+    profiles_list: &'a Vec<T>,
+}
+
+impl<'a, T: HasProfileName> ProfilesHandler<'a, T> {
+    fn new(profile_str_trainers: &'a str, profile_str_aggregators: &'a str, profiles_list: &'a Vec<T>) -> ProfilesHandler<'a, T> {
+        // Create our profile iterators by spliting the "profiles" field by the comma symbol
+        let profiles_iter_trainers = profile_str_trainers.split(",").cycle();
+        let profiles_iter_aggregators = profile_str_aggregators.split(",").cycle();
+
+        let res: ProfilesHandler<T> = ProfilesHandler { 
+            profiles_iter_trainers, profiles_iter_aggregators, profiles_list
+        };
+        res
+    }
+
+    /// Get a profile by its name
+    fn get_profile(&self, profile_name: &str) -> &T {
+        for profile in self.profiles_list {
+            if profile_name == profile.get_name() {
+                return profile;
+            }
+        }
+        panic!("HostProfile named `{}` not found in raw-falafels file", profile_name);
+    }
+
+    /// Pick a profile depending on Node's Role
+    fn pick_profile(&mut self, node_role: &RoleEnum) -> &T { 
+        match node_role {
+            RoleEnum::Trainer(_) => {
+                let profile_name = self.profiles_iter_trainers.next().unwrap();
+                self.get_profile(profile_name)
+            }
+            RoleEnum::Aggregator(_) => {
+                let profile_name = self.profiles_iter_aggregators.next().unwrap();
+                self.get_profile(profile_name)
+            }
         }
     }
 }
