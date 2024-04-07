@@ -40,6 +40,8 @@ pub struct LinkProfile {
     pub bandwidth: String,
     #[serde(rename = "@latency")]
     pub latency: String,
+    #[serde(rename = "@psharing_policy", skip_serializing_if = "Option::is_none")]
+    pub sharing_policy: Option<String>,
     #[serde(rename = "prop")]
     pub props: Vec<Prop>,
 }
