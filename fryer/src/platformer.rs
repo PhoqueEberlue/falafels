@@ -171,30 +171,38 @@ impl<'a> Platformer<'a> {
     }
 }
 
-pub trait HasProfileName {
+
+/// Trait acting as an interface so we can return Profiles of different types and query their name.
+trait ProfileTrait {
     fn get_name(&self) -> &String;
 }
 
-impl HasProfileName for HostProfile {
+impl ProfileTrait for HostProfile {
     fn get_name(&self) -> &String {
         &self.name
     }
 }
 
-impl HasProfileName for LinkProfile {
+impl ProfileTrait for LinkProfile {
     fn get_name(&self) -> &String {
         &self.name
     }
 }
 
-struct ProfilesHandler<'a, T: HasProfileName> {
+/// A ProfilesHandler lets us nicely spread Profiles using cycle iterators.
+/// Profiles must implement ProfileTrait, just so we can get them by their name.
+struct ProfilesHandler<'a, T: ProfileTrait> {
     // Defining cycle iterators to evenly allocate the profiles
     profiles_iter_trainers: std::iter::Cycle<Split<'a, &'a str>>,
     profiles_iter_aggregators: std::iter::Cycle<Split<'a, &'a str>>,
     profiles_list: &'a Vec<T>,
 }
 
-impl<'a, T: HasProfileName> ProfilesHandler<'a, T> {
+impl<'a, T: ProfileTrait> ProfilesHandler<'a, T> {
+    /// Creates a new ProfilesHandler given `profile_str_trainers` and `profile_str_aggregators`
+    /// which corresponds to the profiles we want to give to our trainers and aggregators.
+    /// They must be string containing a list of profile names separated by commas (',').
+    /// Lastly `profiles_list` is a vector of profiles implementing ProfileTrait.
     fn new(profile_str_trainers: &'a str, profile_str_aggregators: &'a str, profiles_list: &'a Vec<T>) -> ProfilesHandler<'a, T> {
         // Create our profile iterators by spliting the "profiles" field by the comma symbol
         let profiles_iter_trainers = profile_str_trainers.split(",").cycle();
@@ -206,7 +214,7 @@ impl<'a, T: HasProfileName> ProfilesHandler<'a, T> {
         res
     }
 
-    /// Get a profile by its name
+    /// Get a profile by its `profile_name` 
     fn get_profile(&self, profile_name: &str) -> &T {
         for profile in self.profiles_list {
             if profile_name == profile.get_name() {
@@ -220,6 +228,7 @@ impl<'a, T: HasProfileName> ProfilesHandler<'a, T> {
     fn pick_profile(&mut self, node_role: &RoleEnum) -> &T { 
         match node_role {
             RoleEnum::Trainer(_) => {
+                // Theoritically the cycle iterator never ends so its safe to unwrap.
                 let profile_name = self.profiles_iter_trainers.next().unwrap();
                 self.get_profile(profile_name)
             }
