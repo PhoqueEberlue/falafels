@@ -3,8 +3,10 @@ use core::panic;
 use quick_xml::de::from_str;
 use serde::Serialize;
 use std::fs;
-use rand::{self, Rng};
+use rand::{self, RngCore, SeedableRng};
 
+/// Tool to fry falafels.
+/// Load a raw-falafels file to produce fried-falafels file.
 pub struct Fryer {
     names_list: Option<NamesList>,
 }
@@ -25,6 +27,8 @@ impl Fryer {
         fryer
     }
 
+    /// Load the content of a raw-falafels file by deserializing then returns a RawFalafels
+    /// structure.
     pub fn load_raw_falafels(&mut self, file_path: &str) -> raw::RawFalafels {
         println!("Loading raw falafels at `{}`... 📰", file_path);
 
@@ -36,6 +40,7 @@ impl Fryer {
         }
     } 
 
+    /// Generate a FriedFalafels structure from a RawFalafels one.
     pub fn fry(&mut self, rf: &raw::RawFalafels) -> fried::FriedFalafels {
         println!("Frying those falafels... 🧑🍳");
 
@@ -103,6 +108,7 @@ impl Fryer {
         ff
     }
 
+    /// Serialize and write to a file a FriedFalafels structure.
     pub fn write_fried_falafels(&self, path: &str, ff: &fried::FriedFalafels) {
         println!("Writing the fried falafels to `{}`...", path);
         let mut result_buffer = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -117,11 +123,14 @@ impl Fryer {
     }
 }
 
+
+/// Handle naming nodes with custom names
 struct NamesList {
     list_of_names: Vec<String>, 
 }
 
 impl NamesList {
+    /// Creates a new NamesList from a text file. The names should be separated with new lines.
     fn new(list_path: &str) -> NamesList {
         let byte_content = fs::read(list_path).expect("Names list path not found");
 
@@ -136,21 +145,22 @@ impl NamesList {
         NamesList { list_of_names }
     }
 
-    fn is_list_big_enough(&self, total_nb_nodes: u8) {
-        // Verifying we have enough names in the file to name each node
-        if self.list_of_names.len() < total_nb_nodes.into() {
-            panic!("It seems that the provided list of names does not contain enough names ({}) for the total number of nodes ({})", self.list_of_names.len(), total_nb_nodes);
+    /// Verifying that the list is big enough for the total number of picks we need
+    fn is_list_big_enough(&self, total_nb: u8) {
+        if self.list_of_names.len() < total_nb.into() {
+            panic!("It seems that the provided list of names does not contain enough names ({}) for the total number we want to pick ({})", self.list_of_names.len(), total_nb);
         }
     }
 
-    /// Randomly pick a name for a node and remove it from the list to prevent it from being picked
-    /// again.
+    /// Randomly pick a name and remove it from the list to prevent it from being picked again.
     fn pick_name(&mut self) -> String {
-        let mut generator = rand::thread_rng();
+        let mut generator = rand::rngs::StdRng::seed_from_u64(42);
 
-        let remove_index = generator.gen_range(0..self.list_of_names.len() - 1);
+        // Using next_u64() + modulo operator instead of gen_range() because this last produces
+        // weirdly distributed outputs
+        let remove_index = generator.next_u64().rem_euclid(self.list_of_names.len() as u64);
 
         // Remove the name at remove_index from the list and return it
-        self.list_of_names.remove(remove_index)
+        self.list_of_names.remove(remove_index as usize)
     }
 }
