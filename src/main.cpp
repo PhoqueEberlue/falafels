@@ -9,7 +9,7 @@
 
 #include "config_loader.hpp"
 
-XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_falafels, "Messages specific for this example");
+XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_main, "Messages specific for this example");
 
 int main(int argc, char* argv[])
 {
