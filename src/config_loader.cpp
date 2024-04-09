@@ -4,6 +4,7 @@
 #include <vector>
 #include <xbt/asserts.h>
 #include <xbt/log.h>
+#include <pugixml.hpp>
 
 #include "node/network_managers/nm.hpp"
 #include "node/roles/aggregator/asynchronous_aggregator.hpp"
@@ -13,7 +14,6 @@
 #include "node/network_managers/centralized_nm.hpp"
 #include "node/network_managers/decentralized_nm.hpp"
 #include "config_loader.hpp"
-#include "../pugixml/pugixml.hpp"
 #include "constants.hpp"
 #include "utils/utils.hpp"
  
