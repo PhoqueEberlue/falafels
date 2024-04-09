@@ -149,15 +149,13 @@ Node *create_node(xml_node *node_elem, node_name name)
 }
 
 /**
- * Create nodes with their respectful configuration.
+ * Create nodes with their respectful configuration and updates the unordered map.
  * @param nodes_elem XML element that contains the list of nodes.
- * @return An unordered map with node_name as key and a pointer to the given Node.
+ * @param An unordered map with node_name as key and a pointer to the given Node.
  */
-std::unordered_map<node_name, Node*> *create_nodes(xml_node *nodes_elem)
+void create_nodes(std::unordered_map<node_name, Node*> *nodes_map, xml_node *nodes_elem)
 {
     XBT_INFO("Creating falafels nodes...");
-
-    auto nodes_map = new std::unordered_map<node_name, Node*>();
 
     // Loop through each (xml) node of the document to instanciate (simulated) nodes
     for (xml_node node_elem: nodes_elem->children("node"))
@@ -193,8 +191,6 @@ std::unordered_map<node_name, Node*> *create_nodes(xml_node *nodes_elem)
         // Set boostrap nodes
         nodes_map->at(name)->get_role()->get_network_manager()->set_bootstrap_nodes(bootstrap_nodes); 
     } 
-
-    return nodes_map;
 }
 
 /**
@@ -249,14 +245,18 @@ void load_config(const char* file_path, simgrid::s4u::Engine *e)
     xbt_assert(result != 0, "Error while loading falafels xml file");
 
     xml_node root_elem = doc.child("fried");
-    xml_node nodes_elem = root_elem.child("nodes");
     xml_node constants_elem = root_elem.child("constants");
+    xml_node clusters_elem = root_elem.child("clusters");
 
     init_constants(&constants_elem);
 
-    auto nodes_map = create_nodes(&nodes_elem);  
+    auto nodes_map = new std::unordered_map<node_name, Node*>();
 
-
+    for (auto cluster: clusters_elem.children())
+    {
+        create_nodes(nodes_map, &cluster);  
+    }
+    
     for (auto [name, node] : *nodes_map)
     {
         XBT_INFO("Creating actor '%s'", name.c_str());
