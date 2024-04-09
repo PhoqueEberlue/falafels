@@ -9,12 +9,13 @@ use std::fs;
 /// Load a raw-falafels file to produce fried-falafels file.
 pub struct Fryer {
     names_list: Option<NamesList>,
+    count_node: u32,
 }
 
 impl Fryer {
     /// Create a new Fryer, Optionnaly pass a file path containing names to be used for node naming
     pub fn new(optional_list_path: Option<&str>) -> Fryer {
-        let mut fryer = Fryer { names_list: None };
+        let mut fryer = Fryer { names_list: None, count_node: 0 };
 
         // If a list path have been provided
         if let Some(list_path) = optional_list_path {
@@ -82,72 +83,108 @@ impl Fryer {
 
     fn create_cluster(&mut self, cluster: &raw::Cluster) -> fried::Cluster {
         match cluster.topology {
-            raw::ClusterTopology::Star => self.create_star_cluster(cluster),
-            raw::ClusterTopology::Ring => unimplemented!(),
-            raw::ClusterTopology::FullyConnected => unimplemented!(),
+            common::ClusterTopology::Star => self.create_star_cluster(cluster),
+            common::ClusterTopology::Ring => unimplemented!(),
+            common::ClusterTopology::FullyConnected => unimplemented!(),
         }
     }
 
+    fn create_fully_connected_cluster() -> fried::Cluster {
+        unimplemented!()
+    }
+
     fn create_star_cluster(&mut self, cluster_param: &raw::Cluster) -> fried::Cluster {
-        let mut cluster_res = fried::Cluster { nodes: Vec::new() };
+        assert!(
+            cluster_param.aggregators.number == 1, 
+            "Only one aggregator is allowed in a star cluster, but `{}` were specified.", 
+            cluster_param.aggregators.number
+        );
+
+        let mut cluster_res = fried::Cluster { nodes: Vec::new(), topology: cluster_param.topology.clone() };
+        let mut trainer_nodes = self.create_trainer_nodes(cluster_param);
+        let mut aggregator_node = self.create_aggregator_nodes(cluster_param).pop().unwrap();
+
+        // Setting bootstrap nodes
+        for trainer_node in trainer_nodes.iter_mut() {
+            // aggregator -> trainer
+            Fryer::set_bootstrap_node(&mut aggregator_node, trainer_node);
+            // trainer -> aggregator 
+            Fryer::set_bootstrap_node(trainer_node, &aggregator_node);
+        }
+
+        cluster_res.nodes.append(&mut trainer_nodes);
+        cluster_res.nodes.push(aggregator_node);
+        
+        cluster_res
+    }
+
+    fn set_bootstrap_node(node: &mut fried::Node, bootstrap_node: &fried::Node) {
+        // Inserts a new array into the Option if its value is None, then returns a mutable
+        // reference to the contained value.
+        let args = node 
+            .network_manager
+            .args
+            .get_or_insert_with(|| Vec::<common::Arg>::new()); 
+
+        args.push(common::Arg {
+            name: "bootstrap-node".to_string(),
+            value: bootstrap_node.name.clone(),
+        });
+    }
+
+    fn create_trainer_nodes(&mut self, cluster_param: &raw::Cluster) -> Vec<fried::Node> {
+        let mut res = Vec::<fried::Node>::new();
 
         // Creating the trainers(s)
-        for i in 0..cluster_param.trainers.number {
+        for _ in 0..cluster_param.trainers.number {
             let role = fried::RoleEnum::Trainer(fried::Trainer {
                 trainer_type: cluster_param.trainers.trainer_type.clone(),
                 args: cluster_param.trainers.args.clone(),
             });
 
             let node = fried::Node {
-                name: if let Some(l) = &mut self.names_list {
-                    l.pick_name()
-                } else {
-                    format!("Node {}", i)
-                },
+                name: self.pick_node_name(),
                 role,
                 network_manager: cluster_param.trainers.network_manager.clone(),
             };
 
-            cluster_res.nodes.push(node);
+            res.push(node);
         }
 
+        res
+    }
+
+    fn create_aggregator_nodes(&mut self, cluster_param: &raw::Cluster) -> Vec<fried::Node> {
+        let mut res = Vec::<fried::Node>::new();
+
         // Creating the aggregator(s)
-        for i in 0..cluster_param.aggregators.number {
+        for _ in 0..cluster_param.aggregators.number {
             let role = fried::RoleEnum::Aggregator(fried::Aggregator {
                 aggregator_type: cluster_param.aggregators.aggregator_type.clone(),
                 args: cluster_param.aggregators.args.clone(),
             });
 
-            let mut network_manager = cluster_param.aggregators.network_manager.clone();
-
-            // Inserts a new array into the Option if its value is None, then returns a mutable
-            // reference to the contained value.
-            let args = network_manager
-                .args
-                .get_or_insert_with(|| Vec::<common::Arg>::new());
-
-            // For each trainer node, append its name to the current aggregator
-            for node in &cluster_res.nodes {
-                args.push(common::Arg {
-                    name: "bootstrap-node".to_string(),
-                    value: node.name.clone(),
-                });
-            }
-
             let aggregator_node = fried::Node {
-                name: if let Some(l) = &mut self.names_list {
-                    l.pick_name()
-                } else {
-                    format!("Node {}", i)
-                },
+                name: self.pick_node_name(),
                 role,
-                network_manager,
+                network_manager: cluster_param.aggregators.network_manager.clone(),
             };
 
-            cluster_res.nodes.push(aggregator_node);
+            res.push(aggregator_node);
         }
 
-        cluster_res
+        res
+    }
+
+    /// Wraper that either call NamesList.pick_name() if it hase been initialized, or attribute a
+    /// number to the node and increment the counter
+    fn pick_node_name(&mut self) -> String {
+        if let Some(l) = &mut self.names_list {
+            l.pick_name()
+        } else {
+            self.count_node += 1;
+            format!("Node {}", self.count_node)
+        }
     }
 
     /// Serialize and write to a file a FriedFalafels structure.

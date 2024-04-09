@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use super::common::{Constants, Arg, NetworkManager, AggregatorType, TrainerType};
+use super::common::{Constants, Arg, NetworkManager, AggregatorType, TrainerType, ClusterTopology};
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename = "fried")]
@@ -19,6 +19,8 @@ pub struct Clusters {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Cluster {
+    #[serde(rename = "@topology")]
+    pub topology: ClusterTopology,
     #[serde(rename = "node")]
     pub nodes: Vec<Node>,
 }

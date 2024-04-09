@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use super::common::{AggregatorType, Arg, Constants, NetworkManager, TrainerType, Prop};
+use super::common::{AggregatorType, Arg, Constants, NetworkManager, TrainerType, Prop, ClusterTopology};
 
 /// Represents <root>...</root>
 #[derive(Deserialize, Debug)]
@@ -49,16 +49,6 @@ pub struct LinkProfile {
 pub struct Clusters {
     #[serde(rename = "cluster")]
     pub list: Vec<Cluster>,
-}
-
-#[derive(Deserialize, Debug)]
-pub enum ClusterTopology {
-    #[serde(rename = "star")]
-    Star,
-    #[serde(rename = "ring")]
-    Ring,
-    #[serde(rename = "fully-connected")]
-    FullyConnected,
 }
 
 #[derive(Deserialize, Debug)]

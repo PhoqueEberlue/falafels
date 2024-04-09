@@ -53,3 +53,13 @@ pub struct Prop {
     #[serde(rename = "@value")]
     pub value: String,
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum ClusterTopology {
+    #[serde(rename = "star")]
+    Star,
+    #[serde(rename = "ring")]
+    Ring,
+    #[serde(rename = "fully-connected")]
+    FullyConnected,
+}
