@@ -6,8 +6,7 @@ use super::common::{AggregatorType, Arg, Constants, NetworkManager, TrainerType,
 pub struct RawFalafels {
     pub constants: Constants,
     pub profiles: Profiles,
-    pub trainers: Trainers,
-    pub aggregators: Aggregators,
+    pub clusters: Clusters,
 }
 
 #[derive(Deserialize, Debug)]
@@ -44,12 +43,36 @@ pub struct LinkProfile {
     pub sharing_policy: Option<String>,
     #[serde(rename = "prop")]
     pub props: Vec<Prop>,
+
+}
+#[derive(Deserialize, Debug)]
+pub struct Clusters {
+    #[serde(rename = "cluster")]
+    pub list: Vec<Cluster>,
+}
+
+#[derive(Deserialize, Debug)]
+pub enum ClusterTopology {
+    #[serde(rename = "star")]
+    Star,
+    #[serde(rename = "ring")]
+    Ring,
+    #[serde(rename = "fully-connected")]
+    FullyConnected,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct Cluster {
+    #[serde(rename = "@topology")]
+    pub topology: ClusterTopology,
+    pub trainers: Trainers,
+    pub aggregators: Aggregators,
 }
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Trainers {
     #[serde(rename = "@number")]
-    pub number: u8,
+    pub number: u16,
     #[serde(rename = "@type")]
     pub trainer_type: TrainerType,
     #[serde(rename = "@host-profiles")]
@@ -65,7 +88,7 @@ pub struct Trainers {
 #[derive(Deserialize, Debug)]
 pub struct Aggregators {
     #[serde(rename = "@number")]
-    pub number: u8,
+    pub number: u16,
     #[serde(rename = "@type")]
     pub aggregator_type: AggregatorType,
     #[serde(rename = "@host-profiles")]

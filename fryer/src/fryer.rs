@@ -1,9 +1,9 @@
-use crate::structures::{common, fried, raw};
+use super::structures::{common, fried, raw};
 use core::panic;
 use quick_xml::de::from_str;
+use rand::{self, RngCore, SeedableRng};
 use serde::Serialize;
 use std::fs;
-use rand::{self, RngCore, SeedableRng};
 
 /// Tool to fry falafels.
 /// Load a raw-falafels file to produce fried-falafels file.
@@ -14,9 +14,7 @@ pub struct Fryer {
 impl Fryer {
     /// Create a new Fryer, Optionnaly pass a file path containing names to be used for node naming
     pub fn new(optional_list_path: Option<&str>) -> Fryer {
-        let mut fryer = Fryer {
-            names_list: None
-        }; 
+        let mut fryer = Fryer { names_list: None };
 
         // If a list path have been provided
         if let Some(list_path) = optional_list_path {
@@ -38,74 +36,118 @@ impl Fryer {
             Ok(raw_falafels) => raw_falafels,
             Err(e) => panic!("Error while parsing raw falafels file: {}", e),
         }
-    } 
+    }
 
     /// Generate a FriedFalafels structure from a RawFalafels one.
     pub fn fry(&mut self, rf: &raw::RawFalafels) -> fried::FriedFalafels {
         println!("Frying those falafels... 🧑🍳");
 
         if let Some(names_list) = &self.names_list {
-            // Total number of nodes
-            let total_nb_nodes = rf.trainers.number + rf.aggregators.number;
-
             // Panic if the list is too short
-            names_list.is_list_big_enough(total_nb_nodes);
+            names_list.is_list_big_enough(Fryer::count_total_number_nodes(&rf.clusters));
+        }
+
+        let mut clusters = Vec::<fried::Cluster>::new();
+
+        for cluster in &rf.clusters.list {
+            // Create cluster nodes
+            let cluster = self.create_cluster(&cluster);
+            // Append them to the other nodes
+            clusters.push(cluster);
         }
 
         // Create FriedFalafels
-        let mut ff = fried::FriedFalafels {
+        let ff = fried::FriedFalafels {
             // Setting version, cloning constants (because no processing needed), creating list of node
             version: "0.1".to_string(),
+            // Cloning constants because no treatment needed
             constants: rf.constants.clone(),
-            nodes: fried::Nodes { list: vec![] },
-        }; 
-
-        // Creating the trainers(s)
-        for i in 0..rf.trainers.number {
-            let role = fried::RoleEnum::Trainer(fried::Trainer {
-                trainer_type: rf.trainers.trainer_type.clone(),
-                args: rf.trainers.args.clone(),
-            });
-
-            let node = fried::Node {
-                name: if let Some(l) = &mut self.names_list { l.pick_name() } else { format!("Node {}", i) },
-                role,
-                network_manager: rf.trainers.network_manager.clone(),
-            };
-
-            ff.nodes.list.push(node);
-        }
-
-        // Creating the aggregator(s)
-        for i in 0..rf.aggregators.number {
-            let role = fried::RoleEnum::Aggregator(fried::Aggregator {
-                aggregator_type: rf.aggregators.aggregator_type.clone(),
-                args: rf.aggregators.args.clone(),
-            });
-
-            let mut network_manager = rf.aggregators.network_manager.clone();
-
-            // Inserts a new array into the Option if its value is None, then returns a mutable
-            // reference to the contained value.
-            let args = network_manager.args.get_or_insert_with(|| Vec::<common::Arg>::new());
-                        
-            // For each trainer node, append its name to the current aggregator
-            for node in &ff.nodes.list {
-                args.push(common::Arg { name: "bootstrap-node".to_string(), value: node.name.clone() });
-            }
-
-            let aggregator_node = fried::Node {
-                name: if let Some(l) = &mut self.names_list { l.pick_name() } else { format!("Node {}", i) },
-                role,
-                network_manager,
-            };
-
-            ff.nodes.list.push(aggregator_node);
-        }
+            // Assigning our nodes
+            clusters: fried::Clusters { list: clusters },
+        };
 
         println!("Falafels ready! 🧆");
 
         ff
+    }
+
+    /// Count the total number of nodes in every clusters
+    fn count_total_number_nodes(clusters: &raw::Clusters) -> u16 {
+        clusters
+            .list
+            .iter()
+            .map(|c| c.trainers.number + c.aggregators.number)
+            .sum::<u16>()
+    }
+
+    fn create_cluster(&mut self, cluster: &raw::Cluster) -> fried::Cluster {
+        match cluster.topology {
+            raw::ClusterTopology::Star => self.create_star_cluster(cluster),
+            raw::ClusterTopology::Ring => unimplemented!(),
+            raw::ClusterTopology::FullyConnected => unimplemented!(),
+        }
+    }
+
+    fn create_star_cluster(&mut self, cluster_param: &raw::Cluster) -> fried::Cluster {
+        let mut cluster_res = fried::Cluster { nodes: Vec::new() };
+
+        // Creating the trainers(s)
+        for i in 0..cluster_param.trainers.number {
+            let role = fried::RoleEnum::Trainer(fried::Trainer {
+                trainer_type: cluster_param.trainers.trainer_type.clone(),
+                args: cluster_param.trainers.args.clone(),
+            });
+
+            let node = fried::Node {
+                name: if let Some(l) = &mut self.names_list {
+                    l.pick_name()
+                } else {
+                    format!("Node {}", i)
+                },
+                role,
+                network_manager: cluster_param.trainers.network_manager.clone(),
+            };
+
+            cluster_res.nodes.push(node);
+        }
+
+        // Creating the aggregator(s)
+        for i in 0..cluster_param.aggregators.number {
+            let role = fried::RoleEnum::Aggregator(fried::Aggregator {
+                aggregator_type: cluster_param.aggregators.aggregator_type.clone(),
+                args: cluster_param.aggregators.args.clone(),
+            });
+
+            let mut network_manager = cluster_param.aggregators.network_manager.clone();
+
+            // Inserts a new array into the Option if its value is None, then returns a mutable
+            // reference to the contained value.
+            let args = network_manager
+                .args
+                .get_or_insert_with(|| Vec::<common::Arg>::new());
+
+            // For each trainer node, append its name to the current aggregator
+            for node in &cluster_res.nodes {
+                args.push(common::Arg {
+                    name: "bootstrap-node".to_string(),
+                    value: node.name.clone(),
+                });
+            }
+
+            let aggregator_node = fried::Node {
+                name: if let Some(l) = &mut self.names_list {
+                    l.pick_name()
+                } else {
+                    format!("Node {}", i)
+                },
+                role,
+                network_manager,
+            };
+
+            cluster_res.nodes.push(aggregator_node);
+        }
+
+        cluster_res
     }
 
     /// Serialize and write to a file a FriedFalafels structure.
@@ -123,10 +165,9 @@ impl Fryer {
     }
 }
 
-
 /// Handle naming nodes with custom names
 struct NamesList {
-    list_of_names: Vec<String>, 
+    list_of_names: Vec<String>,
 }
 
 impl NamesList {
@@ -138,15 +179,15 @@ impl NamesList {
             .expect("Error while parsing names list file content: Expecting utf8 encoding");
 
         let list_of_names = content
-                .lines() // Splitting by lines
-                .map(|s| String::from(s)) // Creating owned values for each line
-                .collect::<Vec<String>>(); // Collect the result
+            .lines() // Splitting by lines
+            .map(|s| String::from(s)) // Creating owned values for each line
+            .collect::<Vec<String>>(); // Collect the result
 
         NamesList { list_of_names }
     }
 
     /// Verifying that the list is big enough for the total number of picks we need
-    fn is_list_big_enough(&self, total_nb: u8) {
+    fn is_list_big_enough(&self, total_nb: u16) {
         if self.list_of_names.len() < total_nb.into() {
             panic!("It seems that the provided list of names does not contain enough names ({}) for the total number we want to pick ({})", self.list_of_names.len(), total_nb);
         }
@@ -158,7 +199,9 @@ impl NamesList {
 
         // Using next_u64() + modulo operator instead of gen_range() because this last produces
         // weirdly distributed outputs
-        let remove_index = generator.next_u64().rem_euclid(self.list_of_names.len() as u64);
+        let remove_index = generator
+            .next_u64()
+            .rem_euclid(self.list_of_names.len() as u64);
 
         // Remove the name at remove_index from the list and return it
         self.list_of_names.remove(remove_index as usize)
