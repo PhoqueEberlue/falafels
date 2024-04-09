@@ -87,16 +87,57 @@ impl Fryer {
     fn create_cluster(&mut self, cluster: &raw::Cluster) -> fried::Cluster {
         match cluster.topology {
             common::ClusterTopology::Star => self.create_star_cluster(cluster),
-            common::ClusterTopology::Ring => unimplemented!(),
+            common::ClusterTopology::Ring => self.create_ring_cluster(cluster),
             common::ClusterTopology::FullyConnected => self.create_fully_connected_cluster(cluster),
         }
     }
 
+    // TODO: should we be able to have multiple aggregators? Does it even makes sense to have fixed
+    // aggregators? Maybe we want to implement voting mechanisms? Then the roles would be the
+    // intialization ones and could be further replaced
+    fn create_ring_cluster(&mut self, raw_cluster: &raw::Cluster) -> fried::Cluster {
+        let mut fried_cluster = fried::Cluster {
+            nodes: Vec::new(),
+            topology: raw_cluster.topology.clone(),
+        };
+
+        let mut trainer_nodes = self.create_trainer_nodes(raw_cluster);
+        let mut aggregator_nodes = self.create_aggregator_nodes(raw_cluster);
+
+        fried_cluster.nodes.append(&mut trainer_nodes);
+        fried_cluster.nodes.append(&mut aggregator_nodes);
+
+        let node_names = fried_cluster
+            .nodes
+            .iter()
+            .map(|n| String::from(&n.name))
+            .collect::<Vec<String>>();
+
+        // Defining cycle iterators so we can access N-1 and N+1 nodes with cycling bounds
+        // Skip all nodes to set the iterator to the last node
+        let mut previous_node = node_names.iter().cycle().skip(node_names.len() - 1);
+        // Skip one node to set the iterator to the second node
+        let mut following_node = node_names.iter().cycle().skip(1);
+
+        for node in fried_cluster.nodes.iter_mut() {
+            // Safe to unwrap because we use a cycle iterator
+            let previous_node_name = previous_node.next().unwrap();
+            let following_node_name = following_node.next().unwrap();
+
+            Fryer::set_bootstrap_node(node, previous_node_name);
+            Fryer::set_bootstrap_node(node, following_node_name);
+        }
+
+        fried_cluster
+    }
+
+    // TODO: same thinking as ring_cluster
     fn create_fully_connected_cluster(&mut self, raw_cluster: &raw::Cluster) -> fried::Cluster {
         let mut fried_cluster = fried::Cluster {
             nodes: Vec::new(),
             topology: raw_cluster.topology.clone(),
         };
+
         let mut trainer_nodes = self.create_trainer_nodes(raw_cluster);
         let mut aggregator_nodes = self.create_aggregator_nodes(raw_cluster);
 
