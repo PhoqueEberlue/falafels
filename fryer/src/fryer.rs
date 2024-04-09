@@ -15,7 +15,10 @@ pub struct Fryer {
 impl Fryer {
     /// Create a new Fryer, Optionnaly pass a file path containing names to be used for node naming
     pub fn new(optional_list_path: Option<&str>) -> Fryer {
-        let mut fryer = Fryer { names_list: None, count_node: 0 };
+        let mut fryer = Fryer {
+            names_list: None,
+            count_node: 0,
+        };
 
         // If a list path have been provided
         if let Some(list_path) = optional_list_path {
@@ -85,50 +88,78 @@ impl Fryer {
         match cluster.topology {
             common::ClusterTopology::Star => self.create_star_cluster(cluster),
             common::ClusterTopology::Ring => unimplemented!(),
-            common::ClusterTopology::FullyConnected => unimplemented!(),
+            common::ClusterTopology::FullyConnected => self.create_fully_connected_cluster(cluster),
         }
     }
 
-    fn create_fully_connected_cluster() -> fried::Cluster {
-        unimplemented!()
+    fn create_fully_connected_cluster(&mut self, raw_cluster: &raw::Cluster) -> fried::Cluster {
+        let mut fried_cluster = fried::Cluster {
+            nodes: Vec::new(),
+            topology: raw_cluster.topology.clone(),
+        };
+        let mut trainer_nodes = self.create_trainer_nodes(raw_cluster);
+        let mut aggregator_nodes = self.create_aggregator_nodes(raw_cluster);
+
+        fried_cluster.nodes.append(&mut trainer_nodes);
+        fried_cluster.nodes.append(&mut aggregator_nodes);
+
+        let node_names = fried_cluster
+            .nodes
+            .iter()
+            .map(|n| String::from(&n.name))
+            .collect::<Vec<String>>();
+
+        // Link every node to each others
+        for node in fried_cluster.nodes.iter_mut() {
+            for bootstrap_node_name in node_names.iter() {
+                if &node.name != bootstrap_node_name {
+                    Fryer::set_bootstrap_node(node, &bootstrap_node_name);
+                }
+            }
+        }
+
+        fried_cluster
     }
 
-    fn create_star_cluster(&mut self, cluster_param: &raw::Cluster) -> fried::Cluster {
+    fn create_star_cluster(&mut self, raw_cluster: &raw::Cluster) -> fried::Cluster {
         assert!(
-            cluster_param.aggregators.number == 1, 
-            "Only one aggregator is allowed in a star cluster, but `{}` were specified.", 
-            cluster_param.aggregators.number
+            raw_cluster.aggregators.number == 1,
+            "Only one aggregator is allowed in a star cluster, but `{}` were specified.",
+            raw_cluster.aggregators.number
         );
 
-        let mut cluster_res = fried::Cluster { nodes: Vec::new(), topology: cluster_param.topology.clone() };
-        let mut trainer_nodes = self.create_trainer_nodes(cluster_param);
-        let mut aggregator_node = self.create_aggregator_nodes(cluster_param).pop().unwrap();
+        let mut fried_cluster = fried::Cluster {
+            nodes: Vec::new(),
+            topology: raw_cluster.topology.clone(),
+        };
+        let mut trainer_nodes = self.create_trainer_nodes(raw_cluster);
+        let mut aggregator_node = self.create_aggregator_nodes(raw_cluster).pop().unwrap();
 
         // Setting bootstrap nodes
         for trainer_node in trainer_nodes.iter_mut() {
             // aggregator -> trainer
-            Fryer::set_bootstrap_node(&mut aggregator_node, trainer_node);
-            // trainer -> aggregator 
-            Fryer::set_bootstrap_node(trainer_node, &aggregator_node);
+            Fryer::set_bootstrap_node(&mut aggregator_node, &trainer_node.name);
+            // trainer -> aggregator
+            Fryer::set_bootstrap_node(trainer_node, &aggregator_node.name);
         }
 
-        cluster_res.nodes.append(&mut trainer_nodes);
-        cluster_res.nodes.push(aggregator_node);
-        
-        cluster_res
+        fried_cluster.nodes.append(&mut trainer_nodes);
+        fried_cluster.nodes.push(aggregator_node);
+
+        fried_cluster
     }
 
-    fn set_bootstrap_node(node: &mut fried::Node, bootstrap_node: &fried::Node) {
+    fn set_bootstrap_node(node: &mut fried::Node, bootstrap_node_name: &String) {
         // Inserts a new array into the Option if its value is None, then returns a mutable
         // reference to the contained value.
-        let args = node 
+        let args = node
             .network_manager
             .args
-            .get_or_insert_with(|| Vec::<common::Arg>::new()); 
+            .get_or_insert_with(|| Vec::<common::Arg>::new());
 
         args.push(common::Arg {
             name: "bootstrap-node".to_string(),
-            value: bootstrap_node.name.clone(),
+            value: bootstrap_node_name.clone(),
         });
     }
 
