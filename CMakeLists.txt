@@ -13,10 +13,6 @@ find_package(SimGrid REQUIRED)
 include_directories(${SimGrid_INCLUDE_DIR})
 
 set(falafels_files
-    pugixml/pugiconfig.hpp
-    pugixml/pugixml.cpp
-    pugixml/pugixml.hpp
-
     src/node/network_managers/centralized_nm.cpp
     src/node/network_managers/centralized_nm.hpp
     src/node/network_managers/decentralized_nm.cpp
@@ -56,3 +52,4 @@ add_executable(main
 )
 
 target_link_libraries(main ${SimGrid_LIBRARY})
+target_link_libraries(main pugixml)

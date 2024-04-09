@@ -4,7 +4,7 @@ WORKDIR /falafels
 
 RUN apt update && \
     apt upgrade -y && \
-    apt install clang cmake libsimgrid-dev -y
+    apt install clang cmake libsimgrid-dev libpugixml-dev -y
 
 COPY CMakeLists.txt /falafels
 COPY src/ /falafels/src/
