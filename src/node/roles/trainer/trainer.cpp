@@ -29,11 +29,14 @@ void Trainer::send_local_model(node_name dest)
 {
     auto nm = this->get_network_manager();
 
-    Packet *res_p = new Packet { .op=Packet::Operation::SEND_LOCAL_MODEL, .src=nm->get_my_node_name() };
+    Packet *p = new Packet(Packet::Operation::SEND_LOCAL_MODEL, nm->get_my_node_name());
 
-    XBT_INFO("%s ---%s--> %s", nm->get_my_node_name().c_str(), operation_to_str(res_p->op), dest.c_str());
+    XBT_INFO("%s ---%s--> %s", nm->get_my_node_name().c_str(), p->op_string.c_str(), dest.c_str());
 
-    nm->put_timeout(res_p, dest, 10);
+    nm->send_timeout(p, dest, 10);
+
+    // Delete our own reference of the packet
+    p->decr_ref_count();
 }
 
 void Trainer::run()
@@ -45,7 +48,7 @@ void Trainer::run()
     while (run)
     {
         p = nm->get();
-        XBT_INFO("%s <--%s--- %s", nm->get_my_node_name().c_str(), operation_to_str(p->op), p->src.c_str());
+        XBT_INFO("%s <--%s--- %s", nm->get_my_node_name().c_str(), p->op_string.c_str(), p->src.c_str());
 
         switch (p->op)
         {
@@ -54,20 +57,20 @@ void Trainer::run()
                     std::string t = p->args->at("number_local_epochs");
                     uint8_t number_local_epochs = (uint8_t) atoi(t.c_str());
 
+                    node_name source = p->src;
+                    p->decr_ref_count();
+
                     this->train(number_local_epochs);
-                    this->send_local_model(p->src);
+                    this->send_local_model(source);
                     break;
                 }
             case Packet::Operation::KILL_TRAINER:
                 {
                     run = false;
+                    p->decr_ref_count();
                     break;
                 }
         }
-
-        // Delete current packet with potential arguments
-        if (p->args) delete p->args;
-        delete p;
     }
 
     XBT_INFO("Exiting");
