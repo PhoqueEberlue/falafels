@@ -15,8 +15,8 @@ include_directories(${SimGrid_INCLUDE_DIR})
 set(falafels_files
     src/node/network_managers/centralized_nm.cpp
     src/node/network_managers/centralized_nm.hpp
-    src/node/network_managers/decentralized_nm.cpp
-    src/node/network_managers/decentralized_nm.hpp
+    src/node/network_managers/ring_nm.cpp
+    src/node/network_managers/ring_nm.hpp
     src/node/network_managers/nm.hpp
 
     src/node/roles/aggregator/aggregator.cpp
@@ -43,6 +43,7 @@ set(falafels_files
     src/config_loader.cpp
     src/config_loader.hpp
     src/constants.hpp
+    src/protocol.cpp
     src/protocol.hpp
 )
 
