@@ -12,7 +12,7 @@
 #include "node/roles/trainer/trainer.hpp"
 #include "node/roles/proxy/proxy.hpp"
 #include "node/network_managers/centralized_nm.hpp"
-#include "node/network_managers/decentralized_nm.hpp"
+#include "node/network_managers/ring_nm.hpp"
 #include "config_loader.hpp"
 #include "constants.hpp"
 #include "utils/utils.hpp"

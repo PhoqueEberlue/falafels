@@ -13,9 +13,6 @@ public:
     CentralizedNetworkManager(node_name);
     uint16_t broadcast(Packet *packet, FilterNode filter);
     uint16_t broadcast_timeout(Packet *packet, FilterNode filter, uint64_t timeout);
-    void send(Packet *packet, node_name name);
-    bool send_timeout(Packet *packet, node_name name, uint64_t timeout);
-    Packet *get();
     void set_bootstrap_nodes(std::vector<NodeInfo*> *nodes);
 };
 

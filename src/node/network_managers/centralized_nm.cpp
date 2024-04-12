@@ -3,7 +3,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <simgrid/s4u/Mailbox.hpp>
-#include <simgrid/Exception.hpp>
 #include <vector>
 #include <xbt/log.h>
 
@@ -60,31 +59,3 @@ uint16_t CentralizedNetworkManager::broadcast_timeout(Packet *packet, FilterNode
     return nb_sent;
 }
 
-void CentralizedNetworkManager::send(Packet *packet, node_name name)
-{
-    auto receiver_mailbox = simgrid::s4u::Mailbox::by_name(name);
-    packet->incr_ref_count();
-    receiver_mailbox->put(packet, packet->get_packet_size());
-}
-
-bool CentralizedNetworkManager::send_timeout(Packet *packet, node_name name, uint64_t timeout)
-{
-    try 
-    {
-        auto receiver_mailbox = simgrid::s4u::Mailbox::by_name(name);
-        packet->incr_ref_count();
-        receiver_mailbox->put(packet, packet->get_packet_size(), timeout);
-        return true;
-    } 
-    catch (simgrid::TimeoutException) 
-    {
-        packet->decr_ref_count();
-        XBT_INFO("Timeout, couldn't send message from %s to %s", this->get_my_node_name().c_str(), name.c_str());
-        return false;
-    }
-}
-
-Packet *CentralizedNetworkManager::get()
-{
-    return this->mailbox->get<Packet>();
-}

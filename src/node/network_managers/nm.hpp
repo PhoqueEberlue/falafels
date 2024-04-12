@@ -19,13 +19,13 @@ protected:
 
 public:
     NetworkManager(){}
+    void send(Packet*, node_name);
+    bool send_timeout(Packet*, node_name, uint64_t);
+    Packet *get();
+
     virtual ~NetworkManager(){}
     virtual uint16_t broadcast(Packet*, FilterNode) = 0;
     virtual uint16_t broadcast_timeout(Packet*, FilterNode, uint64_t) = 0;
-    virtual void send(Packet*, node_name) = 0;
-    virtual bool send_timeout(Packet*, node_name, uint64_t) = 0;
-
-    virtual Packet *get() = 0;
     virtual void set_bootstrap_nodes(std::vector<NodeInfo*> *nodes) = 0;
 
     std::vector<NodeInfo*> *get_bootstrap_nodes() { return this->bootstrap_nodes; }
@@ -36,6 +36,12 @@ namespace Filters {
     static bool trainers(NodeInfo *node_info)
     {
         return node_info->role == NodeRole::Trainer;
+    }
+
+    static bool trainers_and_aggregators(NodeInfo *node_info)
+    {
+        return node_info->role == NodeRole::Trainer || 
+               node_info->role == NodeRole::Aggregator;
     }
 }
 
