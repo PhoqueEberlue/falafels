@@ -13,12 +13,12 @@ find_package(SimGrid REQUIRED)
 include_directories(${SimGrid_INCLUDE_DIR})
 
 set(falafels_files
-    src/node/network_managers/centralized_nm.cpp
-    src/node/network_managers/centralized_nm.hpp
-    src/node/network_managers/ring_nm.cpp
-    src/node/network_managers/ring_nm.hpp
     src/node/network_managers/nm.cpp
     src/node/network_managers/nm.hpp
+    src/node/network_managers/ring_nm.cpp
+    src/node/network_managers/ring_nm.hpp
+    src/node/network_managers/star_nm.cpp
+    src/node/network_managers/star_nm.hpp
 
     src/node/roles/aggregator/aggregator.cpp
     src/node/roles/aggregator/aggregator.hpp
