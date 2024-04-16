@@ -36,7 +36,7 @@ void AsynchronousAggregator::run()
         node_name src = this->wait_local_model();
         this->aggregate(1);
         this->send_global_model(src);
-    } 
+    }
 
     this->send_kills();
 
@@ -48,23 +48,20 @@ void AsynchronousAggregator::broadcast_global_model()
     auto nm = this->get_network_manager();
     auto args = new std::unordered_map<std::string, std::string>();
     args->insert({ "number_local_epochs", std::to_string(this->number_local_epochs) });
-    Packet *p = new Packet(Packet::Operation::SEND_GLOBAL_MODEL, nm->get_my_node_name(), args);
+    Packet *p = new Packet(Packet::Operation::SEND_GLOBAL_MODEL, this->get_network_manager()->get_my_node_name(), "BROADCAST", args);
 
-    XBT_INFO("%s ---%s--> *TRAINERS", p->src.c_str(), p->op_string.c_str());
     nm->broadcast(p, Filters::trainers);
 }
 
 /* Sends the global model to every start_nodes */
-void AsynchronousAggregator::send_global_model(node_name name)
+void AsynchronousAggregator::send_global_model(node_name dst)
 {
     auto nm = this->get_network_manager();
     auto args = new std::unordered_map<std::string, std::string>();
     args->insert({ "number_local_epochs", std::to_string(this->number_local_epochs) });
-    Packet *p = new Packet(Packet::Operation::SEND_GLOBAL_MODEL, nm->get_my_node_name(), args);
+    Packet *p = new Packet(Packet::Operation::SEND_GLOBAL_MODEL, this->get_network_manager()->get_my_node_name(), dst, args);
 
-    XBT_INFO("%s ---%s--> %s", p->src.c_str(), p->op_string.c_str(), name.c_str());
-
-    nm->send(p, name);
+    nm->send(p, dst);
 }
 
 node_name AsynchronousAggregator::wait_local_model()
@@ -77,14 +74,15 @@ node_name AsynchronousAggregator::wait_local_model()
     // Note that here we don't check that the local models come from different trainers
     while (cond) {
         p = nm->get();
-        XBT_INFO("%s <--%s--- %s", nm->get_my_node_name().c_str(), p->op_string.c_str(), p->src.c_str());
 
         if (p->op == Packet::Operation::SEND_LOCAL_MODEL)
         {
             res = p->src;
             cond = false;
         }
-        p->decr_ref_count();
+
+        delete p;
+        // p->decr_ref_count();
     }    
 
     return res;
@@ -95,9 +93,7 @@ void AsynchronousAggregator::send_kills()
     auto nm = this->get_network_manager();
     Packet *p;
 
-    p = new Packet(Packet::Operation::KILL_TRAINER, nm->get_my_node_name());
-
-    XBT_INFO("%s ---%s--> *TRAINERS", p->src.c_str(), p->op_string.c_str());
+    p = new Packet(Packet::Operation::KILL_TRAINER, this->get_network_manager()->get_my_node_name(), "BROADCAST");
 
     nm->broadcast(p, Filters::trainers);
 }

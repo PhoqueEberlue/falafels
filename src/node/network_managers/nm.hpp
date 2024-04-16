@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <simgrid/forward.h>
 #include <simgrid/s4u/Mailbox.hpp>
 #include <vector>
 #include "../../protocol.hpp"
@@ -16,17 +17,20 @@ protected:
     simgrid::s4u::Mailbox *mailbox;
     std::vector<NodeInfo*> *bootstrap_nodes;
     node_name my_node_name;
+    NodeRole my_node_role;
 
 public:
     NetworkManager(){}
-    void send(Packet*, node_name);
-    bool send_timeout(Packet*, node_name, uint64_t);
-    Packet *get();
+    void send(Packet*, node_name dst);
+    bool send(Packet*, node_name dst, uint64_t time_out);
+    simgrid::s4u::CommPtr send_async(Packet*, node_name);
 
     virtual ~NetworkManager(){}
+    virtual Packet *get() = 0;
     virtual uint16_t broadcast(Packet*, FilterNode) = 0;
-    virtual uint16_t broadcast_timeout(Packet*, FilterNode, uint64_t) = 0;
+    virtual uint16_t broadcast(Packet*, FilterNode, uint64_t time_out) = 0;
     virtual void set_bootstrap_nodes(std::vector<NodeInfo*> *nodes) = 0;
+    virtual void wait_last_comms() = 0;
 
     std::vector<NodeInfo*> *get_bootstrap_nodes() { return this->bootstrap_nodes; }
     node_name get_my_node_name() { return this->my_node_name; }

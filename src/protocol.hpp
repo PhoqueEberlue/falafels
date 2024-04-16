@@ -8,6 +8,7 @@
 #include "constants.hpp"
 
 typedef std::string node_name;
+typedef uint64_t packet_id;
 
 enum class NodeRole
 {
@@ -33,24 +34,38 @@ public:
         KILL_TRAINER,
     } op;
 
-    const node_name src;
+    node_name src;
+    node_name dst;
+
+    const node_name original_src;
+    const node_name final_dst;
+
+    /* Unique packet identifier */
+    packet_id id = 0;
 
     /** 
      * Additionnal arguments passed as a pointer. This is unrealistic for a real distributed use case.
      * That's why sizeof() shouldn't be used to compute the size of the Packet. Instead use compute_packet_size().
      */
-    const std::unordered_map<std::string, std::string> *args = nullptr;
+    std::unordered_map<std::string, std::string> *args = nullptr;
     
     std::string op_string;
 
-    Packet(Operation op, node_name src) : op(op), src(src)
+    Packet(Operation op, node_name src, node_name dst) : op(op), original_src(src), final_dst(dst)
     { 
         this->op_string = operation_to_string(this->op);
+        this->src = this->original_src;
+        this->id = this->total_packet_number;
+        this->total_packet_number += 1;
     }
 
-    Packet(Operation op, node_name src, std::unordered_map<std::string, std::string> *args) : op(op), src(src), args(args)
+    Packet(Operation op, node_name src, node_name dst, std::unordered_map<std::string, std::string> *args) : op(op), original_src(src), final_dst(dst), args(args)
     {
         this->op_string = operation_to_string(this->op);
+        this->src = this->original_src;
+        this->dst = this->final_dst;
+        this->id = this->total_packet_number;
+        this->total_packet_number += 1;
     }
 
     void incr_ref_count();
@@ -58,15 +73,21 @@ public:
 
     uint64_t get_packet_size();
 
+    Packet *clone();
+
+    // Make the destructor private so we have to call decr_ref_count instead. NOTE: temporary disabled.
+    ~Packet();
 private:
     static std::string operation_to_string(Packet::Operation op);
+
+    // Use to generate new packet ids
+    static inline packet_id total_packet_number = 0;
+
     uint64_t packet_size = 0;
 
     // Counting the number of references to this object, by default at 1 when instanciated.
     uint16_t ref_count = 1;
 
-    // Make the destructor private so we have to call decr_ref_count instead
-    ~Packet();
 };
 
 #endif // !FALAFELS_PROTOCOL_HPP

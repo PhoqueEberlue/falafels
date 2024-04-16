@@ -51,20 +51,21 @@ std::unordered_map<std::string, std::string> *parse_arguments(xml_object_range<x
  * @param name Name of the Node that will be associated to this network manager.
  * @return A pointer to the created NetworkManager.
  */
-NetworkManager *create_network_manager(xml_node *network_manager_elem, node_name name)
+NetworkManager *create_network_manager(xml_node *network_manager_elem, node_name name, NodeRole role, std::string topology)
 {
     NetworkManager *network_manager;
 
-    auto nm_type = network_manager_elem->attribute("type").as_string();
+    // auto nm_type = network_manager_elem->attribute("type").as_string();
+    // for now, topology of the cluster implies the NM type
+    auto nm_type = topology.c_str();
 
     if (strcmp(nm_type, "centralized") == 0)
     {
-        network_manager = new CentralizedNetworkManager(name);
+        network_manager = new CentralizedNetworkManager(name, role);
     }
-    else if (strcmp(nm_type, "decentralized") == 0)
+    else if (strcmp(nm_type, "ring") == 0)
     {
-        // TODO
-        // network_manager = new DecentralizedNetworkManager(name);
+        network_manager = new RingNetworkManager(name, role);
     }
 
     XBT_INFO("With %s network manager", nm_type);
@@ -133,7 +134,7 @@ Role *create_role(xml_node *role_elem)
  * @param name The name of the current node.
  * @return A pointer to the created Node.
  */
-Node *create_node(xml_node *node_elem, node_name name)
+Node *create_node(xml_node *node_elem, node_name name, std::string topology)
 {
     XBT_INFO("------------------------------");
     XBT_INFO("Creating node: %s", name.c_str());
@@ -142,7 +143,7 @@ Node *create_node(xml_node *node_elem, node_name name)
     Role *role = create_role(&role_elem);
 
     xml_node network_manager_elem = role_elem.next_sibling(); 
-    NetworkManager *network_manager = create_network_manager(&network_manager_elem, name);
+    NetworkManager *network_manager = create_network_manager(&network_manager_elem, name, role->get_role_type(), topology);
 
     // Returning new falafels node
     return new Node(role, network_manager);
@@ -157,11 +158,13 @@ void create_nodes(std::unordered_map<node_name, Node*> *nodes_map, xml_node *nod
 {
     XBT_INFO("Creating falafels nodes...");
 
+    std::string topology = nodes_elem->attribute("topology").as_string();
+
     // Loop through each (xml) node of the document to instanciate (simulated) nodes
     for (xml_node node_elem: nodes_elem->children("node"))
     {
         node_name name = node_elem.attribute("name").as_string();
-        Node *node     = create_node(&node_elem, name);
+        Node *node     = create_node(&node_elem, name, topology);
 
         nodes_map->insert({name, node});
     }

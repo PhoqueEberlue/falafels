@@ -1,6 +1,7 @@
 #include "protocol.hpp"
 #include <string>
 #include <xbt/asserts.h>
+#include <xbt/log.h>
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_falafels_protocol, "Messages specific for this example");
 
@@ -33,11 +34,15 @@ uint64_t Packet::get_packet_size()
     return this->packet_size;
 }
 
+// /!\ WARNING DEPRECATED /!\
+// For now we copy every packet and sharing common packets pointers with several nodes is not possible
 void Packet::incr_ref_count()
 { 
     this->ref_count += 1; 
 } 
 
+// /!\ WARNING DEPRECATED /!\
+// For now we copy every packet and sharing common packets pointers with several nodes is not possible
 void Packet::decr_ref_count()
 {
     this->ref_count -= 1;
@@ -66,6 +71,34 @@ std::string Packet::operation_to_string(Packet::Operation op)
         case Packet::Operation::KILL_TRAINER:
             return "\x1B[31mKILL_TRAINER\033[0m";
     }
+}
+
+/**
+ * WARNING WE DO NOT COPY THE POINTED VALUES YET
+ */
+Packet *Packet::clone()
+{
+    Packet *res;
+
+    if (this->args)
+    {
+        auto args_copy = new std::unordered_map<std::string, std::string>(*this->args);
+        res = new Packet(this->op, this->original_src, this->final_dst, args_copy);
+    }
+    else 
+    {
+        res = new Packet(this->op, this->original_src, this->final_dst);
+    }
+
+    // Decrement the total packet number because a clone isn't considered as a new packet
+    Packet::total_packet_number -= 1;
+
+    // Copy the packet id to the new one
+    res->id = this->id;
+    res->src = this->src;
+    res->dst = this->dst;
+
+    return res;
 }
 
 Packet::~Packet()

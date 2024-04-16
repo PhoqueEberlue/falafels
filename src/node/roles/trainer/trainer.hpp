@@ -10,7 +10,7 @@ class Trainer : public Role
 {
 private:
     void train(uint8_t number_local_epochs);
-    void send_local_model(node_name dest);
+    void send_local_model(node_name dst, node_name final_dst);
 public:
     Trainer(std::unordered_map<std::string, std::string> *args);
     void run();

@@ -20,20 +20,18 @@ void Trainer::train(uint8_t number_local_epochs)
     XBT_INFO("Starting local training with flops value per epoch: %f", flops);
     for (int i = 0; i < number_local_epochs; i++)
     {
-        XBT_INFO("Epoch %i ====> ...", i);
+        // XBT_INFO("Epoch %i ====> ...", i);
         simgrid::s4u::this_actor::execute(flops);
     }
 }
 
-void Trainer::send_local_model(node_name dest)
+void Trainer::send_local_model(node_name dst, node_name final_dst)
 {
     auto nm = this->get_network_manager();
 
-    Packet *p = new Packet(Packet::Operation::SEND_LOCAL_MODEL, nm->get_my_node_name());
+    Packet *p = new Packet(Packet::Operation::SEND_LOCAL_MODEL, this->get_network_manager()->get_my_node_name(), final_dst);
 
-    XBT_INFO("%s ---%s--> %s", nm->get_my_node_name().c_str(), p->op_string.c_str(), dest.c_str());
-
-    nm->send_timeout(p, dest, 10);
+    nm->send(p, dst, 10);
 
     // Delete our own reference of the packet
     p->decr_ref_count();
@@ -48,7 +46,6 @@ void Trainer::run()
     while (run)
     {
         p = nm->get();
-        XBT_INFO("%s <--%s--- %s", nm->get_my_node_name().c_str(), p->op_string.c_str(), p->src.c_str());
 
         switch (p->op)
         {
@@ -58,20 +55,31 @@ void Trainer::run()
                     uint8_t number_local_epochs = (uint8_t) atoi(t.c_str());
 
                     node_name source = p->src;
-                    p->decr_ref_count();
+                    node_name original_src = p->original_src;
+                    // p->decr_ref_count();
 
                     this->train(number_local_epochs);
-                    this->send_local_model(source);
+                    this->send_local_model(source, original_src);
                     break;
                 }
             case Packet::Operation::KILL_TRAINER:
                 {
                     run = false;
-                    p->decr_ref_count();
+                    // p->decr_ref_count();
+                    break;
+                }
+            case Packet::Operation::SEND_LOCAL_MODEL:
+                {
+                    // p->decr_ref_count();
+                    // Ignore, the packet is automatically redirected when using a decentralized nm i.e. ring nm.
                     break;
                 }
         }
+
+        delete p;
     }
+
+    nm->wait_last_comms();
 
     XBT_INFO("Exiting");
     simgrid::s4u::this_actor::exit();

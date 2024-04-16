@@ -8,9 +8,10 @@
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_centralized_nm, "Messages specific for this example");
 
-CentralizedNetworkManager::CentralizedNetworkManager(node_name name)
+CentralizedNetworkManager::CentralizedNetworkManager(node_name name, NodeRole role)
 {
     this->my_node_name = name;
+    this->my_node_role = role;
     // Initializing our mailbox
     this->mailbox = simgrid::s4u::Mailbox::by_name(name);
 }
@@ -33,12 +34,12 @@ uint16_t CentralizedNetworkManager::broadcast(Packet *packet, FilterNode filter)
     }
 
     // Delete our own reference of the packet
-    packet->decr_ref_count();
+    // packet->decr_ref_count();
 
     return this->get_bootstrap_nodes()->size();
 }
 
-uint16_t CentralizedNetworkManager::broadcast_timeout(Packet *packet, FilterNode filter, uint64_t timeout)
+uint16_t CentralizedNetworkManager::broadcast(Packet *packet, FilterNode filter, uint64_t timeout)
 {
     uint16_t nb_sent = 0;
 
@@ -46,16 +47,20 @@ uint16_t CentralizedNetworkManager::broadcast_timeout(Packet *packet, FilterNode
     {
         if (filter(node_info))
         {
-            // Would be better with shared pointers... Because right now each receiver will try to free the memory,
-            // so we have to make duplicates
-            if (send_timeout(packet, node_info->name, timeout))
+            if (send(packet, node_info->name, timeout))
                 nb_sent++;
         }
     }
 
     // Delete our own reference of the packet
-    packet->decr_ref_count();
+    // packet->decr_ref_count();
 
     return nb_sent;
 }
 
+Packet *CentralizedNetworkManager::get()
+{
+    auto p = this->mailbox->get<Packet>();
+    XBT_INFO("%s <--%s--- %s", this->my_node_name.c_str(), p->op_string.c_str(), p->src.c_str());
+    return p;
+}

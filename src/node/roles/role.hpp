@@ -25,13 +25,13 @@ public:
      * Sets the NetworkManager of the current Role.
      * @param nm NetworkManager
      */
-    void set_network_manager(NetworkManager *nm) { network_manager = nm; }
+    void set_network_manager(NetworkManager *nm) { this->network_manager = nm; }
 
     /**
      * Get the NetworkManager of the current Role.
      * @return nm NetworkManager
      */
-    NetworkManager *get_network_manager() { return network_manager; }
+    NetworkManager *get_network_manager() { return this->network_manager; }
 };
 
 #endif // !FALAFELS_ROLE_HPP

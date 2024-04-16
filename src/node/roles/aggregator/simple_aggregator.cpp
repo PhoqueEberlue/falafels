@@ -42,9 +42,7 @@ void SimpleAggregator::send_global_model()
     args->insert({ "number_local_epochs", std::to_string(this->number_local_epochs) });
 
     // Sadly we cannot use smart pointers in mailbox->put because it takes a void* as parameter...
-    p = new Packet(Packet::Operation::SEND_GLOBAL_MODEL, nm->get_my_node_name(), args);
-
-    XBT_INFO("%s -> *", p->op_string.c_str());
+    p = new Packet(Packet::Operation::SEND_GLOBAL_MODEL, this->get_network_manager()->get_my_node_name(), "BROADCAST", args);
 
     uint16_t nb_sent = nm->broadcast(p, Filters::trainers);
 
@@ -61,7 +59,6 @@ uint64_t SimpleAggregator::wait_local_models()
     while (number_local_models < this->number_client_training)
     {
         p = nm->get();
-        XBT_INFO("%s <- %s", nm->get_my_node_name().c_str(), p->op_string.c_str());
 
         // Note that here we don't check that the local models come from different trainers
         if (p->op == Packet::Operation::SEND_LOCAL_MODEL)
@@ -81,9 +78,7 @@ void SimpleAggregator::send_kills()
     auto nm = this->get_network_manager();
     Packet *p;
 
-    p = new Packet(Packet::Operation::KILL_TRAINER, nm->get_my_node_name());
-
-    XBT_INFO("%s -> *", p->op_string.c_str());
+    p = new Packet(Packet::Operation::KILL_TRAINER, this->get_network_manager()->get_my_node_name(), "BROADCAST");
 
     nm->broadcast(p, Filters::trainers);
 }
