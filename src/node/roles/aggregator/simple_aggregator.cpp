@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <simgrid/s4u/Engine.hpp>
 #include <xbt/log.h>
 
@@ -34,24 +35,18 @@ void SimpleAggregator::run()
 /* Sends the global model to every start_nodes */
 void SimpleAggregator::send_global_model()
 {
-    this->number_client_training = 0;
     auto nm = this->get_network_manager();
     Packet *p;
 
-    for (std::string node_name: nm->get_node_names_filter(trainer_filter))
-    {   
-        auto args = new std::unordered_map<std::string, std::string>();
-        args->insert({ "number_local_epochs", std::to_string(this->number_local_epochs) });
+    auto args = new std::unordered_map<std::string, std::string>();
+    args->insert({ "number_local_epochs", std::to_string(this->number_local_epochs) });
 
-        // Sadly we cannot use smart pointers in mailbox->put because it takes a void* as parameter...
-        p = new Packet { .op=Packet::Operation::SEND_GLOBAL_MODEL, .src=nm->get_my_node_name(), .args=args };
+    // Sadly we cannot use smart pointers in mailbox->put because it takes a void* as parameter...
+    p = new Packet(Packet::Operation::SEND_GLOBAL_MODEL, this->get_network_manager()->get_my_node_name(), "BROADCAST", args);
 
-        XBT_INFO("%s -> %s", operation_to_str(p->op), node_name.c_str());
+    uint16_t nb_sent = nm->broadcast(p, Filters::trainers);
 
-        nm->put(p, node_name);
-
-        this->number_client_training += 1;
-    }
+    this->number_client_training = nb_sent;
 }
 
 uint64_t SimpleAggregator::wait_local_models()
@@ -64,7 +59,6 @@ uint64_t SimpleAggregator::wait_local_models()
     while (number_local_models < this->number_client_training)
     {
         p = nm->get();
-        XBT_INFO("%s <- %s", nm->get_my_node_name().c_str(), operation_to_str(p->op));
 
         // Note that here we don't check that the local models come from different trainers
         if (p->op == Packet::Operation::SEND_LOCAL_MODEL)
@@ -72,6 +66,7 @@ uint64_t SimpleAggregator::wait_local_models()
             number_local_models += 1;
         }
     }
+    // TODO: add decrement call somewhere
     
     XBT_INFO("Retrieved %lu local models out of %lu", number_local_models, this->number_client_training);
 
@@ -83,12 +78,7 @@ void SimpleAggregator::send_kills()
     auto nm = this->get_network_manager();
     Packet *p;
 
-    for (auto node_name: nm->get_node_names_filter(trainer_filter))
-    {
-        p = new Packet { .op=Packet::Operation::KILL_TRAINER, .src=nm->get_my_node_name() };
+    p = new Packet(Packet::Operation::KILL_TRAINER, this->get_network_manager()->get_my_node_name(), "BROADCAST");
 
-        XBT_INFO("%s -> %s", operation_to_str(p->op), node_name.c_str());
-
-        nm->put(p, node_name);
-    }
+    nm->broadcast(p, Filters::trainers);
 }

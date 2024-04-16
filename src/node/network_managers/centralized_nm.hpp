@@ -3,20 +3,19 @@
 #define FALAFELS_CENTRALIZED_NM_HPP
 
 #include "nm.hpp"
+#include <cstdint>
 
 class CentralizedNetworkManager : public NetworkManager 
 {
 private:
     ~CentralizedNetworkManager();
-    void put(Packet*, node_name);
-    bool put_timeout(Packet *packet, node_name name, uint64_t timeout);
-    Packet *get();
-
-
-    std::vector<node_name> get_node_names_filter(std::function<bool(NodeInfo*)>);
 public:
-    CentralizedNetworkManager(node_name);
-    void run();
+    CentralizedNetworkManager(node_name, NodeRole);
+    Packet *get();
+    uint16_t broadcast(Packet *packet, FilterNode filter);
+    uint16_t broadcast(Packet *packet, FilterNode filter, uint64_t timeout);
+    void set_bootstrap_nodes(std::vector<NodeInfo*> *nodes);
+    void wait_last_comms() {}
 };
 
 #endif // !FALAFELS_CENTRALIZED_NM_HPP

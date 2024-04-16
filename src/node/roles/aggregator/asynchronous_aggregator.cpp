@@ -1,19 +1,14 @@
 #include <simgrid/s4u/Engine.hpp>
 #include <simgrid/s4u/Mailbox.hpp>
 #include <unordered_map>
-#include <vector>
 #include <xbt/log.h>
 
 #include "asynchronous_aggregator.hpp"
+#include "../../network_managers/nm.hpp"
 #include "../../../protocol.hpp"
 #include "../../../utils/utils.hpp"
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_asynchronous_aggregator, "Messages specific for this example");
-
-static bool trainer_filter(NodeInfo *node_info)
-{
-    return node_info->role == NodeRole::Trainer;
-}
 
 AsynchronousAggregator::AsynchronousAggregator(std::unordered_map<std::string, std::string> *args)
 {
@@ -33,82 +28,64 @@ AsynchronousAggregator::AsynchronousAggregator(std::unordered_map<std::string, s
 
 void AsynchronousAggregator::run()
 {
-    // At start we suppose that every trainer nodes are available
-    available_trainers = this->get_network_manager()->get_node_names_filter(trainer_filter);
-    total_number_clients = available_trainers.size();
+    // At first send the global model to everyone
+    this->broadcast_global_model();
 
     while (simgrid::s4u::Engine::get_instance()->get_clock() < 2)
     {
-        this->send_global_model_to_available_trainers();
-        uint64_t number_local_models = this->wait_local_models();
-        this->aggregate(number_local_models);
-    } 
+        node_name src = this->wait_local_model();
+        this->aggregate(1);
+        this->send_global_model(src);
+    }
 
     this->send_kills();
 
     simgrid::s4u::this_actor::exit();
 }
 
-/* Sends the global model to every start_nodes */
-void AsynchronousAggregator::send_global_model_to_available_trainers()
+void AsynchronousAggregator::broadcast_global_model()
 {
     auto nm = this->get_network_manager();
-    Packet *p;
+    auto args = new std::unordered_map<std::string, std::string>();
+    args->insert({ "number_local_epochs", std::to_string(this->number_local_epochs) });
+    Packet *p = new Packet(Packet::Operation::SEND_GLOBAL_MODEL, this->get_network_manager()->get_my_node_name(), "BROADCAST", args);
 
-    for (std::string node_name: this->available_trainers)
-    {   
-        auto args = new std::unordered_map<std::string, std::string>();
-        args->insert({ "number_local_epochs", std::to_string(this->number_local_epochs) });
-        p = new Packet { .op=Packet::Operation::SEND_GLOBAL_MODEL, .src=nm->get_my_node_name(), .args=args };
-
-        XBT_INFO("%s ---%s--> %s", p->src.c_str(), operation_to_str(p->op), node_name.c_str());
-
-        nm->put(p, node_name);
-    }
-
-    // The trainers are not available anymore, clearing them
-    this->available_trainers.clear();
+    nm->broadcast(p, Filters::trainers);
 }
 
-uint64_t AsynchronousAggregator::wait_local_models()
+/* Sends the global model to every start_nodes */
+void AsynchronousAggregator::send_global_model(node_name dst)
 {
-    uint64_t number_local_models = 0;
     auto nm = this->get_network_manager();
+    auto args = new std::unordered_map<std::string, std::string>();
+    args->insert({ "number_local_epochs", std::to_string(this->number_local_epochs) });
+    Packet *p = new Packet(Packet::Operation::SEND_GLOBAL_MODEL, this->get_network_manager()->get_my_node_name(), dst, args);
+
+    nm->send(p, dst);
+}
+
+node_name AsynchronousAggregator::wait_local_model()
+{
     Packet *p;
+    node_name res;
+    auto nm = this->get_network_manager();
+    bool cond = true;
 
-    while (true)
-    {
-        // When proportion threshold is set to 0, wait for at least one model
-        if (this->proportion_threshold == 0.0)
-        {
-            if (number_local_models == 1)
-                break;
-
-        } 
-        // Else wait for the proportion threshold to be met
-        else 
-        {
-            if (number_local_models >= this->total_number_clients * this->proportion_threshold)
-                break;
-        }
-
+    // Note that here we don't check that the local models come from different trainers
+    while (cond) {
         p = nm->get();
-        XBT_INFO("%s <--%s--- %s", nm->get_my_node_name().c_str(), operation_to_str(p->op), p->src.c_str());
 
-        // Note that here we don't check that the local models come from different trainers
         if (p->op == Packet::Operation::SEND_LOCAL_MODEL)
         {
-            // Add the sender to the available trainers list
-            this->available_trainers.push_back(p->src);
-            number_local_models += 1;
+            res = p->src;
+            cond = false;
         }
-        
-        delete p;
-    }
-    
-    XBT_INFO("Enough local models: %lu out of %i with proportion threshold of %f", number_local_models, this->total_number_clients, this->proportion_threshold);
 
-    return number_local_models;
+        delete p;
+        // p->decr_ref_count();
+    }    
+
+    return res;
 }
 
 void AsynchronousAggregator::send_kills()
@@ -116,12 +93,7 @@ void AsynchronousAggregator::send_kills()
     auto nm = this->get_network_manager();
     Packet *p;
 
-    for (auto node_name: nm->get_node_names_filter(trainer_filter))
-    {
-        p = new Packet { .op=Packet::Operation::KILL_TRAINER, .src=nm->get_my_node_name() };
+    p = new Packet(Packet::Operation::KILL_TRAINER, this->get_network_manager()->get_my_node_name(), "BROADCAST");
 
-        XBT_INFO("%s ---%s--> %s", p->src.c_str(), operation_to_str(p->op), node_name.c_str());
-
-        nm->put(p, node_name);
-    }
+    nm->broadcast(p, Filters::trainers);
 }

@@ -8,6 +8,7 @@
 #include "constants.hpp"
 
 typedef std::string node_name;
+typedef uint64_t packet_id;
 
 enum class NodeRole
 {
@@ -23,69 +24,70 @@ struct NodeInfo
     NodeRole role;
 };
 
-struct Packet 
+class Packet 
 {
-    enum Operation
+public:
+    const enum Operation
     { 
         SEND_GLOBAL_MODEL, 
         SEND_LOCAL_MODEL,
         KILL_TRAINER,
     } op;
 
-    const std::string src;
+    node_name src;
+    node_name dst;
+
+    const node_name original_src;
+    const node_name final_dst;
+
+    /* Unique packet identifier */
+    packet_id id = 0;
 
     /** 
      * Additionnal arguments passed as a pointer. This is unrealistic for a real distributed use case.
      * That's why sizeof() shouldn't be used to compute the size of the Packet. Instead use compute_packet_size().
      */
-    const std::unordered_map<std::string, std::string> *args = nullptr;
-};
+    std::unordered_map<std::string, std::string> *args = nullptr;
+    
+    std::string op_string;
 
+    Packet(Operation op, node_name src, node_name dst) : op(op), original_src(src), final_dst(dst)
+    { 
+        this->op_string = operation_to_string(this->op);
+        this->src = this->original_src;
+        this->id = this->total_packet_number;
+        this->total_packet_number += 1;
+    }
 
-/**
- * Compute the simulated size of a packet:
- * - The "real" memory used in the structure
- * - The simulated memory, such as MODEL_SIZE_BYTES
- *
- * @param p Packet pointer
- * @return The simulated size in bytes.
- */
-static const uint64_t compute_packet_size(Packet *p)
-{
-    uint64_t result = sizeof(Packet::Operation) + p->src.size();
-
-    // Add the model size if its a send model operation
-    if (p->op == Packet::SEND_GLOBAL_MODEL || p->op == Packet::SEND_LOCAL_MODEL)
-        result += Constants::MODEL_SIZE_BYTES;
-
-    if (p->args)
+    Packet(Operation op, node_name src, node_name dst, std::unordered_map<std::string, std::string> *args) : op(op), original_src(src), final_dst(dst), args(args)
     {
-        for (const auto&[key, value]: *p->args)
-        {
-            result += key.size() + value.size();
-        }
+        this->op_string = operation_to_string(this->op);
+        this->src = this->original_src;
+        this->dst = this->final_dst;
+        this->id = this->total_packet_number;
+        this->total_packet_number += 1;
     }
 
-    return result;
-}
+    void incr_ref_count();
+    void decr_ref_count();
 
+    uint64_t get_packet_size();
 
-/**
- * Format an operation as text with nice colors
- *
- * @param op the operation
- * @return formated text;
- */
-static const char* operation_to_str(Packet::Operation op)
-{
-    switch (op) {
-        case Packet::Operation::SEND_GLOBAL_MODEL:
-            return "\x1B[34mSEND_GLOBAL_MODEL\033[0m";
-        case Packet::Operation::SEND_LOCAL_MODEL:
-            return "\x1B[32mSEND_LOCAL_MODEL\033[0m";
-        case Packet::Operation::KILL_TRAINER:
-            return "\x1B[31mKILL_TRAINER\033[0m";
-    }
-}
+    Packet *clone();
+
+    // Make the destructor private so we have to call decr_ref_count instead. NOTE: temporary disabled.
+    ~Packet();
+private:
+    static std::string operation_to_string(Packet::Operation op);
+
+    // Use to generate new packet ids
+    static inline packet_id total_packet_number = 0;
+
+    uint64_t packet_size = 0;
+
+    // Counting the number of references to this object, by default at 1 when instanciated.
+    uint16_t ref_count = 1;
+
+};
 
 #endif // !FALAFELS_PROTOCOL_HPP
