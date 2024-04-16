@@ -11,10 +11,11 @@
 #include "node/roles/aggregator/simple_aggregator.hpp"
 #include "node/roles/trainer/trainer.hpp"
 #include "node/roles/proxy/proxy.hpp"
-#include "node/network_managers/centralized_nm.hpp"
+#include "node/network_managers/star_nm.hpp"
 #include "node/network_managers/ring_nm.hpp"
 #include "config_loader.hpp"
 #include "constants.hpp"
+#include "protocol.hpp"
 #include "utils/utils.hpp"
  
  
@@ -51,7 +52,7 @@ std::unordered_map<std::string, std::string> *parse_arguments(xml_object_range<x
  * @param name Name of the Node that will be associated to this network manager.
  * @return A pointer to the created NetworkManager.
  */
-NetworkManager *create_network_manager(xml_node *network_manager_elem, node_name name, NodeRole role, std::string topology)
+NetworkManager *create_network_manager(xml_node *network_manager_elem, NodeInfo *node_info, std::string topology)
 {
     NetworkManager *network_manager;
 
@@ -59,13 +60,13 @@ NetworkManager *create_network_manager(xml_node *network_manager_elem, node_name
     // for now, topology of the cluster implies the NM type
     auto nm_type = topology.c_str();
 
-    if (strcmp(nm_type, "centralized") == 0)
+    if (strcmp(nm_type, "star") == 0)
     {
-        network_manager = new CentralizedNetworkManager(name, role);
+        network_manager = new StarNetworkManager(node_info);
     }
     else if (strcmp(nm_type, "ring") == 0)
     {
-        network_manager = new RingNetworkManager(name, role);
+        network_manager = new RingNetworkManager(node_info);
     }
 
     XBT_INFO("With %s network manager", nm_type);
@@ -142,8 +143,10 @@ Node *create_node(xml_node *node_elem, node_name name, std::string topology)
     xml_node role_elem = node_elem->first_child();
     Role *role = create_role(&role_elem);
 
+    NodeInfo *node_info = new NodeInfo { .name = name, .role=role->get_role_type() };
+
     xml_node network_manager_elem = role_elem.next_sibling(); 
-    NetworkManager *network_manager = create_network_manager(&network_manager_elem, name, role->get_role_type(), topology);
+    NetworkManager *network_manager = create_network_manager(&network_manager_elem, node_info, topology);
 
     // Returning new falafels node
     return new Node(role, network_manager);

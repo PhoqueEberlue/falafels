@@ -4,6 +4,7 @@
 
 #include "nm.hpp"
 #include <cstdint>
+#include <memory>
 #include <simgrid/forward.h>
 #include <simgrid/s4u/ActivitySet.hpp>
 #include <vector>
@@ -19,8 +20,11 @@ private:
 
     void redirect(Packet*);
 public:
-    RingNetworkManager(node_name, NodeRole);
-    Packet *get();
+    RingNetworkManager(NodeInfo*);
+    void handle_registration_requests();
+    void send_registration_request();
+    std::unique_ptr<Packet> get();
+    std::unique_ptr<Packet> get(double timeout);
     uint16_t broadcast(Packet* packet, FilterNode filter);
     uint16_t broadcast(Packet *packet, FilterNode filter, uint64_t timeout);
     void set_bootstrap_nodes(std::vector<NodeInfo*> *nodes);

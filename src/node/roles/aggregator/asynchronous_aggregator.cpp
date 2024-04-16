@@ -28,10 +28,15 @@ AsynchronousAggregator::AsynchronousAggregator(std::unordered_map<std::string, s
 
 void AsynchronousAggregator::run()
 {
-    // At first send the global model to everyone
+    // Wait for the trainers to register.
+    this->get_network_manager()->handle_registration_requests();
+
+    // Send the global model to everyone
     this->broadcast_global_model();
 
-    while (simgrid::s4u::Engine::get_instance()->get_clock() < 2)
+    auto current_sim_time = simgrid::s4u::Engine::get_instance()->get_clock();
+
+    while (simgrid::s4u::Engine::get_instance()->get_clock() < current_sim_time + Constants::DURATION_TRAINING_PHASE)
     {
         node_name src = this->wait_local_model();
         this->aggregate(1);
@@ -42,6 +47,7 @@ void AsynchronousAggregator::run()
 
     simgrid::s4u::this_actor::exit();
 }
+
 
 void AsynchronousAggregator::broadcast_global_model()
 {
@@ -66,7 +72,7 @@ void AsynchronousAggregator::send_global_model(node_name dst)
 
 node_name AsynchronousAggregator::wait_local_model()
 {
-    Packet *p;
+    std::unique_ptr<Packet> p;
     node_name res;
     auto nm = this->get_network_manager();
     bool cond = true;
@@ -80,9 +86,6 @@ node_name AsynchronousAggregator::wait_local_model()
             res = p->src;
             cond = false;
         }
-
-        delete p;
-        // p->decr_ref_count();
     }    
 
     return res;

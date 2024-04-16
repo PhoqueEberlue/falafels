@@ -1,6 +1,7 @@
 #include "../../../constants.hpp"
 #include <cstdint>
 #include <cstdlib>
+#include <memory>
 #include <unordered_map>
 #include <xbt/log.h>
 #include "trainer.hpp"
@@ -17,7 +18,7 @@ void Trainer::train(uint8_t number_local_epochs)
 {
     double flops = Constants::LOCAL_MODEL_TRAINING_FLOPS;
 
-    XBT_INFO("Starting local training with flops value per epoch: %f", flops);
+    XBT_INFO("Starting local training with flops value `%f` and %i epochs", flops, number_local_epochs);
     for (int i = 0; i < number_local_epochs; i++)
     {
         // XBT_INFO("Epoch %i ====> ...", i);
@@ -32,16 +33,16 @@ void Trainer::send_local_model(node_name dst, node_name final_dst)
     Packet *p = new Packet(Packet::Operation::SEND_LOCAL_MODEL, this->get_network_manager()->get_my_node_name(), final_dst);
 
     nm->send(p, dst, 10);
-
-    // Delete our own reference of the packet
-    p->decr_ref_count();
 }
 
 void Trainer::run()
 {
     auto nm = this->get_network_manager();
-    Packet *p;
+    std::unique_ptr<Packet> p;
     bool run = true;
+
+    // Wait for the current node to be registered by the Aggregator
+    this->get_network_manager()->send_registration_request();
 
     while (run)
     {
@@ -56,27 +57,23 @@ void Trainer::run()
 
                     node_name source = p->src;
                     node_name original_src = p->original_src;
-                    // p->decr_ref_count();
 
                     this->train(number_local_epochs);
+
                     this->send_local_model(source, original_src);
                     break;
                 }
             case Packet::Operation::KILL_TRAINER:
                 {
                     run = false;
-                    // p->decr_ref_count();
                     break;
                 }
             case Packet::Operation::SEND_LOCAL_MODEL:
                 {
-                    // p->decr_ref_count();
                     // Ignore, the packet is automatically redirected when using a decentralized nm i.e. ring nm.
                     break;
                 }
         }
-
-        delete p;
     }
 
     nm->wait_last_comms();

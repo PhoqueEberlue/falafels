@@ -1,4 +1,7 @@
 #include "node.hpp"
+#include <xbt/log.h>
+
+XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_node, "Messages specific for this example");
 
 Node::Node(Role *r, NetworkManager *nm)
 {
@@ -15,7 +18,7 @@ Node::~Node()
 NodeInfo *Node::get_node_info()
 { 
     // Instanciate and return NodeInfo struct
-    return new NodeInfo { .name=this->role->get_network_manager()->get_my_node_name(), .role=this->role->get_role_type() }; 
+    return this->role->get_network_manager()->get_my_node_info();
 }
 
 void Node::set_role(Role *r)

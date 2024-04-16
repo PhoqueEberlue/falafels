@@ -19,6 +19,12 @@ public:
 
     /** Number of flops for training a local model. */
     inline static double LOCAL_MODEL_TRAINING_FLOPS = 1000000.0;
+
+    /** Timeout for the registration phase */
+    inline static double REGISTRATION_TIMEOUT = 2.0;
+
+    /** Duration in seconds for the training phase */
+    inline static double DURATION_TRAINING_PHASE = 10.0;
 };
 
 #endif // !CONSTANTS_HPP

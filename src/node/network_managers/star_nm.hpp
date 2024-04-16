@@ -4,14 +4,19 @@
 
 #include "nm.hpp"
 #include <cstdint>
+#include <vector>
 
-class CentralizedNetworkManager : public NetworkManager 
+class StarNetworkManager : public NetworkManager 
 {
 private:
-    ~CentralizedNetworkManager();
+    ~StarNetworkManager();
+    std::vector<NodeInfo*> connected_nodes;
 public:
-    CentralizedNetworkManager(node_name, NodeRole);
-    Packet *get();
+    StarNetworkManager(NodeInfo*);
+    void handle_registration_requests();
+    void send_registration_request();
+    std::unique_ptr<Packet> get();
+    std::unique_ptr<Packet> get(double timeout);
     uint16_t broadcast(Packet *packet, FilterNode filter);
     uint16_t broadcast(Packet *packet, FilterNode filter, uint64_t timeout);
     void set_bootstrap_nodes(std::vector<NodeInfo*> *nodes);

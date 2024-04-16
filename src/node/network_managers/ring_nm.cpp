@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <memory>
 #include <simgrid/Exception.hpp>
 #include <simgrid/forward.h>
 #include <vector>
@@ -6,16 +7,16 @@
 #include <xbt/ex.h>
 #include <xbt/log.h>
 #include "ring_nm.hpp"
+#include <simgrid/s4u/Engine.hpp>
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_ring_nm, "Messages specific for this example");
 
-RingNetworkManager::RingNetworkManager(node_name name, NodeRole role)
+RingNetworkManager::RingNetworkManager(NodeInfo *node_info)
 {
-    this->my_node_name = name;
-    this->my_node_role = role;
+    this->my_node_info = node_info;
 
     // Initializing our mailbox
-    this->mailbox = simgrid::s4u::Mailbox::by_name(name);
+    this->mailbox = simgrid::s4u::Mailbox::by_name(node_info->name);
 
     auto tmp = new simgrid::s4u::ActivitySet();
     this->pending_comms = simgrid::s4u::ActivitySetPtr(tmp);
@@ -24,11 +25,14 @@ RingNetworkManager::RingNetworkManager(node_name name, NodeRole role)
 
 RingNetworkManager::~RingNetworkManager() {};
 
-void RingNetworkManager::set_bootstrap_nodes(std::vector<NodeInfo*> *nodes)
+void RingNetworkManager::handle_registration_requests()
 {
-    xbt_assert(nodes->size() == 2, "The RingNetworkManager must have at least 2 bootstrap nodes");
-    this->left_node = nodes->at(0);
-    this->right_node = nodes->at(1);
+   
+}
+
+void RingNetworkManager::send_registration_request()
+{
+    
 }
 
 uint16_t RingNetworkManager::broadcast(Packet *packet, FilterNode filter) {
@@ -49,7 +53,7 @@ uint16_t RingNetworkManager::broadcast(Packet *packet, FilterNode filter) {
     }
 
     // Delete our own reference of the packet
-    packet->decr_ref_count();
+    // packet->decr_ref_count();
 
     return res;
 }
@@ -59,7 +63,7 @@ uint16_t RingNetworkManager::broadcast(Packet *packet, FilterNode filter, uint64
     // TODO
 }
 
-Packet *RingNetworkManager::get()
+std::unique_ptr<Packet> RingNetworkManager::get()
 {
     // How can I handle that correctly
     auto completed_one = this->pending_comms->test_any();
@@ -69,18 +73,18 @@ Packet *RingNetworkManager::get()
 
     }
 
-    Packet *p;
+    std::unique_ptr<Packet> p;
     bool cond = true;
 
     while (cond)
     {
-        p = this->mailbox->get<Packet>();
-        XBT_INFO("%s <--%s--- %s", this->my_node_name.c_str(), p->op_string.c_str(), p->src.c_str()); 
+        p = this->mailbox->get_unique<Packet>();
+        XBT_INFO("%s <--%s--- %s", this->get_my_node_name().c_str(), p->op_string.c_str(), p->src.c_str()); 
 
         auto v = this->received_packets;
 
         // Don't redirect packets as an aggregator
-        if (this->my_node_role != NodeRole::Aggregator)
+        if (this->my_node_info->role != NodeRole::Aggregator)
         {
             // if the packet was allready received 
             if(std::find(v.begin(), v.end(), p->id) != v.end()) 
@@ -91,10 +95,10 @@ Packet *RingNetworkManager::get()
             else 
             {
                 // if the packet has broadcast enabled or if dst is not for the current node
-                if (p->final_dst == "BROADCAST" || p->final_dst != this->my_node_name)
+                if (p->final_dst == "BROADCAST" || p->final_dst != this->get_my_node_name())
                 {
-                    // redirect 
-                    this->redirect(p);
+                    // TODO: redirect 
+                    // this->redirect(p);
                 }
 
                 // Add to received packets
@@ -116,7 +120,7 @@ void RingNetworkManager::redirect(Packet *p)
     // Clone the packet because we need to modify the source
     auto new_p = p->clone();
     // Set the new source to the current node name
-    new_p->src = this->my_node_name;
+    new_p->src = this->get_my_node_name();
 
     node_name dst;
     // If the packet comes from our left
@@ -138,4 +142,11 @@ void RingNetworkManager::redirect(Packet *p)
 void RingNetworkManager::wait_last_comms() 
 {
     this->pending_comms->wait_all();
+}
+
+std::unique_ptr<Packet> RingNetworkManager::get(double timeout)
+{
+    auto p = this->mailbox->get_unique<Packet>(timeout);
+    XBT_INFO("%s <--%s--- %s", this->get_my_node_name().c_str(), p->op_string.c_str(), p->src.c_str());
+    return p;
 }

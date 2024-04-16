@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <memory>
 #include <simgrid/s4u/Engine.hpp>
 #include <xbt/log.h>
 
@@ -20,7 +21,12 @@ static bool trainer_filter(NodeInfo *node_info)
 
 void SimpleAggregator::run()
 {
-    while (simgrid::s4u::Engine::get_instance()->get_clock() < 2)
+    // Wait for the trainers to register.
+    this->get_network_manager()->handle_registration_requests();
+
+    auto current_sim_time = simgrid::s4u::Engine::get_instance()->get_clock();
+
+    while (simgrid::s4u::Engine::get_instance()->get_clock() < current_sim_time + Constants::DURATION_TRAINING_PHASE)
     {
         this->send_global_model();
         uint64_t number_local_models = this->wait_local_models();
@@ -31,6 +37,7 @@ void SimpleAggregator::run()
 
     simgrid::s4u::this_actor::exit();
 }
+
 
 /* Sends the global model to every start_nodes */
 void SimpleAggregator::send_global_model()
@@ -53,11 +60,12 @@ uint64_t SimpleAggregator::wait_local_models()
 {
     uint64_t number_local_models = 0;
     auto nm                      = this->get_network_manager();
-    Packet *p;
+    std::unique_ptr<Packet> p;
 
     // While we don't have enough local models
     while (number_local_models < this->number_client_training)
     {
+        XBT_INFO("nb local models: %lu", number_local_models);
         p = nm->get();
 
         // Note that here we don't check that the local models come from different trainers
@@ -66,7 +74,6 @@ uint64_t SimpleAggregator::wait_local_models()
             number_local_models += 1;
         }
     }
-    // TODO: add decrement call somewhere
     
     XBT_INFO("Retrieved %lu local models out of %lu", number_local_models, this->number_client_training);
 
@@ -76,9 +83,7 @@ uint64_t SimpleAggregator::wait_local_models()
 void SimpleAggregator::send_kills()
 {
     auto nm = this->get_network_manager();
-    Packet *p;
-
-    p = new Packet(Packet::Operation::KILL_TRAINER, this->get_network_manager()->get_my_node_name(), "BROADCAST");
+    Packet *p = new Packet(Packet::Operation::KILL_TRAINER, this->get_network_manager()->get_my_node_name(), "BROADCAST");
 
     nm->broadcast(p, Filters::trainers);
 }

@@ -5,6 +5,23 @@
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_falafels_protocol, "Messages specific for this example");
 
+Packet::Packet(Operation op, node_name src, node_name dst) : op(op), original_src(src), final_dst(dst)
+{ 
+    this->op_string = operation_to_string(this->op);
+    this->src = this->original_src;
+    this->id = this->total_packet_number;
+    this->total_packet_number += 1;
+}
+
+Packet::Packet(Operation op, node_name src, node_name dst, std::unordered_map<std::string, std::string> *args) : op(op), original_src(src), final_dst(dst), args(args)
+{
+    this->op_string = operation_to_string(this->op);
+    this->src = this->original_src;
+    this->dst = this->final_dst;
+    this->id = this->total_packet_number;
+    this->total_packet_number += 1;
+}
+
 /**
  * Compute the simulated size of a packet:
  * - The "real" memory used in the structure
@@ -34,28 +51,6 @@ uint64_t Packet::get_packet_size()
     return this->packet_size;
 }
 
-// /!\ WARNING DEPRECATED /!\
-// For now we copy every packet and sharing common packets pointers with several nodes is not possible
-void Packet::incr_ref_count()
-{ 
-    this->ref_count += 1; 
-} 
-
-// /!\ WARNING DEPRECATED /!\
-// For now we copy every packet and sharing common packets pointers with several nodes is not possible
-void Packet::decr_ref_count()
-{
-    this->ref_count -= 1;
-
-    // XBT_INFO("ref count %i", this->ref_count);
-
-    if (this->ref_count == 0)
-    {
-        // XBT_INFO("Deleting packet %s", this->op_string.c_str());
-        delete this;
-    }
-}
-
 /**
  * Format an the operation field as text with nice colors
  *
@@ -70,6 +65,10 @@ std::string Packet::operation_to_string(Packet::Operation op)
             return "\x1B[32mSEND_LOCAL_MODEL\033[0m";
         case Packet::Operation::KILL_TRAINER:
             return "\x1B[31mKILL_TRAINER\033[0m";
+        case Packet::Operation::REGISTRATION_REQUEST:
+            return "\x1B[33mREGISTRATION_REQUEST\033[0m";
+        case Packet::Operation::REGISTRATION_CONFIRMATION:
+            return "\x1B[33mREGISTRATION_CONFIRMATION\033[0m";
     }
 }
 
@@ -97,6 +96,7 @@ Packet *Packet::clone()
     res->id = this->id;
     res->src = this->src;
     res->dst = this->dst;
+    res->node_info = this->node_info;
 
     return res;
 }
