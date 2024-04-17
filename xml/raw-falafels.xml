@@ -1,23 +1,59 @@
 <?xml version='1.0'?>
+<!-- 
+The "raw" file is used to generate Falafels scenario.
+This includes generating:
+- a "fried" file which is a deployment file for the falafels simulator
+- a simgrid platform file defining the physical network
+Those two files are linked by the fact that each falafels Node (or simgrid Actor)
+will receive its corresponding simgrid Host.
+-->
 <raw version="0.1">
+    <!-- List of constants that can be accessed through the whole program -->
     <constants>
-        <constant name="MODEL_SIZE_BYTES" value=""/>
-        <constant name="GLOBAL_MODEL_AGGREGATING_FLOPS" value=""/>
-        <constant name="LOCAL_MODEL_TRAINING_FLOPS" value=""/>
+        <constant name="MODEL_SIZE_BYTES" value="2000"/>
+        <constant name="GLOBAL_MODEL_AGGREGATING_FLOPS" value="1000000.0"/>
+        <constant name="LOCAL_MODEL_TRAINING_FLOPS" value="1000000.0"/>
     </constants>
 
-    <aggregators number="1" type="simple">
-        <arg name="" value=""/>
-        <network-manager type="centralized">
-            <arg name="" value=""/>
-        </network-manager>
-    </aggregators>
+    <!-- List of profiles to be used for our nodes and their cables -->
+    <profiles>
+        <host-profile name="big-server" speed="500.0Mf,250.0Mf,100.0Mf" core="32" pstate="0">
+            <prop id="wattage_per_state" value="200.0:193.33333333333333:400.0, 193.0:190.0:370.0, 190.0:190.0:250.0"/>
+            <prop id="wattage_off" value="50"/>
+        </host-profile>
+        <host-profile name="average-computer" speed="100.0Mf,50.0Mf,20.0Mf" core="4" pstate="0">
+            <prop id="wattage_per_state" value="100.0:93.33333333333333:200.0, 93.0:90.0:170.0, 90.0:90.0:150.0"/>
+            <prop id="wattage_off" value="10"/>
+        </host-profile>
+        <host-profile name="small-device" speed="50.0Mf,25.0Mf,10.0Mf" core="1" pstate="0">
+            <prop id="wattage_per_state" value="100.0:200.0:200.0, 93.0:170.0:170.0, 90.0:150.0:150.0" />
+            <prop id="wattage_off" value="10" />
+        </host-profile>
 
-    <trainers number="15" type="simple" network_manager="centralized">
-        <network-manager type="centralized">
-            <arg name="" value=""/>
-        </network-manager>
-    </trainers>
+        <link-profile name="fiber" bandwidth="1.618875GBps" latency="19.98us">
+            <prop id="wattage_range" value="100.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </link-profile>
+        <link-profile name="adsl" bandwidth="10.179966MBps" latency="190.98us">
+            <prop id="wattage_range" value="100.0:200.0"/>
+            <prop id="wattage_off" value="10"/>
+        </link-profile>
+    </profiles>
 
+    <clusters>
+
+        <cluster topology="star">
+            <aggregators number="1" type="simple" host-profiles="big-server" link-profiles="fiber">
+                <network-manager type="star">
+                    <!--<arg name="" value=""/> -->
+                </network-manager>
+            </aggregators>
+
+            <trainers number="4" type="simple" host-profiles="average-computer,small-device" link-profiles="fiber,adsl">
+                <network-manager type="star"/>
+            </trainers>
+        </cluster>
+
+    </clusters>
+    
 </raw>
-

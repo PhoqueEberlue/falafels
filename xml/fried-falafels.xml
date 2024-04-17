@@ -1,122 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <fried version="0.1">
     <constants>
-        <constant name="MODEL_SIZE_BYTES" value=""/>
-        <constant name="GLOBAL_MODEL_AGGREGATING_FLOPS" value=""/>
-        <constant name="LOCAL_MODEL_TRAINING_FLOPS" value=""/>
+        <constant name="MODEL_SIZE_BYTES" value="2000"/>
+        <constant name="GLOBAL_MODEL_AGGREGATING_FLOPS" value="1000000.0"/>
+        <constant name="LOCAL_MODEL_TRAINING_FLOPS" value="1000000.0"/>
     </constants>
-    <nodes>
-        <node name="Morgana">
-            <trainer type="simple"/>
-            <network-manager type="centralized">
-                <arg name="" value=""/>
-            </network-manager>
-        </node>
-        <node name="Maokai">
-            <trainer type="simple"/>
-            <network-manager type="centralized">
-                <arg name="" value=""/>
-            </network-manager>
-        </node>
-        <node name="Tryndamere">
-            <trainer type="simple"/>
-            <network-manager type="centralized">
-                <arg name="" value=""/>
-            </network-manager>
-        </node>
-        <node name="Nautilus">
-            <trainer type="simple"/>
-            <network-manager type="centralized">
-                <arg name="" value=""/>
-            </network-manager>
-        </node>
-        <node name="Darius">
-            <trainer type="simple"/>
-            <network-manager type="centralized">
-                <arg name="" value=""/>
-            </network-manager>
-        </node>
-        <node name="Camille">
-            <trainer type="simple"/>
-            <network-manager type="centralized">
-                <arg name="" value=""/>
-            </network-manager>
-        </node>
-        <node name="Skarner">
-            <trainer type="simple"/>
-            <network-manager type="centralized">
-                <arg name="" value=""/>
-            </network-manager>
-        </node>
-        <node name="Vayne">
-            <trainer type="simple"/>
-            <network-manager type="centralized">
-                <arg name="" value=""/>
-            </network-manager>
-        </node>
-        <node name="Kindred">
-            <trainer type="simple"/>
-            <network-manager type="centralized">
-                <arg name="" value=""/>
-            </network-manager>
-        </node>
-        <node name="Syndra">
-            <trainer type="simple"/>
-            <network-manager type="centralized">
-                <arg name="" value=""/>
-            </network-manager>
-        </node>
-        <node name="Shen">
-            <trainer type="simple"/>
-            <network-manager type="centralized">
-                <arg name="" value=""/>
-            </network-manager>
-        </node>
-        <node name="Naafiri">
-            <trainer type="simple"/>
-            <network-manager type="centralized">
-                <arg name="" value=""/>
-            </network-manager>
-        </node>
-        <node name="Hecarim">
-            <trainer type="simple"/>
-            <network-manager type="centralized">
-                <arg name="" value=""/>
-            </network-manager>
-        </node>
-        <node name="Jayce">
-            <trainer type="simple"/>
-            <network-manager type="centralized">
-                <arg name="" value=""/>
-            </network-manager>
-        </node>
-        <node name="Nocturne">
-            <trainer type="simple"/>
-            <network-manager type="centralized">
-                <arg name="" value=""/>
-            </network-manager>
-        </node>
-        <node name="Viktor">
-            <aggregator type="simple">
-                <arg name="" value=""/>
-            </aggregator>
-            <network-manager type="centralized">
-                <arg name="" value=""/>
-                <arg name="bootstrap-node" value="Morgana"/>
-                <arg name="bootstrap-node" value="Maokai"/>
-                <arg name="bootstrap-node" value="Tryndamere"/>
-                <arg name="bootstrap-node" value="Nautilus"/>
-                <arg name="bootstrap-node" value="Darius"/>
-                <arg name="bootstrap-node" value="Camille"/>
-                <arg name="bootstrap-node" value="Skarner"/>
-                <arg name="bootstrap-node" value="Vayne"/>
-                <arg name="bootstrap-node" value="Kindred"/>
-                <arg name="bootstrap-node" value="Syndra"/>
-                <arg name="bootstrap-node" value="Shen"/>
-                <arg name="bootstrap-node" value="Naafiri"/>
-                <arg name="bootstrap-node" value="Hecarim"/>
-                <arg name="bootstrap-node" value="Jayce"/>
-                <arg name="bootstrap-node" value="Nocturne"/>
-            </network-manager>
-        </node>
-    </nodes>
+    <clusters>
+        <cluster topology="star">
+            <node name="Pyke">
+                <trainer type="simple"/>
+                <network-manager type="star">
+                    <arg name="bootstrap-node" value="Soraka"/>
+                </network-manager>
+            </node>
+            <node name="Morgana">
+                <trainer type="simple"/>
+                <network-manager type="star">
+                    <arg name="bootstrap-node" value="Soraka"/>
+                </network-manager>
+            </node>
+            <node name="Maokai">
+                <trainer type="simple"/>
+                <network-manager type="star">
+                    <arg name="bootstrap-node" value="Soraka"/>
+                </network-manager>
+            </node>
+            <node name="Zoe">
+                <trainer type="simple"/>
+                <network-manager type="star">
+                    <arg name="bootstrap-node" value="Soraka"/>
+                </network-manager>
+            </node>
+            <node name="Soraka">
+                <aggregator type="simple"/>
+                <network-manager type="star">
+                    <arg/>
+                </network-manager>
+            </node>
+        </cluster>
+    </clusters>
 </fried>

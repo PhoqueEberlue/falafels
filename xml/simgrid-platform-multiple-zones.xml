@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE platform SYSTEM "https://simgrid.org/simgrid.dtd">
+<platform version="4.1">
+    <zone id="main" routing="Full">
+        <zone id="zone1" routing="Full"> 
+            <host id="Xayah" speed="98.095Mf">
+                <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </host>
+            <host id="Nidalee" speed="98.095Mf">
+                <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </host>
+            <host id="Jinx" speed="98.095Mf">
+                <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </host>
+            <host id="Katarina" speed="98.095Mf">
+                <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </host>
+            <host id="Mordekaiser" speed="98.095Mf">
+                <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </host>
+            <host id="Gangplank" speed="98.095Mf">
+                <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </host>
+            <host id="Sivir" speed="98.095Mf">
+                <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </host>
+            <host id="Kled" speed="98.095Mf">
+                <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </host>
+            <host id="Bel&apos;Veth" speed="98.095Mf">
+                <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </host>
+
+            <link id="loopback" bandwidth="498MBps" latency="15us" sharing_policy="FATPIPE">
+                <prop id="wattage_range" value="100.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </link>
+            <link id="1" bandwidth="11.618875MBps" latency="189.98us">
+                <prop id="wattage_range" value="100.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </link>
+            <link id="2" bandwidth="11.618875MBps" latency="189.98us">
+                <prop id="wattage_range" value="100.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </link>
+            <link id="3" bandwidth="11.618875MBps" latency="189.98us">
+                <prop id="wattage_range" value="100.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </link>
+            <link id="4" bandwidth="11.618875MBps" latency="189.98us">
+                <prop id="wattage_range" value="100.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </link>
+            <link id="5" bandwidth="11.618875MBps" latency="189.98us">
+                <prop id="wattage_range" value="100.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </link>
+            <link id="6" bandwidth="11.618875MBps" latency="189.98us">
+                <prop id="wattage_range" value="100.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </link>
+            <link id="7" bandwidth="11.618875MBps" latency="189.98us">
+                <prop id="wattage_range" value="100.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </link>
+            <link id="8" bandwidth="11.618875MBps" latency="189.98us">
+                <prop id="wattage_range" value="100.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </link>
+            <link id="9" bandwidth="11.618875MBps" latency="189.98us">
+                <prop id="wattage_range" value="100.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </link>
+
+            <link id="gateway" bandwidth="11.618875MBps" latency="189.98us">
+                <prop id="wattage_range" value="100.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </link>
+
+            
+            <route src="Xayah" dst="Xayah">
+                <link_ctn id="loopback"/>
+            </route>
+            <route src="Nidalee" dst="Nidalee">
+                <link_ctn id="loopback"/>
+            </route>
+            <route src="Jinx" dst="Jinx">
+                <link_ctn id="loopback"/>
+            </route>
+            <route src="Katarina" dst="Katarina">
+                <link_ctn id="loopback"/>
+            </route>
+            <route src="Mordekaiser" dst="Mordekaiser">
+                <link_ctn id="loopback"/>
+            </route>
+            <route src="Gangplank" dst="Gangplank">
+                <link_ctn id="loopback"/>
+            </route>
+            <route src="Sivir" dst="Sivir">
+                <link_ctn id="loopback"/>
+            </route>
+            <route src="Kled" dst="Kled">
+                <link_ctn id="loopback"/>
+            </route>
+            <route src="Bel&apos;Veth" dst="Bel&apos;Veth">
+                <link_ctn id="loopback"/>
+            </route>
+            
+        </zone>
+
+        <zone id="zone2" routing="Full">
+     
+            <host id="Tristana" speed="98.095Mf">
+                <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </host>
+            <host id="Kayn" speed="98.095Mf">
+                <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </host>
+            <host id="Rumble" speed="98.095Mf">
+                <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </host>
+            <host id="Tryndamere" speed="98.095Mf">
+                <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </host>
+            <host id="Yorick" speed="98.095Mf">
+                <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </host>
+            <host id="Zac" speed="98.095Mf">
+                <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </host>
+            <host id="Udyr" speed="98.095Mf">
+                <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </host>
+
+            <link id="10" bandwidth="11.618875MBps" latency="189.98us">
+                <prop id="wattage_range" value="100.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </link>
+            <link id="11" bandwidth="11.618875MBps" latency="189.98us">
+                <prop id="wattage_range" value="100.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </link>
+            <link id="12" bandwidth="11.618875MBps" latency="189.98us">
+                <prop id="wattage_range" value="100.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </link>
+            <link id="13" bandwidth="11.618875MBps" latency="189.98us">
+                <prop id="wattage_range" value="100.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </link>
+            <link id="14" bandwidth="11.618875MBps" latency="189.98us">
+                <prop id="wattage_range" value="100.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </link>
+            <link id="15" bandwidth="11.618875MBps" latency="189.98us">
+                <prop id="wattage_range" value="100.0:200.0"/>
+                <prop id="wattage_off" value="10"/>
+            </link> 
+
+            <route src="Tristana" dst="Tristana">
+                <link_ctn id="loopback"/>
+            </route>
+            <route src="Kayn" dst="Kayn">
+                <link_ctn id="loopback"/>
+            </route>
+            <route src="Rumble" dst="Rumble">
+                <link_ctn id="loopback"/>
+            </route>
+            <route src="Tryndamere" dst="Tryndamere">
+                <link_ctn id="loopback"/>
+            </route>
+            <route src="Yorick" dst="Yorick">
+                <link_ctn id="loopback"/>
+            </route>
+            <route src="Zac" dst="Zac">
+                <link_ctn id="loopback"/>
+            </route>
+            <route src="Udyr" dst="Udyr">
+                <link_ctn id="loopback"/>
+            </route>
+
+            <route src="Tristana" dst="Udyr">
+                <link_ctn id="10"/>
+            </route>
+            <route src="Kayn" dst="Udyr">
+                <link_ctn id="11"/>
+            </route>
+            <route src="Rumble" dst="Udyr">
+                <link_ctn id="12"/>
+            </route>
+            <route src="Tryndamere" dst="Udyr">
+                <link_ctn id="13"/>
+            </route>
+            <route src="Yorick" dst="Udyr">
+                <link_ctn id="14"/>
+            </route>
+            <route src="Zac" dst="Udyr">
+                <link_ctn id="15"/>
+            </route>
+
+        </zone>
+
+        <zoneRoute src="zone1" dst="zone2" gw_src="Xayah" gw_dst="Udyr" symmetrical="yes">
+            <link_ctn id="gateway" />
+        </zoneRoute>
+
+    </zone>
+
+</platform>
