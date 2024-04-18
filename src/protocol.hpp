@@ -2,7 +2,9 @@
 #define FALAFELS_PROTOCOL_HPP
 
 #include <cstdint>
+#include <cstring>
 #include <string>
+#include <vector>
 #include <xbt/log.h>
 #include <unordered_map>
 #include "constants.hpp"
@@ -22,12 +24,14 @@ struct NodeInfo
 {
     node_name name;
     NodeRole role;
+    
+    NodeInfo(NodeInfo *other) : name(other->name), role(other->role) {}
 };
 
 class Packet 
 {
 public:
-    /* Operation for the application layer */
+    /** Operation for the application layer. */
     const enum Operation
     { 
         /* Aggregator operations */
@@ -39,42 +43,47 @@ public:
         REGISTRATION_REQUEST,
     } op;
 
-    /* Operation stored as a nice string */
+    /** Operation stored as a nice string. Automatically assigned when calling the constructor */
     std::string op_string;
 
-    /* Writable src and dst, usefull in a peer to peer scenario */
-    node_name src;
-    node_name dst;
+    /** Possible values contained in a Packet. The actual value is indicated by the Operation enum. */
+    const union Data {
+        /** REGISTRATION_REQUEST: the node that the aggregator should register. */
+        NodeInfo node_to_register; 
+        /* REGISTRATION_CONFIRMATION: list of nodes attributed by the aggregator. */
+        std::vector<NodeInfo> *node_list; 
+        /** SEND_GLOBAL_MODEL: number of local epochs the trainer should perform. */
+        uint8_t number_local_epochs;
+    } *data;
 
-    /* Const src and dst */
+    /** Compute the simulated size of a packet by following the pointer in the data union */
+    uint64_t get_packet_size();
+ 
+    /** Const src and dst */
     const node_name original_src;
     const node_name final_dst;
 
-    NodeInfo *node_info = nullptr; 
+    /** Writable src and dst, usefull in a peer-to-peer scenario */
+    node_name previous_src;
+    node_name next_dst;
 
-    /* Unique packet identifier */
+    /** Unique packet identifier */
     packet_id id = 0;
 
-    /** 
-     * Additionnal arguments passed as a pointer. This is unrealistic for a real distributed use case.
-     * That's why sizeof() shouldn't be used to compute the size of the Packet. Instead use compute_packet_size().
-     */
-    std::unordered_map<std::string, std::string> *args = nullptr;
-    
-
-    uint64_t get_packet_size();
-
+    /** Clone a packet WITHOUT cloning the data union itself */
     Packet *clone();
 
-    Packet(Operation op, node_name src, node_name dst);
-    Packet(Operation op, node_name src, node_name dst, std::unordered_map<std::string, std::string> *args);
+    Packet(node_name src, node_name dst, Operation op, Data *data);
+
     ~Packet();
 private:
+    /** Method that generates a nice representation of Operation enum with colors. */
     static std::string operation_to_string(Packet::Operation op);
 
-    // Use to generate new packet ids
+    /** Use to generate new packet ids */
     static inline packet_id total_packet_number = 0;
 
+    /** "cache" variable to prevent computing the packet's size multiple times */
     uint64_t packet_size = 0;
 };
 

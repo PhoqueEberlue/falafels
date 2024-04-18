@@ -1,25 +1,44 @@
 #include "protocol.hpp"
+#include <cstdint>
 #include <string>
 #include <xbt/asserts.h>
 #include <xbt/log.h>
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_falafels_protocol, "Messages specific for this example");
 
-Packet::Packet(Operation op, node_name src, node_name dst) : op(op), original_src(src), final_dst(dst)
+Packet::Packet(node_name src, node_name dst, Operation op, Data *data=nullptr) : 
+    original_src(src), final_dst(dst), op(op), data(data)
 { 
     this->op_string = operation_to_string(this->op);
-    this->src = this->original_src;
     this->id = this->total_packet_number;
     this->total_packet_number += 1;
-}
 
-Packet::Packet(Operation op, node_name src, node_name dst, std::unordered_map<std::string, std::string> *args) : op(op), original_src(src), final_dst(dst), args(args)
-{
-    this->op_string = operation_to_string(this->op);
-    this->src = this->original_src;
-    this->dst = this->final_dst;
-    this->id = this->total_packet_number;
-    this->total_packet_number += 1;
+    // Verifying data parameter
+    switch (this->op)
+    {
+        case Operation::SEND_GLOBAL_MODEL:
+            xbt_assert(data != nullptr && data->number_local_epochs > 0, 
+                       "Expected `number_local_epochs` for SEND_GLOBAL_MODEL packet.");
+            break;
+        case Operation::REGISTRATION_REQUEST:
+            xbt_assert(data != nullptr, 
+                       "Expected `node_to_register` for REGISTRATION_REQUEST packet.");
+            break;
+        case Operation::REGISTRATION_CONFIRMATION:
+            xbt_assert(data != nullptr && data->node_list != nullptr, 
+                       "Expected `node_list` for REGISTRATION_CONFIRMATION packet.");
+            break;
+
+        // Operations with no arguments required
+        case Operation::SEND_LOCAL_MODEL:
+            xbt_assert(data == nullptr, 
+                       "Expected no arguments for SEND_LOCAL_MODEL packet");
+            break;
+        case Operation::KILL_TRAINER:
+            xbt_assert(data == nullptr, 
+                       "Expected no arguments for KILL_TRAINER packet");
+            break;
+    }
 }
 
 /**
@@ -31,20 +50,38 @@ Packet::Packet(Operation op, node_name src, node_name dst, std::unordered_map<st
  */
 uint64_t Packet::get_packet_size()
 {
+    // If the packet size haven't been computed yet.
     if (this->packet_size == 0) 
     {
-        uint64_t result = sizeof(Packet::Operation) + this->src.size();
+        uint64_t result = 
+            sizeof(Packet::Operation) + 
+            this->original_src.size() +
+            this->final_dst.size() +
+            sizeof(this->id);
 
-        // Add the model size if its a send model operation
-        if (this->op == Packet::SEND_GLOBAL_MODEL || this->op == Packet::SEND_LOCAL_MODEL)
-            result += Constants::MODEL_SIZE_BYTES;
+        // TODO: add next_dest and previous_src?
 
-        if (this->args)
+        switch (this->op)
         {
-            for (const auto&[key, value]: *this->args)
-            {
-                result += key.size() + value.size();
-            }
+            case Operation::SEND_GLOBAL_MODEL:
+                // Size of the model + size of the param
+                result += Constants::MODEL_SIZE_BYTES + sizeof(uint8_t);
+                break;
+            case Operation::SEND_LOCAL_MODEL:
+                // Size of the model but no params
+                result += Constants::MODEL_SIZE_BYTES;
+                break;
+            case Operation::REGISTRATION_REQUEST:
+                result += sizeof(NodeInfo);
+                break;
+            case Operation::REGISTRATION_CONFIRMATION:
+                // Total size of the list
+                result += sizeof(NodeInfo) * this->data->node_list->size();
+                break;
+
+            case Operation::KILL_TRAINER:
+                // No additionnal arguments
+                break;
         }
     }
 
@@ -58,51 +95,44 @@ uint64_t Packet::get_packet_size()
  */
 std::string Packet::operation_to_string(Packet::Operation op)
 {
-    switch (op) {
-        case Packet::Operation::SEND_GLOBAL_MODEL:
+    switch (op)
+    {
+        case Operation::SEND_GLOBAL_MODEL:
             return "\x1B[34mSEND_GLOBAL_MODEL\033[0m";
-        case Packet::Operation::SEND_LOCAL_MODEL:
+        case Operation::SEND_LOCAL_MODEL:
             return "\x1B[32mSEND_LOCAL_MODEL\033[0m";
-        case Packet::Operation::KILL_TRAINER:
+        case Operation::KILL_TRAINER:
             return "\x1B[31mKILL_TRAINER\033[0m";
-        case Packet::Operation::REGISTRATION_REQUEST:
+        case Operation::REGISTRATION_REQUEST:
             return "\x1B[33mREGISTRATION_REQUEST\033[0m";
-        case Packet::Operation::REGISTRATION_CONFIRMATION:
+        case Operation::REGISTRATION_CONFIRMATION:
             return "\x1B[33mREGISTRATION_CONFIRMATION\033[0m";
     }
 }
 
 /**
- * WARNING WE DO NOT COPY THE POINTED VALUES YET
+ * Clone a packet WITHOUT cloning the data union itself
  */
 Packet *Packet::clone()
 {
-    Packet *res;
-
-    if (this->args)
-    {
-        auto args_copy = new std::unordered_map<std::string, std::string>(*this->args);
-        res = new Packet(this->op, this->original_src, this->final_dst, args_copy);
-    }
-    else 
-    {
-        res = new Packet(this->op, this->original_src, this->final_dst);
-    }
+    Packet *res = new Packet(this->original_src, this->final_dst, this->op, (Data *) this->data);
 
     // Decrement the total packet number because a clone isn't considered as a new packet
     Packet::total_packet_number -= 1;
-
-    // Copy the packet id to the new one
-    res->id = this->id;
-    res->src = this->src;
-    res->dst = this->dst;
-    res->node_info = this->node_info;
 
     return res;
 }
 
 Packet::~Packet()
 {
-    // Delete potential arguments
-    if (this->args) delete this->args;
+    // Delete members of the data union that were using heap allocated data.
+    switch (this->op)
+    {
+        case Operation::REGISTRATION_CONFIRMATION:
+            delete this->data->node_list;
+            break;
+
+        default:
+            break;
+    }
 }
