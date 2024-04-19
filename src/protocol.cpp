@@ -6,7 +6,7 @@
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_falafels_protocol, "Messages specific for this example");
 
-Packet::Packet(node_name src, node_name dst, Operation op, Data *data=nullptr) : 
+Packet::Packet(node_name src, node_name dst, Operation op, Data *data) : 
     original_src(src), final_dst(dst), op(op), data(data)
 { 
     this->op_string = operation_to_string(this->op);
