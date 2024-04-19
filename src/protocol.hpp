@@ -24,8 +24,6 @@ struct NodeInfo
 {
     node_name name;
     NodeRole role;
-    
-    NodeInfo(NodeInfo *other) : name(other->name), role(other->role) {}
 };
 
 class Packet 
@@ -64,8 +62,8 @@ public:
     const node_name final_dst;
 
     /** Writable src and dst, usefull in a peer-to-peer scenario */
-    node_name previous_src;
-    node_name next_dst;
+    node_name src;
+    node_name dst;
 
     /** Unique packet identifier */
     packet_id id = 0;
@@ -73,7 +71,7 @@ public:
     /** Clone a packet WITHOUT cloning the data union itself */
     Packet *clone();
 
-    Packet(node_name src, node_name dst, Operation op, Data *data);
+    Packet(node_name src, node_name dst, Operation op, Data *data=nullptr);
 
     ~Packet();
 private:
