@@ -25,7 +25,7 @@ using namespace pugi;
 
 void node_runner(Node *node)
 {
-    XBT_INFO("Node: %s", node->get_role()->get_network_manager()->get_my_node_name().c_str());
+    XBT_INFO("Init node: %s", node->get_role()->get_network_manager()->get_my_node_name().c_str());
     node->run();
 }
 
@@ -221,6 +221,9 @@ void set_constant(const xml_attribute *name, xml_attribute *value)
             break;
         case str2int("LOCAL_MODEL_TRAINING_FLOPS"):
             Constants::LOCAL_MODEL_TRAINING_FLOPS = value->as_double();
+            break;
+        case str2int("DURATION_TRAINING_PHASE"):
+            Constants::DURATION_TRAINING_PHASE = value->as_double();
             break;
     }
 }
