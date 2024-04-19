@@ -8,8 +8,6 @@
 class AsynchronousAggregator : public Aggregator
 {
 private:
-    uint32_t total_number_clients;
-
     /** Value between 0.0 and 1.0 indicating the proportion of local models needed before initializing an aggregation round */
     float proportion_threshold = 0.5;
 

@@ -35,6 +35,7 @@ void SimpleAggregator::run()
 
     this->send_kills();
 
+    this->print_end_report();
     simgrid::s4u::this_actor::exit();
 }
 
@@ -42,16 +43,13 @@ void SimpleAggregator::run()
 /* Sends the global model to every start_nodes */
 void SimpleAggregator::send_global_model()
 {
-    auto nm = this->get_network_manager();
-    Packet *p;
+    Packet *p = new Packet(
+        this->get_network_manager()->get_my_node_name(), "BROADCAST",
+        Packet::Operation::SEND_GLOBAL_MODEL, 
+        new Packet::Data { .number_local_epochs=this->number_local_epochs }
+    );
 
-    auto args = new std::unordered_map<std::string, std::string>();
-    args->insert({ "number_local_epochs", std::to_string(this->number_local_epochs) });
-
-    // Sadly we cannot use smart pointers in mailbox->put because it takes a void* as parameter...
-    p = new Packet(Packet::Operation::SEND_GLOBAL_MODEL, this->get_network_manager()->get_my_node_name(), "BROADCAST", args);
-
-    uint16_t nb_sent = nm->broadcast(p, Filters::trainers);
+    uint16_t nb_sent = this->get_network_manager()->broadcast(p, Filters::trainers);
 
     this->number_client_training = nb_sent;
 }
@@ -82,8 +80,10 @@ uint64_t SimpleAggregator::wait_local_models()
 
 void SimpleAggregator::send_kills()
 {
-    auto nm = this->get_network_manager();
-    Packet *p = new Packet(Packet::Operation::KILL_TRAINER, this->get_network_manager()->get_my_node_name(), "BROADCAST");
+    Packet *p = new Packet(
+        this->get_network_manager()->get_my_node_name(), "BROADCAST",
+        Packet::Operation::KILL_TRAINER
+    );
 
-    nm->broadcast(p, Filters::trainers);
+    this->get_network_manager()->broadcast(p, Filters::trainers);
 }

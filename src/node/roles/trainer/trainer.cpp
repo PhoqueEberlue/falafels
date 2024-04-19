@@ -30,7 +30,10 @@ void Trainer::send_local_model(node_name dst, node_name final_dst)
 {
     auto nm = this->get_network_manager();
 
-    Packet *p = new Packet(Packet::Operation::SEND_LOCAL_MODEL, this->get_network_manager()->get_my_node_name(), final_dst);
+    Packet *p = new Packet(
+        this->get_network_manager()->get_my_node_name(), final_dst,
+        Packet::Operation::SEND_LOCAL_MODEL
+    );
 
     nm->send(p, dst, 10);
 }
@@ -52,15 +55,9 @@ void Trainer::run()
         {
             case Packet::Operation::SEND_GLOBAL_MODEL:
                 {
-                    std::string t = p->args->at("number_local_epochs");
-                    uint8_t number_local_epochs = (uint8_t) atoi(t.c_str());
+                    this->train(p->data->number_local_epochs);
 
-                    node_name source = p->src;
-                    node_name original_src = p->original_src;
-
-                    this->train(number_local_epochs);
-
-                    this->send_local_model(source, original_src);
+                    this->send_local_model(p->src, p->original_src);
                     break;
                 }
             case Packet::Operation::KILL_TRAINER:

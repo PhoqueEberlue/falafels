@@ -14,4 +14,14 @@ void Aggregator::aggregate(uint64_t number_models)
     double flops = Constants::GLOBAL_MODEL_AGGREGATING_FLOPS * number_models;
     XBT_INFO("Starting aggregation with flops value: %f", flops);
     simgrid::s4u::this_actor::execute(flops);
+    this->number_aggregated_model += number_models;
+}
+
+void Aggregator::print_end_report() 
+{
+    this->number_global_epochs = this->number_aggregated_model / this->number_client_training;
+
+    XBT_INFO("Number of model aggregated: %lu", this->number_aggregated_model);
+    XBT_INFO("Number of client that were training: %u", this->number_client_training);
+    XBT_INFO("Number of global epochs done: %u", this->number_global_epochs);
 }

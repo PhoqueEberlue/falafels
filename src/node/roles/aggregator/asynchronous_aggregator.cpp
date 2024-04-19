@@ -45,6 +45,7 @@ void AsynchronousAggregator::run()
 
     this->send_kills();
 
+    this->print_end_report();
     simgrid::s4u::this_actor::exit();
 }
 
@@ -52,20 +53,28 @@ void AsynchronousAggregator::run()
 void AsynchronousAggregator::broadcast_global_model()
 {
     auto nm = this->get_network_manager();
-    auto args = new std::unordered_map<std::string, std::string>();
-    args->insert({ "number_local_epochs", std::to_string(this->number_local_epochs) });
-    Packet *p = new Packet(Packet::Operation::SEND_GLOBAL_MODEL, this->get_network_manager()->get_my_node_name(), "BROADCAST", args);
 
-    nm->broadcast(p, Filters::trainers);
+    Packet *p = new Packet(
+        this->get_network_manager()->get_my_node_name(), "BROADCAST",
+        Packet::Operation::SEND_GLOBAL_MODEL, 
+        new Packet::Data { .number_local_epochs=this->number_local_epochs }
+    );
+
+    auto nb_sent = nm->broadcast(p, Filters::trainers);
+
+    this->number_client_training = nb_sent;
 }
 
 /* Sends the global model to every start_nodes */
 void AsynchronousAggregator::send_global_model(node_name dst)
 {
     auto nm = this->get_network_manager();
-    auto args = new std::unordered_map<std::string, std::string>();
-    args->insert({ "number_local_epochs", std::to_string(this->number_local_epochs) });
-    Packet *p = new Packet(Packet::Operation::SEND_GLOBAL_MODEL, this->get_network_manager()->get_my_node_name(), dst, args);
+
+    Packet *p = new Packet(
+        this->get_network_manager()->get_my_node_name(), dst,
+        Packet::Operation::SEND_GLOBAL_MODEL, 
+        new Packet::Data { .number_local_epochs=this->number_local_epochs }
+    );
 
     nm->send(p, dst);
 }
@@ -96,7 +105,10 @@ void AsynchronousAggregator::send_kills()
     auto nm = this->get_network_manager();
     Packet *p;
 
-    p = new Packet(Packet::Operation::KILL_TRAINER, this->get_network_manager()->get_my_node_name(), "BROADCAST");
+    p = new Packet(
+        this->get_network_manager()->get_my_node_name(), "BROADCAST",
+        Packet::Operation::KILL_TRAINER
+    );
 
     nm->broadcast(p, Filters::trainers);
 }

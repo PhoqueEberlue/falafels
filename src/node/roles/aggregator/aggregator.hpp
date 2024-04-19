@@ -11,11 +11,17 @@ protected:
     /** Value indicating the number of local epochs that the aggregator will ask the trainers to do. */
     uint8_t number_local_epochs = 3;
 
+    /** Value indicating the number of global epochs achieved by the aggregator */
+    uint16_t number_global_epochs = 0;
+
+    /** Number of local model aggregated, used to compute the global number of epochs. */
+    uint64_t number_aggregated_model = 0;
+
+    /** The actual number of trainers */
+    uint16_t number_client_training = 0;
+
     void aggregate(uint64_t number_models);
-    // TODO: what functions are in common with every aggregator??
-    // virtual void send_global_model();
-    // virtual void wait_local_models();
-    // virtual void send_kills();
+    void print_end_report();
 public:
     Aggregator() {}
     virtual ~Aggregator() {}

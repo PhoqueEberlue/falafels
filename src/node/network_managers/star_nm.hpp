@@ -10,7 +10,7 @@ class StarNetworkManager : public NetworkManager
 {
 private:
     ~StarNetworkManager();
-    std::vector<NodeInfo*> connected_nodes;
+    std::vector<NodeInfo> *connected_nodes;
 public:
     StarNetworkManager(NodeInfo*);
     void handle_registration_requests();
