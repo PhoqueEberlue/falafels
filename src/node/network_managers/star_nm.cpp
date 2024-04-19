@@ -22,7 +22,12 @@ StarNetworkManager::StarNetworkManager(NodeInfo *node_info)
     this->connected_nodes = new std::vector<NodeInfo>();
 }
 
-StarNetworkManager::~StarNetworkManager() {};
+StarNetworkManager::~StarNetworkManager() 
+{
+    delete this->connected_nodes;
+    delete this->bootstrap_nodes;
+    delete this->my_node_info;
+};
 
 void StarNetworkManager::handle_registration_requests()
 {

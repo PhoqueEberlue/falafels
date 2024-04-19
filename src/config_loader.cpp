@@ -27,6 +27,7 @@ void node_runner(Node *node)
 {
     XBT_INFO("Init node: %s", node->get_role()->get_network_manager()->get_my_node_name().c_str());
     node->run();
+    delete node;
 }
 
 /**
