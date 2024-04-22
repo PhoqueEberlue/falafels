@@ -53,7 +53,7 @@ std::unordered_map<std::string, std::string> *parse_arguments(xml_object_range<x
  * @param name Name of the Node that will be associated to this network manager.
  * @return A pointer to the created NetworkManager.
  */
-NetworkManager *create_network_manager(xml_node *network_manager_elem, NodeInfo *node_info, std::string topology)
+NetworkManager *create_network_manager(xml_node *network_manager_elem, NodeInfo node_info, std::string topology)
 {
     NetworkManager *network_manager;
 
@@ -144,7 +144,7 @@ Node *create_node(xml_node *node_elem, node_name name, std::string topology)
     xml_node role_elem = node_elem->first_child();
     Role *role = create_role(&role_elem);
 
-    NodeInfo *node_info = new NodeInfo { .name = name, .role=role->get_role_type() };
+    NodeInfo node_info = NodeInfo { .name = name, .role=role->get_role_type() };
 
     xml_node network_manager_elem = role_elem.next_sibling(); 
     NetworkManager *network_manager = create_network_manager(&network_manager_elem, node_info, topology);

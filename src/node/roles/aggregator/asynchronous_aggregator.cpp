@@ -1,5 +1,6 @@
 #include <simgrid/s4u/Engine.hpp>
 #include <simgrid/s4u/Mailbox.hpp>
+#include <tuple>
 #include <unordered_map>
 #include <xbt/log.h>
 
@@ -29,18 +30,25 @@ AsynchronousAggregator::AsynchronousAggregator(std::unordered_map<std::string, s
 void AsynchronousAggregator::run()
 {
     // Wait for the trainers to register.
-    this->get_network_manager()->handle_registration_requests();
+    this->number_client_training = 
+        this->get_network_manager()->handle_registration_requests();
 
     // Send the global model to everyone
     this->broadcast_global_model();
 
-    auto current_sim_time = simgrid::s4u::Engine::get_instance()->get_clock();
+    auto sim_time = simgrid::s4u::Engine::get_instance()->get_clock();
 
-    while (simgrid::s4u::Engine::get_instance()->get_clock() < current_sim_time + Constants::DURATION_TRAINING_PHASE)
+    while (simgrid::s4u::Engine::get_instance()->get_clock() < sim_time + Constants::DURATION_TRAINING_PHASE)
     {
-        node_name src = this->wait_local_model();
+        auto tupple = this->wait_local_model();
+        node_name src = std::get<0>(tupple); 
+        node_name original_src = std::get<0>(tupple); 
+
+        XBT_INFO("src %s", src.c_str());
+        XBT_INFO("original_src %s", original_src.c_str());
+
         this->aggregate(1);
-        this->send_global_model(src);
+        this->send_global_model(src, original_src);
     }
 
     this->send_kills();
@@ -60,18 +68,16 @@ void AsynchronousAggregator::broadcast_global_model()
         new Packet::Data { .number_local_epochs=this->number_local_epochs }
     );
 
-    auto nb_sent = nm->broadcast(p, Filters::trainers);
-
-    this->number_client_training = nb_sent;
+    nm->broadcast(p, Filters::trainers);
 }
 
 /* Sends the global model to every start_nodes */
-void AsynchronousAggregator::send_global_model(node_name dst)
+void AsynchronousAggregator::send_global_model(node_name dst, node_name final_dst)
 {
     auto nm = this->get_network_manager();
 
     Packet *p = new Packet(
-        this->get_network_manager()->get_my_node_name(), dst,
+        this->get_network_manager()->get_my_node_name(), final_dst,
         Packet::Operation::SEND_GLOBAL_MODEL, 
         new Packet::Data { .number_local_epochs=this->number_local_epochs }
     );
@@ -79,7 +85,7 @@ void AsynchronousAggregator::send_global_model(node_name dst)
     nm->send(p, dst);
 }
 
-node_name AsynchronousAggregator::wait_local_model()
+std::tuple<node_name, node_name> AsynchronousAggregator::wait_local_model()
 {
     std::unique_ptr<Packet> p;
     node_name res;
@@ -97,7 +103,7 @@ node_name AsynchronousAggregator::wait_local_model()
         }
     }    
 
-    return res;
+    return std::tuple<node_name, node_name>(p->src, p->original_src);
 }
 
 void AsynchronousAggregator::send_kills()

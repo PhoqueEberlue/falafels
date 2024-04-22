@@ -14,11 +14,11 @@
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_star_nm, "Messages specific for this example");
 
-StarNetworkManager::StarNetworkManager(NodeInfo *node_info)
+StarNetworkManager::StarNetworkManager(NodeInfo node_info)
 {
     this->my_node_info = node_info;
     // Initializing our mailbox
-    this->mailbox = simgrid::s4u::Mailbox::by_name(node_info->name);
+    this->mailbox = simgrid::s4u::Mailbox::by_name(this->my_node_info.name);
     this->connected_nodes = new std::vector<NodeInfo>();
 }
 
@@ -26,13 +26,13 @@ StarNetworkManager::~StarNetworkManager()
 {
     delete this->connected_nodes;
     delete this->bootstrap_nodes;
-    delete this->my_node_info;
 };
 
-void StarNetworkManager::handle_registration_requests()
+uint16_t StarNetworkManager::handle_registration_requests()
 {
-    xbt_assert(this->my_node_info->role == NodeRole::Aggregator);
+    xbt_assert(this->my_node_info.role == NodeRole::Aggregator);
 
+    uint16_t number_registration = 0;
     std::unique_ptr<Packet> p;
 
     while (true) 
@@ -48,12 +48,12 @@ void StarNetworkManager::handle_registration_requests()
 
         if (p->op == Packet::Operation::REGISTRATION_REQUEST)
         {
-            this->connected_nodes->push_back(p->data->node_to_register);
+            this->connected_nodes->push_back(*p->data->node_to_register);
 
-            XBT_INFO("Added %s as a connected node", p->data->node_to_register.name.c_str());
+            XBT_INFO("Added %s as a connected node", p->data->node_to_register->name.c_str());
 
             auto node_list = new std::vector<NodeInfo>();
-            node_list->push_back(*this->my_node_info);
+            node_list->push_back(this->my_node_info);
 
             Packet *res_p = new Packet(
                 this->get_my_node_name(), p->final_dst,
@@ -62,13 +62,17 @@ void StarNetworkManager::handle_registration_requests()
             );
 
             this->send(res_p, p->src);
+
+            number_registration += 1;
         }
     }
+
+    return number_registration;
 }
 
 void StarNetworkManager::send_registration_request()
 {
-    xbt_assert(this->my_node_info->role == NodeRole::Trainer);
+    xbt_assert(this->my_node_info.role == NodeRole::Trainer);
 
     // Take the first bootstrap node, in a centralized topology we should have only one anyways.
     auto bootstrap_node = this->bootstrap_nodes->at(0);
@@ -76,7 +80,7 @@ void StarNetworkManager::send_registration_request()
     Packet *p = new Packet(
         this->get_my_node_name(), bootstrap_node->name,
         Packet::Operation::REGISTRATION_REQUEST,
-        new Packet::Data { .node_to_register = *this->my_node_info } 
+        new Packet::Data { .node_to_register = &this->my_node_info } 
     );
 
     this->send(p, bootstrap_node->name);

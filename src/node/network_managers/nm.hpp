@@ -16,7 +16,7 @@ class NetworkManager
 protected:
     simgrid::s4u::Mailbox *mailbox;
     std::vector<NodeInfo*> *bootstrap_nodes;
-    NodeInfo *my_node_info;
+    NodeInfo my_node_info;
 
 public:
     NetworkManager(){}
@@ -28,15 +28,15 @@ public:
     virtual std::unique_ptr<Packet> get() = 0;
     virtual std::unique_ptr<Packet> get(double timeout) = 0;
 
-    virtual void handle_registration_requests() = 0;
+    virtual uint16_t handle_registration_requests() = 0;
     virtual void send_registration_request() = 0;
     virtual uint16_t broadcast(Packet*, FilterNode) = 0;
     virtual uint16_t broadcast(Packet*, FilterNode, uint64_t time_out) = 0;
-    virtual void wait_last_comms() = 0;
+    // virtual void wait_last_comms() = 0;
 
     std::vector<NodeInfo*> *get_bootstrap_nodes() { return this->bootstrap_nodes; }
-    node_name get_my_node_name() { return this->my_node_info->name; }
-    NodeInfo *get_my_node_info() { return this->my_node_info; }
+    node_name get_my_node_name() { return this->my_node_info.name; }
+    NodeInfo *get_my_node_info() { return &this->my_node_info; }
     void set_bootstrap_nodes(std::vector<NodeInfo*> *nodes);
 };
 

@@ -47,7 +47,7 @@ public:
     /** Possible values contained in a Packet. The actual value is indicated by the Operation enum. */
     const union Data {
         /** REGISTRATION_REQUEST: the node that the aggregator should register. */
-        NodeInfo node_to_register; 
+        NodeInfo *node_to_register; 
         /* REGISTRATION_CONFIRMATION: list of nodes attributed by the aggregator. */
         std::vector<NodeInfo> *node_list; 
         /** SEND_GLOBAL_MODEL: number of local epochs the trainer should perform. */

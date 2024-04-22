@@ -22,7 +22,8 @@ static bool trainer_filter(NodeInfo *node_info)
 void SimpleAggregator::run()
 {
     // Wait for the trainers to register.
-    this->get_network_manager()->handle_registration_requests();
+    this->number_client_training = 
+        this->get_network_manager()->handle_registration_requests();
 
     auto current_sim_time = simgrid::s4u::Engine::get_instance()->get_clock();
 
@@ -50,8 +51,6 @@ void SimpleAggregator::send_global_model()
     );
 
     uint16_t nb_sent = this->get_network_manager()->broadcast(p, Filters::trainers);
-
-    this->number_client_training = nb_sent;
 }
 
 uint64_t SimpleAggregator::wait_local_models()
