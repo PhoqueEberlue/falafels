@@ -1,44 +1,43 @@
 #include "protocol.hpp"
 #include <cstdint>
+#include <memory>
+#include <optional>
 #include <string>
 #include <xbt/asserts.h>
 #include <xbt/log.h>
 
+using namespace std;
+
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_falafels_protocol, "Messages specific for this example");
 
-Packet::Packet(node_name src, node_name dst, Operation op, Data *data) : 
+Packet::Packet(node_name src, node_name dst, Operation op, const optional<Data> &data) : 
     original_src(src), final_dst(dst), op(op), data(data)
 { 
     this->op_string = operation_to_string(this->op);
     this->id = this->total_packet_number;
     this->total_packet_number += 1;
+}
 
-    // Verifying data parameter
-    switch (this->op)
-    {
-        case Operation::SEND_GLOBAL_MODEL:
-            xbt_assert(data != nullptr && data->number_local_epochs > 0, 
-                       "Expected `number_local_epochs` for SEND_GLOBAL_MODEL packet.");
-            break;
-        case Operation::REGISTRATION_REQUEST:
-            xbt_assert(data != nullptr, 
-                       "Expected `node_to_register` for REGISTRATION_REQUEST packet.");
-            break;
-        case Operation::REGISTRATION_CONFIRMATION:
-            xbt_assert(data != nullptr && data->node_list != nullptr, 
-                       "Expected `node_list` for REGISTRATION_CONFIRMATION packet.");
-            break;
 
-        // Operations with no arguments required
-        case Operation::SEND_LOCAL_MODEL:
-            xbt_assert(data == nullptr, 
-                       "Expected no arguments for SEND_LOCAL_MODEL packet");
-            break;
-        case Operation::KILL_TRAINER:
-            xbt_assert(data == nullptr, 
-                       "Expected no arguments for KILL_TRAINER packet");
-            break;
-    }
+NodeInfo Packet::get_node_to_register()
+{
+    xbt_assert(holds_alternative<NodeInfo>(*this->data), 
+               "Cannot call get_node_to_register() because `shared_ptr<NodeInfo>` wasn't found in the data variant");
+    return get<NodeInfo>(*this->data);
+}
+
+shared_ptr<vector<NodeInfo>> Packet::get_node_list()
+{
+    xbt_assert(holds_alternative<shared_ptr<std::vector<NodeInfo>>>(*this->data), 
+               "Cannot call get_node_list() because `shared_ptr<vector<NodeInfo>>` wasn't found in the data variant");
+    return get<shared_ptr<vector<NodeInfo>>>(*this->data);
+}
+
+uint8_t Packet::get_number_local_epochs()
+{
+    xbt_assert(holds_alternative<uint8_t>(*this->data), 
+               "Cannot call get_number_local_epochs() because `uint8_t` wasn't found in the data variant");
+    return get<uint8_t>(*this->data);
 }
 
 /**
@@ -76,7 +75,7 @@ uint64_t Packet::get_packet_size()
                 break;
             case Operation::REGISTRATION_CONFIRMATION:
                 // Total size of the list
-                result += sizeof(NodeInfo) * this->data->node_list->size();
+                result += sizeof(NodeInfo) * this->get_node_list()->size();
                 break;
 
             case Operation::KILL_TRAINER:
@@ -111,28 +110,14 @@ std::string Packet::operation_to_string(Packet::Operation op)
 }
 
 /**
- * Clone a packet WITHOUT cloning the data union itself
+ * Clone a packet
  */
 Packet *Packet::clone()
 {
-    Packet *res = new Packet(this->original_src, this->final_dst, this->op, (Data *) this->data);
+    Packet *res = new Packet(this->original_src, this->final_dst, this->op, this->data);
 
     // Decrement the total packet number because a clone isn't considered as a new packet
     Packet::total_packet_number -= 1;
-
+    
     return res;
-}
-
-Packet::~Packet()
-{
-    // Delete members of the data union that were using heap allocated data.
-    switch (this->op)
-    {
-        case Operation::REGISTRATION_CONFIRMATION:
-            delete this->data->node_list;
-            break;
-
-        default:
-            break;
-    }
 }

@@ -2,11 +2,13 @@
 #define FALAFELS_PROTOCOL_HPP
 
 #include <cstdint>
-#include <cstring>
+#include <memory>
+#include <optional>
 #include <string>
+#include <variant>
 #include <vector>
 #include <xbt/log.h>
-#include <unordered_map>
+
 #include "constants.hpp"
 
 typedef std::string node_name;
@@ -45,14 +47,20 @@ public:
     std::string op_string;
 
     /** Possible values contained in a Packet. The actual value is indicated by the Operation enum. */
-    const union Data {
+    typedef std::variant<
         /** REGISTRATION_REQUEST: the node that the aggregator should register. */
-        NodeInfo *node_to_register; 
+        NodeInfo,
         /* REGISTRATION_CONFIRMATION: list of nodes attributed by the aggregator. */
-        std::vector<NodeInfo> *node_list; 
+        std::shared_ptr<std::vector<NodeInfo>>, 
         /** SEND_GLOBAL_MODEL: number of local epochs the trainer should perform. */
-        uint8_t number_local_epochs;
-    } *data;
+        uint8_t
+    > Data;
+
+    /* --------------------- Variant getters --------------------- */
+    NodeInfo get_node_to_register();
+    std::shared_ptr<std::vector<NodeInfo>> get_node_list();
+    uint8_t get_number_local_epochs();
+    /* ----------------------------------------------------------- */
 
     /** Compute the simulated size of a packet by following the pointer in the data union */
     uint64_t get_packet_size();
@@ -68,13 +76,17 @@ public:
     /** Unique packet identifier */
     packet_id id = 0;
 
-    /** Clone a packet WITHOUT cloning the data union itself */
+    /** Clone a packet. Note that pointers in the data variant are also cloned, thus the pointed value will be accessible
+     * both by the cloned packet and the original one. */
     Packet *clone();
 
-    Packet(node_name src, node_name dst, Operation op, Data *data=nullptr);
+    Packet(node_name src, node_name dst, Operation op, const std::optional<Data> &data=std::nullopt);
 
-    ~Packet();
+    ~Packet() {}
 private:
+    /** field storing the Data variant */
+    const std::optional<Data> data;
+
     /** Method that generates a nice representation of Operation enum with colors. */
     static std::string operation_to_string(Packet::Operation op);
 
