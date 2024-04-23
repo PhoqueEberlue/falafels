@@ -5,6 +5,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <variant>
 #include <vector>
 #include <xbt/log.h>
@@ -21,7 +22,6 @@ enum class NodeRole
     Proxy
 };
 
-
 struct NodeInfo
 {
     node_name name;
@@ -30,41 +30,56 @@ struct NodeInfo
 
 class Packet 
 {
-public:
-    /** Operation for the application layer. */
-    const enum Operation
+public: 
+    /* --------------------- Operation and their data to be stored in variant --------------------- */
+    /* Aggregator operations */
+    struct RegistrationConfirmation 
     { 
-        /* Aggregator operations */
-        SEND_GLOBAL_MODEL, 
-        KILL_TRAINER,
-        REGISTRATION_CONFIRMATION,
-        /* Trainer operations */
-        SEND_LOCAL_MODEL,
-        REGISTRATION_REQUEST,
-    } op;
+        std::shared_ptr<std::vector<NodeInfo>> node_list; // list of nodes attributed by the aggregator.
+        static constexpr std::string_view op_name = "\x1B[33mREGISTRATION_CONFIRMATION\033[0m\0";
+    };
+    struct SendGlobalModel
+    {
+        uint8_t number_local_epochs; // number of local epochs the trainer should perform.
+        static constexpr std::string_view op_name = "\x1B[34mSEND_GLOBAL_MODEL\033[0m\0";
+    };
+    struct KillTrainer 
+    {
+        static constexpr std::string_view op_name = "\x1B[31mKILL_TRAINER\033[0m\0";
+    };
 
-    /** Operation stored as a nice string. Automatically assigned when calling the constructor */
-    std::string op_string;
+    /* Trainer operations */
+    struct RegistrationRequest 
+    { 
+        NodeInfo node_to_register; // the node that the aggregator should register.
+        static constexpr std::string_view op_name = "\x1B[33mREGISTRATION_REQUEST\033[0m\0";
+    };
+    struct SendLocalModel 
+    {
+        static constexpr std::string_view op_name = "\x1B[32mSEND_LOCAL_MODEL\033[0m\0";
+    };
+    /* -------------------------------------------------------------------------------------------- */
 
-    /** Possible values contained in a Packet. The actual value is indicated by the Operation enum. */
+    // Tool to use lambdas in std::visit, see: https://en.cppreference.com/w/cpp/utility/variant/visit
+    template<class... Ts>
+    struct overloaded : Ts... { using Ts::operator()...; };
+
+    // Definition of our Operation variant
     typedef std::variant<
-        /** REGISTRATION_REQUEST: the node that the aggregator should register. */
-        NodeInfo,
-        /* REGISTRATION_CONFIRMATION: list of nodes attributed by the aggregator. */
-        std::shared_ptr<std::vector<NodeInfo>>, 
-        /** SEND_GLOBAL_MODEL: number of local epochs the trainer should perform. */
-        uint8_t
-    > Data;
-
-    /* --------------------- Variant getters --------------------- */
-    NodeInfo get_node_to_register();
-    std::shared_ptr<std::vector<NodeInfo>> get_node_list();
-    uint8_t get_number_local_epochs();
-    /* ----------------------------------------------------------- */
-
-    /** Compute the simulated size of a packet by following the pointer in the data union */
+        RegistrationConfirmation,
+        SendGlobalModel,
+        KillTrainer,
+        RegistrationRequest,
+        SendLocalModel
+    > Operation;
+    /** Compute the simulated size of a packet by following the pointers stored in the data union */
     uint64_t get_packet_size();
- 
+
+    /** Get the printable name of Packet's Operation */
+    const char* get_op_name();
+    
+    const Operation op;
+
     /** Const src and dst */
     const node_name original_src;
     const node_name final_dst;
@@ -80,15 +95,10 @@ public:
      * both by the cloned packet and the original one. */
     Packet *clone();
 
-    Packet(node_name src, node_name dst, Operation op, const std::optional<Data> &data=std::nullopt);
+    Packet(node_name src, node_name dst, Operation op);
 
     ~Packet() {}
 private:
-    /** field storing the Data variant */
-    const std::optional<Data> data;
-
-    /** Method that generates a nice representation of Operation enum with colors. */
-    static std::string operation_to_string(Packet::Operation op);
 
     /** Use to generate new packet ids */
     static inline packet_id total_packet_number = 0;
