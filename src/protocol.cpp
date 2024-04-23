@@ -83,6 +83,8 @@ const char *Packet::get_op_name()
 Packet *Packet::clone()
 {
     Packet *res = new Packet(this->original_src, this->final_dst, this->op);
+    res->id = this->id;
+    res->packet_size = this->packet_size;
 
     // Decrement the total packet number because a clone isn't considered as a new packet
     Packet::total_packet_number -= 1;
