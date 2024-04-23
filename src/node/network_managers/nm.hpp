@@ -34,7 +34,7 @@ public:
     void set_bootstrap_nodes(std::vector<NodeInfo> *nodes);
 
     /* --------- Methods to be redefined by children classes --------- */
-    virtual ~NetworkManager(){}
+    virtual ~NetworkManager();
     virtual uint16_t handle_registration_requests() = 0;
     virtual void send_registration_request() = 0;
     virtual void broadcast(std::shared_ptr<Packet>, FilterNode, const std::optional<double> &timeout=std::nullopt) = 0;

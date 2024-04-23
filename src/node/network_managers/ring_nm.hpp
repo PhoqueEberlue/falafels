@@ -15,7 +15,7 @@ private:
     NodeInfo left_node;
     NodeInfo right_node;
     simgrid::s4u::ActivitySetPtr pending_comms;
-    std::vector<packet_id> received_packets;
+    std::vector<packet_id> *received_packets;
     ~RingNetworkManager();
 
     void redirect(std::unique_ptr<Packet>&);

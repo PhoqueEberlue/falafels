@@ -29,7 +29,6 @@ StarNetworkManager::StarNetworkManager(NodeInfo node_info)
 StarNetworkManager::~StarNetworkManager() 
 {
     delete this->connected_nodes;
-    delete this->bootstrap_nodes;
 };
 
 uint16_t StarNetworkManager::handle_registration_requests()

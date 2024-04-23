@@ -24,12 +24,12 @@ RingNetworkManager::RingNetworkManager(NodeInfo node_info)
 
     auto tmp = new simgrid::s4u::ActivitySet();
     this->pending_comms = simgrid::s4u::ActivitySetPtr(tmp);
-    this->received_packets = vector<packet_id>();
+    this->received_packets = new vector<packet_id>();
 }
 
 RingNetworkManager::~RingNetworkManager()
 {
-    delete this->bootstrap_nodes;
+    delete this->received_packets;
 };
 
 uint16_t RingNetworkManager::handle_registration_requests()
@@ -164,7 +164,7 @@ void RingNetworkManager::broadcast(shared_ptr<Packet> packet, FilterNode filter,
 bool RingNetworkManager::is_duplicated(std::unique_ptr<Packet> &packet)
 {
     auto r = this->received_packets;
-    return find(r.begin(), r.end(), packet->id) != r.end();
+    return find(r->begin(), r->end(), packet->id) != r->end();
 }
 
 unique_ptr<Packet> RingNetworkManager::get_packet(const optional<double> &timeout)
@@ -186,7 +186,7 @@ unique_ptr<Packet> RingNetworkManager::get_packet(const optional<double> &timeou
             }
 
             // Add to received packets
-            this->received_packets.push_back(p->id);
+            this->received_packets->push_back(p->id);
             cond = false;
         }
         else 
@@ -200,8 +200,11 @@ unique_ptr<Packet> RingNetworkManager::get_packet(const optional<double> &timeou
 
 void RingNetworkManager::redirect(unique_ptr<Packet> &p)
 {
-    // Clone the packet because we need to modify the source // Might cause memory leak???
-    auto new_p = make_shared<Packet>(*p->clone());
+    // Clone the packet because we need to modify the source // Might cause memory leak??? -> no shit sherlock
+    // TODO: make that better 
+    Packet *tmp = p->clone();
+    delete tmp;
+    auto new_p = make_shared<Packet>(*p);
 
     node_name dst;
     // If the original packet came from our left

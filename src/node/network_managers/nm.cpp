@@ -8,6 +8,11 @@ using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_network_manager, "Messages specific for this example");
 
+NetworkManager::~NetworkManager()
+{
+    delete this->bootstrap_nodes;
+}
+
 void NetworkManager::set_bootstrap_nodes(vector<NodeInfo> *nodes)
 {
     this->bootstrap_nodes = nodes;

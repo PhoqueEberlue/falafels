@@ -54,7 +54,6 @@ void AsynchronousAggregator::run()
     this->send_kills();
 
     this->print_end_report();
-    simgrid::s4u::this_actor::exit();
 }
 
 
