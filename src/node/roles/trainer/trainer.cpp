@@ -66,7 +66,8 @@ void Trainer::run()
         }
     }
 
-    // nm->wait_last_comms();
+    // Wait last comms before exiting
+    nm->wait_last_comms(2);
 
     XBT_INFO("Exiting");
     simgrid::s4u::this_actor::exit();

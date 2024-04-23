@@ -41,7 +41,7 @@ public:
 
     /** get to be used by roles that will be override by the specific NetworkManager */
     virtual std::unique_ptr<Packet> get_packet(const std::optional<double> &timeout=std::nullopt) = 0;
-    // virtual void wait_last_comms() = 0;
+    virtual void wait_last_comms(const std::optional<double> &timeout=std::nullopt) = 0;
 };
 
 namespace Filters {

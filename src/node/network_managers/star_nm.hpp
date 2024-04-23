@@ -21,7 +21,9 @@ public:
     void broadcast(std::shared_ptr<Packet>, FilterNode, const std::optional<double> &timeout=std::nullopt);
 
     void set_bootstrap_nodes(std::vector<NodeInfo*> *nodes);
-    // void wait_last_comms() {}
+
+    // For now the function is not needed in starnm because we don't use async.
+    void wait_last_comms(const std::optional<double> &timeout=std::nullopt) {}
 };
 
 #endif // !FALAFELS_CENTRALIZED_NM_HPP

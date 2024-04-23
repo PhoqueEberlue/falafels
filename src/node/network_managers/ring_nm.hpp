@@ -19,6 +19,8 @@ private:
     ~RingNetworkManager();
 
     void redirect(std::unique_ptr<Packet>&);
+
+    bool is_duplicated(std::unique_ptr<Packet>&);
 public:
     RingNetworkManager(NodeInfo);
     uint16_t handle_registration_requests();
@@ -28,7 +30,7 @@ public:
     void broadcast(std::shared_ptr<Packet>, FilterNode, const std::optional<double> &timeout=std::nullopt);
 
     void set_bootstrap_nodes(std::vector<NodeInfo*> *nodes);
-    // void wait_last_comms();
+    void wait_last_comms(const std::optional<double> &timeout=std::nullopt);
 };
 
 #endif // !FALAFELS_DECENTRALIZED_NM_HPP

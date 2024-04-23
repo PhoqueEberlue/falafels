@@ -161,64 +161,37 @@ void RingNetworkManager::broadcast(shared_ptr<Packet> packet, FilterNode filter,
     }
 }
 
+bool RingNetworkManager::is_duplicated(std::unique_ptr<Packet> &packet)
+{
+    auto r = this->received_packets;
+    return find(r.begin(), r.end(), packet->id) != r.end();
+}
+
 unique_ptr<Packet> RingNetworkManager::get_packet(const optional<double> &timeout)
 {
-    // How can I handle that correctly
-    auto completed_one = this->pending_comms->test_any();
- 
-    if (completed_one != nullptr)
-    {
- 
-    }
- 
     unique_ptr<Packet> p;
     bool cond = true;
  
     while (cond)
     {
         p = this->get(timeout);
-        XBT_INFO("%s <--%s--- %s", this->get_my_node_name().c_str(), p->get_op_name(), p->src.c_str()); 
  
-        auto v = this->received_packets;
- 
-        // Don't redirect packets as an aggregator
-        if (this->my_node_info.role != NodeRole::Aggregator)
+        // Check that the packet haven't been already received
+        if(!this->is_duplicated(p))
         {
-            // if the packet was allready received 
-            if(find(v.begin(), v.end(), p->id) != v.end()) 
+            // if the packet has broadcast enabled or if dst is not for the current node
+            if (p->final_dst == "BROADCAST" || p->final_dst != this->get_my_node_name())
             {
-                XBT_INFO("discarding packet %lu", p->id);
-                // ignore
-            } 
-            else 
-            {
-                // if the packet has broadcast enabled or if dst is not for the current node
-                if (p->final_dst == "BROADCAST" || p->final_dst != this->get_my_node_name())
-                {
-                    this->redirect(p);
-                }
-
-                
-                if (auto *kill = get_if<Packet::KillTrainer>(&p->op))
-                {
-                    try
-                    {
-                        // Wait finish pending comms before exiting with timeout in case of double send
-                        this->pending_comms->wait_all_for(2);
-                    } 
-                    catch (simgrid::TimeoutException) {
-                        XBT_INFO("Timeout");
-                    }
-                }
- 
-                // Add to received packets
-                this->received_packets.push_back(p->id);
-                cond = false;
+                this->redirect(p);
             }
+
+            // Add to received packets
+            this->received_packets.push_back(p->id);
+            cond = false;
         }
         else 
         {
-            cond = false;
+            XBT_INFO("Discarding packet %lu: duplicate", p->id);
         }
     }
  
@@ -229,8 +202,6 @@ void RingNetworkManager::redirect(unique_ptr<Packet> &p)
 {
     // Clone the packet because we need to modify the source // Might cause memory leak???
     auto new_p = make_shared<Packet>(*p->clone());
-    // Set the new source to the current node name
-    new_p->src = this->get_my_node_name();
 
     node_name dst;
     // If the original packet came from our left
@@ -250,7 +221,21 @@ void RingNetworkManager::redirect(unique_ptr<Packet> &p)
     this->pending_comms->push(comm);
 }
 
-// void RingNetworkManager::wait_last_comms() 
-// {
-//     this->pending_comms->wait_all();
-// }
+void RingNetworkManager::wait_last_comms(const optional<double> &timeout)
+{
+    if (!timeout)
+    {
+        this->pending_comms->wait_all();
+    }
+    else
+    {
+        try
+        {
+            // Wait finish pending comms before exiting with timeout in case of double send
+            this->pending_comms->wait_all_for(*timeout);
+        } 
+        catch (simgrid::TimeoutException) {
+            XBT_INFO("Timeout");
+        }
+    }
+}
