@@ -4,6 +4,7 @@
 
 #include "nm.hpp"
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 class StarNetworkManager : public NetworkManager 
@@ -15,10 +16,10 @@ public:
     StarNetworkManager(NodeInfo);
     uint16_t handle_registration_requests();
     void send_registration_request();
-    std::unique_ptr<Packet> get();
-    std::unique_ptr<Packet> get(double timeout);
-    uint16_t broadcast(Packet *packet, FilterNode filter);
-    uint16_t broadcast(Packet *packet, FilterNode filter, uint64_t timeout);
+
+    std::unique_ptr<Packet> get_packet(const std::optional<double> &timeout=std::nullopt);
+    void broadcast(std::shared_ptr<Packet>, FilterNode, const std::optional<double> &timeout=std::nullopt);
+
     void set_bootstrap_nodes(std::vector<NodeInfo*> *nodes);
     // void wait_last_comms() {}
 };

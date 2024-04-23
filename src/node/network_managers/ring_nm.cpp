@@ -2,12 +2,16 @@
 #include <memory>
 #include <simgrid/Exception.hpp>
 #include <simgrid/forward.h>
+#include <variant>
 #include <vector>
 #include <xbt/asserts.h>
 #include <xbt/ex.h>
 #include <xbt/log.h>
-#include "ring_nm.hpp"
 #include <simgrid/s4u/Engine.hpp>
+
+#include "ring_nm.hpp"
+
+using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_ring_nm, "Messages specific for this example");
 
@@ -20,7 +24,7 @@ RingNetworkManager::RingNetworkManager(NodeInfo node_info)
 
     auto tmp = new simgrid::s4u::ActivitySet();
     this->pending_comms = simgrid::s4u::ActivitySetPtr(tmp);
-    this->received_packets = std::vector<packet_id>();
+    this->received_packets = vector<packet_id>();
 }
 
 RingNetworkManager::~RingNetworkManager()
@@ -32,9 +36,9 @@ uint16_t RingNetworkManager::handle_registration_requests()
 {
     xbt_assert(this->my_node_info.role == NodeRole::Aggregator);
  
-    auto node_list_tmp = std::vector<NodeInfo>();
+    auto node_list_tmp = vector<NodeInfo>();
     
-    std::unique_ptr<Packet> p;
+    unique_ptr<Packet> p;
  
     // ---------- Wait for registrations ----------
     while (true) 
@@ -47,10 +51,10 @@ uint16_t RingNetworkManager::handle_registration_requests()
         {
             break;
         }
- 
-        if (p->op == Packet::Operation::REGISTRATION_REQUEST)
+
+        if (auto *reg_req = get_if<Packet::RegistrationRequest>(&p->op))
         {
-            node_list_tmp.push_back(*p->data->node_to_register); 
+            node_list_tmp.push_back(reg_req->node_to_register); 
         }
     }
 
@@ -80,16 +84,17 @@ uint16_t RingNetworkManager::handle_registration_requests()
             right_n = node_list_tmp.at(i + 1);
         }
 
-        auto neigbours = new std::vector<NodeInfo>();
-        neigbours->push_back(left_n);
-        neigbours->push_back(right_n);
+        auto neigbours = vector<NodeInfo>();
+        neigbours.push_back(left_n);
+        neigbours.push_back(right_n);
 
-        Packet *res_p = new Packet(
+        auto res_p = make_shared<Packet>(Packet(
             this->get_my_node_name(), 
             node_list_tmp.at(i).name, // Sent the packt to the current node
-            Packet::Operation::REGISTRATION_CONFIRMATION, 
-            new Packet::Data { .node_list = neigbours }
-        );
+            Packet::RegistrationConfirmation(
+                make_shared<vector<NodeInfo>>(neigbours)
+            )
+        ));
 
         this->send(res_p, node_list_tmp.at(i).name);
     }
@@ -108,27 +113,28 @@ void RingNetworkManager::send_registration_request()
     // Take the first bootstrap node. TODO: handle multiple bootstrap nodes??
     auto bootstrap_node = this->bootstrap_nodes->at(0);
 
-    Packet *p = new Packet(
-        this->get_my_node_name(), bootstrap_node->name, 
-        Packet::Operation::REGISTRATION_REQUEST,
-        new Packet::Data { .node_to_register = &this->my_node_info }
-    );
+    auto p = make_shared<Packet>(Packet(
+        this->get_my_node_name(), bootstrap_node.name, 
+        Packet::RegistrationRequest(
+            this->my_node_info
+        )
+    ));
 
     // Send the request
-    this->send(p, bootstrap_node->name);
+    this->send(p, bootstrap_node.name);
 
-    std::unique_ptr<Packet> response;
+    unique_ptr<Packet> response;
 
     // Wait for confirmation 
     while (true) 
     {
         response = this->get();
 
-        if (response->op == Packet::Operation::REGISTRATION_CONFIRMATION)
+        if (auto *reg_conf = get_if<Packet::RegistrationConfirmation>(&response->op))
         {
             XBT_INFO("Succesfully registered");
-            this->left_node = response->data->node_list->at(0);
-            this->right_node = response->data->node_list->at(1);
+            this->left_node = reg_conf->node_list->at(0);
+            this->right_node = reg_conf->node_list->at(1);
             XBT_INFO("Adding %s as left node", this->left_node.name.c_str());
             XBT_INFO("Adding %s as right node", this->right_node.name.c_str());
             break;
@@ -136,36 +142,26 @@ void RingNetworkManager::send_registration_request()
     }
 }
 
-uint16_t RingNetworkManager::broadcast(Packet *packet, FilterNode filter) 
+void RingNetworkManager::broadcast(shared_ptr<Packet> packet, FilterNode filter, const optional<double> &timeout) 
 {
     uint16_t res = 0;
 
     // Send to left node
     if (filter(&this->left_node))
     {
-        this->send(packet->clone(), this->left_node.name);
+        this->send(packet, this->left_node.name, timeout);
         res++;
     }
 
     // Send to right node
     if (filter(&this->right_node))
     {
-        this->send(packet->clone(), this->right_node.name);
+        this->send(packet, this->right_node.name, timeout);
         res++;
     }
-
-    // Delete our version of the packet
-    delete packet;
-
-    return res;
 }
 
-uint16_t RingNetworkManager::broadcast(Packet *packet, FilterNode filter, uint64_t timeout)
-{
-    // TODO
-}
-
-std::unique_ptr<Packet> RingNetworkManager::get()
+unique_ptr<Packet> RingNetworkManager::get_packet(const optional<double> &timeout)
 {
     // How can I handle that correctly
     auto completed_one = this->pending_comms->test_any();
@@ -175,13 +171,13 @@ std::unique_ptr<Packet> RingNetworkManager::get()
  
     }
  
-    std::unique_ptr<Packet> p;
+    unique_ptr<Packet> p;
     bool cond = true;
  
     while (cond)
     {
-        p = this->mailbox->get_unique<Packet>();
-        XBT_INFO("%s <--%s--- %s", this->get_my_node_name().c_str(), p->op_string.c_str(), p->src.c_str()); 
+        p = this->get(timeout);
+        XBT_INFO("%s <--%s--- %s", this->get_my_node_name().c_str(), p->get_op_name(), p->src.c_str()); 
  
         auto v = this->received_packets;
  
@@ -189,7 +185,7 @@ std::unique_ptr<Packet> RingNetworkManager::get()
         if (this->my_node_info.role != NodeRole::Aggregator)
         {
             // if the packet was allready received 
-            if(std::find(v.begin(), v.end(), p->id) != v.end()) 
+            if(find(v.begin(), v.end(), p->id) != v.end()) 
             {
                 XBT_INFO("discarding packet %lu", p->id);
                 // ignore
@@ -203,7 +199,7 @@ std::unique_ptr<Packet> RingNetworkManager::get()
                 }
 
                 
-                if (p->op == Packet::Operation::KILL_TRAINER)
+                if (auto *kill = get_if<Packet::KillTrainer>(&p->op))
                 {
                     try
                     {
@@ -229,10 +225,10 @@ std::unique_ptr<Packet> RingNetworkManager::get()
     return p;
 }
 
-void RingNetworkManager::redirect(std::unique_ptr<Packet> &p)
+void RingNetworkManager::redirect(unique_ptr<Packet> &p)
 {
-    // Clone the packet because we need to modify the source
-    auto new_p = p->clone();
+    // Clone the packet because we need to modify the source // Might cause memory leak???
+    auto new_p = make_shared<Packet>(*p->clone());
     // Set the new source to the current node name
     new_p->src = this->get_my_node_name();
 
@@ -258,10 +254,3 @@ void RingNetworkManager::redirect(std::unique_ptr<Packet> &p)
 // {
 //     this->pending_comms->wait_all();
 // }
-
-std::unique_ptr<Packet> RingNetworkManager::get(double timeout)
-{
-     auto p = this->mailbox->get_unique<Packet>(timeout);
-     XBT_INFO("%s <--%s--- %s", this->get_my_node_name().c_str(), p->op_string.c_str(), p->src.c_str());
-     return p;
-}

@@ -4,6 +4,8 @@
 
 #include <cstdint>
 #include <functional>
+#include <memory>
+#include <optional>
 #include <simgrid/forward.h>
 #include <simgrid/s4u/Mailbox.hpp>
 #include <vector>
@@ -15,29 +17,31 @@ class NetworkManager
 {
 protected:
     simgrid::s4u::Mailbox *mailbox;
-    std::vector<NodeInfo*> *bootstrap_nodes;
+    std::vector<NodeInfo> *bootstrap_nodes;
     NodeInfo my_node_info;
 
+    /** get to be used for inherited classes of NetworkManager */
+    std::unique_ptr<Packet> get(const std::optional<double> &timeout=std::nullopt);
 public:
     NetworkManager(){}
-    void send(Packet*, node_name dst);
-    bool send(Packet*, node_name dst, uint64_t time_out);
-    simgrid::s4u::CommPtr send_async(Packet*, node_name);
 
+    void send(std::shared_ptr<Packet>, node_name dst, const std::optional<double> &timeout=std::nullopt);
+    simgrid::s4u::CommPtr send_async(std::shared_ptr<Packet>, node_name);
+
+    std::vector<NodeInfo> *get_bootstrap_nodes() { return this->bootstrap_nodes; }
+    node_name get_my_node_name() { return this->my_node_info.name; }
+    NodeInfo get_my_node_info() { return this->my_node_info; }
+    void set_bootstrap_nodes(std::vector<NodeInfo> *nodes);
+
+    /* --------- Methods to be redefined by children classes --------- */
     virtual ~NetworkManager(){}
-    virtual std::unique_ptr<Packet> get() = 0;
-    virtual std::unique_ptr<Packet> get(double timeout) = 0;
-
     virtual uint16_t handle_registration_requests() = 0;
     virtual void send_registration_request() = 0;
-    virtual uint16_t broadcast(Packet*, FilterNode) = 0;
-    virtual uint16_t broadcast(Packet*, FilterNode, uint64_t time_out) = 0;
-    // virtual void wait_last_comms() = 0;
+    virtual void broadcast(std::shared_ptr<Packet>, FilterNode, const std::optional<double> &timeout=std::nullopt) = 0;
 
-    std::vector<NodeInfo*> *get_bootstrap_nodes() { return this->bootstrap_nodes; }
-    node_name get_my_node_name() { return this->my_node_info.name; }
-    NodeInfo *get_my_node_info() { return &this->my_node_info; }
-    void set_bootstrap_nodes(std::vector<NodeInfo*> *nodes);
+    /** get to be used by roles that will be override by the specific NetworkManager */
+    virtual std::unique_ptr<Packet> get_packet(const std::optional<double> &timeout=std::nullopt) = 0;
+    // virtual void wait_last_comms() = 0;
 };
 
 namespace Filters {

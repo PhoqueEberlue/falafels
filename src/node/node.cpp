@@ -15,7 +15,7 @@ Node::~Node()
     delete this->role;
 }
 
-NodeInfo *Node::get_node_info()
+NodeInfo Node::get_node_info()
 { 
     // Instanciate and return NodeInfo struct
     return this->role->get_network_manager()->get_my_node_info();

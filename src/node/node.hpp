@@ -57,7 +57,7 @@ public:
      * Allocate a NodeInfo struct representing Node's information.
      * @return NodeInfo*.
      */
-    NodeInfo *get_node_info();
+    NodeInfo get_node_info();
 };
 
 #endif // !FALAFELS_NODE_HPP

@@ -2,12 +2,15 @@
 #include <simgrid/s4u/Mailbox.hpp>
 #include <tuple>
 #include <unordered_map>
+#include <variant>
 #include <xbt/log.h>
 
 #include "asynchronous_aggregator.hpp"
 #include "../../network_managers/nm.hpp"
 #include "../../../protocol.hpp"
 #include "../../../utils/utils.hpp"
+
+using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_asynchronous_aggregator, "Messages specific for this example");
 
@@ -44,9 +47,6 @@ void AsynchronousAggregator::run()
         node_name src = std::get<0>(tupple); 
         node_name original_src = std::get<0>(tupple); 
 
-        XBT_INFO("src %s", src.c_str());
-        XBT_INFO("original_src %s", original_src.c_str());
-
         this->aggregate(1);
         this->send_global_model(src, original_src);
     }
@@ -62,11 +62,12 @@ void AsynchronousAggregator::broadcast_global_model()
 {
     auto nm = this->get_network_manager();
 
-    Packet *p = new Packet(
+    auto p = make_shared<Packet>(Packet(
         this->get_network_manager()->get_my_node_name(), "BROADCAST",
-        Packet::Operation::SEND_GLOBAL_MODEL, 
-        new Packet::Data { .number_local_epochs=this->number_local_epochs }
-    );
+        Packet::SendGlobalModel(
+            this->number_local_epochs
+        )
+    ));
 
     nm->broadcast(p, Filters::trainers);
 }
@@ -76,11 +77,12 @@ void AsynchronousAggregator::send_global_model(node_name dst, node_name final_ds
 {
     auto nm = this->get_network_manager();
 
-    Packet *p = new Packet(
+    auto p = make_shared<Packet>(Packet(
         this->get_network_manager()->get_my_node_name(), final_dst,
-        Packet::Operation::SEND_GLOBAL_MODEL, 
-        new Packet::Data { .number_local_epochs=this->number_local_epochs }
-    );
+        Packet::SendGlobalModel(
+            this->number_local_epochs
+        )
+    ));
 
     nm->send(p, dst);
 }
@@ -94,9 +96,9 @@ std::tuple<node_name, node_name> AsynchronousAggregator::wait_local_model()
 
     // Note that here we don't check that the local models come from different trainers
     while (cond) {
-        p = nm->get();
+        p = nm->get_packet();
 
-        if (p->op == Packet::Operation::SEND_LOCAL_MODEL)
+        if (auto *send_local = get_if<Packet::SendLocalModel>(&p->op))
         {
             res = p->src;
             cond = false;
@@ -109,12 +111,11 @@ std::tuple<node_name, node_name> AsynchronousAggregator::wait_local_model()
 void AsynchronousAggregator::send_kills()
 {
     auto nm = this->get_network_manager();
-    Packet *p;
 
-    p = new Packet(
+    auto p = make_shared<Packet>(Packet(
         this->get_network_manager()->get_my_node_name(), "BROADCAST",
-        Packet::Operation::KILL_TRAINER
-    );
+        Packet::KillTrainer()
+    ));
 
     nm->broadcast(p, Filters::trainers);
 }

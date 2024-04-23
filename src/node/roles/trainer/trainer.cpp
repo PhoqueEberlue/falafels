@@ -3,8 +3,11 @@
 #include <cstdlib>
 #include <memory>
 #include <unordered_map>
+#include <variant>
 #include <xbt/log.h>
 #include "trainer.hpp"
+
+using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_trainer, "Messages specific for this example");
 
@@ -30,10 +33,10 @@ void Trainer::send_local_model(node_name dst, node_name final_dst)
 {
     auto nm = this->get_network_manager();
 
-    Packet *p = new Packet(
+    auto p = make_shared<Packet>(Packet(
         this->get_network_manager()->get_my_node_name(), final_dst,
-        Packet::Operation::SEND_LOCAL_MODEL
-    );
+        Packet::SendLocalModel()
+    ));
 
     nm->send(p, dst, 10);
 }
@@ -49,27 +52,17 @@ void Trainer::run()
 
     while (run)
     {
-        p = nm->get();
+        p = nm->get_packet();
 
-        switch (p->op)
+        if (auto *op_glob = get_if<Packet::SendGlobalModel>(&p->op))
         {
-            case Packet::Operation::SEND_GLOBAL_MODEL:
-                {
-                    this->train(p->data->number_local_epochs);
+            this->train(op_glob->number_local_epochs);
 
-                    this->send_local_model(p->src, p->original_src);
-                    break;
-                }
-            case Packet::Operation::KILL_TRAINER:
-                {
-                    run = false;
-                    break;
-                }
-            case Packet::Operation::SEND_LOCAL_MODEL:
-                {
-                    // Ignore, the packet is automatically redirected when using a decentralized nm i.e. ring nm.
-                    break;
-                }
+            this->send_local_model(p->src, p->original_src);
+        }
+        else if (auto *op_kill = get_if<Packet::KillTrainer>(&p->op))
+        {
+            run = false;
         }
     }
 
