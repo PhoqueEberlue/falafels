@@ -177,7 +177,7 @@ void create_nodes(std::unordered_map<node_name, Node*> *nodes_map, xml_node *nod
     for (xml_node node_elem: nodes_elem->children("node"))
     {
         node_name name = node_elem.attribute("name").as_string();
-        auto bootstrap_nodes = new std::vector<NodeInfo*>(); 
+        auto bootstrap_nodes = new std::vector<NodeInfo>(); 
 
         // Loop through bootstrap nodes
         for (xml_node arg: node_elem.child("network-manager").children())
@@ -189,7 +189,7 @@ void create_nodes(std::unordered_map<node_name, Node*> *nodes_map, xml_node *nod
                 auto bootstrap_node = arg.attribute("value").as_string();
                 // Get corresponding node info
                 XBT_INFO("Fetching NodeInfo of '%s' to be added as boostrap node for '%s'", bootstrap_node, name.c_str());
-                NodeInfo *node_info = nodes_map->at(bootstrap_node)->get_node_info();
+                NodeInfo node_info = nodes_map->at(bootstrap_node)->get_node_info();
 
                 bootstrap_nodes->push_back(node_info);
             }
