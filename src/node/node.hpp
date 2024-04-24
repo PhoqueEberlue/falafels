@@ -1,6 +1,7 @@
 #ifndef FALAFELS_NODE_HPP
 #define FALAFELS_NODE_HPP
 
+#include <memory>
 #include <simgrid/s4u/Actor.hpp>
 #include <simgrid/s4u/Engine.hpp>
 #include <xbt/log.h>
@@ -21,15 +22,16 @@
 class Node
 {
 private:
-    Role *role;
+    std::unique_ptr<Role> role;
 public:
     /**
      * Node constructor
      * @param r Node's Role
      * @param nm Node's NetworkManager
      */
-    Node(Role *r, NetworkManager *nm);
+    Node(std::unique_ptr<Role> r, std::unique_ptr<NetworkManager> nm);
 
+    Node() {};
     /**
      * Delete node's NetworkManager and Role.
      */
@@ -51,7 +53,7 @@ public:
      * Get the Node's Role.
      * @return Node's Role.
      */
-    Role *get_role() { return role; }
+    Role *get_role() { return role.get(); }
 
     /**
      * Allocate a NodeInfo struct representing Node's information.

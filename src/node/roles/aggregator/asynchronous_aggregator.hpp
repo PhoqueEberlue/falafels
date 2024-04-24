@@ -17,6 +17,7 @@ private:
     void broadcast_global_model();
 public:
     AsynchronousAggregator(std::unordered_map<std::string, std::string> *args);
+    ~AsynchronousAggregator() {};
     void run();
 };
 

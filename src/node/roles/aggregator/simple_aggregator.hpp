@@ -12,6 +12,7 @@ private:
     void send_kills();
 public:
     SimpleAggregator(std::unordered_map<std::string, std::string> *args);
+    ~SimpleAggregator() {};
     void run();
 };
 

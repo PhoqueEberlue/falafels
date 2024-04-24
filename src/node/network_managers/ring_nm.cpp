@@ -16,14 +16,12 @@ using namespace std;
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_ring_nm, "Messages specific for this example");
 
 RingNetworkManager::RingNetworkManager(NodeInfo node_info)
-{
+{ 
     this->my_node_info = node_info;
 
     // Initializing our mailbox
     this->mailbox = simgrid::s4u::Mailbox::by_name(node_info.name);
 
-    auto tmp = new simgrid::s4u::ActivitySet();
-    this->pending_comms = simgrid::s4u::ActivitySetPtr(tmp);
     this->received_packets = new vector<packet_id>();
 }
 
@@ -200,10 +198,6 @@ unique_ptr<Packet> RingNetworkManager::get_packet(const optional<double> &timeou
 
 void RingNetworkManager::redirect(unique_ptr<Packet> &p)
 {
-    // Clone the packet because we need to modify the source // Might cause memory leak??? -> no shit sherlock
-    // TODO: make that better 
-    Packet *tmp = p->clone();
-    delete tmp;
     auto new_p = make_shared<Packet>(*p);
 
     node_name dst;
@@ -220,25 +214,5 @@ void RingNetworkManager::redirect(unique_ptr<Packet> &p)
     }
     
     // Note that the final dest stays the same.
-    auto comm = this->send_async(new_p, dst);
-    this->pending_comms->push(comm);
-}
-
-void RingNetworkManager::wait_last_comms(const optional<double> &timeout)
-{
-    if (!timeout)
-    {
-        this->pending_comms->wait_all();
-    }
-    else
-    {
-        try
-        {
-            // Wait finish pending comms before exiting with timeout in case of double send
-            this->pending_comms->wait_all_for(*timeout);
-        } 
-        catch (simgrid::TimeoutException) {
-            XBT_INFO("Timeout");
-        }
-    }
+    this->send_async(new_p, dst);
 }

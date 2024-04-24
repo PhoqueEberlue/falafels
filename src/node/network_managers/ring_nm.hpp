@@ -6,7 +6,6 @@
 #include <cstdint>
 #include <memory>
 #include <simgrid/forward.h>
-#include <simgrid/s4u/ActivitySet.hpp>
 #include <vector>
 
 class RingNetworkManager : public NetworkManager
@@ -14,15 +13,14 @@ class RingNetworkManager : public NetworkManager
 private:
     NodeInfo left_node;
     NodeInfo right_node;
-    simgrid::s4u::ActivitySetPtr pending_comms;
     std::vector<packet_id> *received_packets;
-    ~RingNetworkManager();
 
     void redirect(std::unique_ptr<Packet>&);
 
     bool is_duplicated(std::unique_ptr<Packet>&);
 public:
     RingNetworkManager(NodeInfo);
+    ~RingNetworkManager();
     uint16_t handle_registration_requests();
     void send_registration_request();
 
@@ -30,7 +28,6 @@ public:
     void broadcast(std::shared_ptr<Packet>, FilterNode, const std::optional<double> &timeout=std::nullopt);
 
     void set_bootstrap_nodes(std::vector<NodeInfo*> *nodes);
-    void wait_last_comms(const std::optional<double> &timeout=std::nullopt);
 };
 
 #endif // !FALAFELS_DECENTRALIZED_NM_HPP

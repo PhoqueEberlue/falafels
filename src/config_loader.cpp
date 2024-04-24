@@ -1,6 +1,7 @@
 #include <cstring>
 #include <memory>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 #include <xbt/asserts.h>
 #include <xbt/log.h>
@@ -18,26 +19,19 @@
 #include "protocol.hpp"
 #include "utils/utils.hpp"
  
+using namespace pugi;
+using namespace std;
  
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_falafels_config, "Messages specific for this example");
-
-using namespace pugi;
-
-void node_runner(Node *node)
-{
-    XBT_INFO("Init node: %s", node->get_role()->get_network_manager()->get_my_node_name().c_str());
-    node->run();
-    delete node;
-}
 
 /**
  * Parse arguments in the form of a list of args elements such as: <arg name="" value=""/>
  * @param iterator over the arg elements
  * @return A pointer to a unordered map containing key, values as strings.
  */
-std::unordered_map<std::string, std::string> *parse_arguments(xml_object_range<xml_node_iterator> *args)
+unordered_map<string, string> *parse_arguments(xml_object_range<xml_node_iterator> *args)
 {
-    auto res = new std::unordered_map<std::string, std::string>();
+    auto res = new unordered_map<string, string>();
 
     for (auto arg: *args)
     {
@@ -53,9 +47,9 @@ std::unordered_map<std::string, std::string> *parse_arguments(xml_object_range<x
  * @param name Name of the Node that will be associated to this network manager.
  * @return A pointer to the created NetworkManager.
  */
-NetworkManager *create_network_manager(xml_node *network_manager_elem, NodeInfo node_info, std::string topology)
+unique_ptr<NetworkManager> create_network_manager(xml_node *network_manager_elem, NodeInfo node_info, string topology)
 {
-    NetworkManager *network_manager;
+    unique_ptr<NetworkManager> network_manager;
 
     // auto nm_type = network_manager_elem->attribute("type").as_string();
     // for now, topology of the cluster implies the NM type
@@ -63,11 +57,11 @@ NetworkManager *create_network_manager(xml_node *network_manager_elem, NodeInfo 
 
     if (strcmp(nm_type, "star") == 0)
     {
-        network_manager = new StarNetworkManager(node_info);
+        network_manager = make_unique<StarNetworkManager>(node_info);
     }
     else if (strcmp(nm_type, "ring") == 0)
     {
-        network_manager = new RingNetworkManager(node_info);
+        network_manager = make_unique<RingNetworkManager>(node_info);
     }
 
     XBT_INFO("With %s network manager", nm_type);
@@ -80,23 +74,23 @@ NetworkManager *create_network_manager(xml_node *network_manager_elem, NodeInfo 
  * @param aggregator_elem XML element that contains aggregator informations.
  * @return A pointer to the created aggregator.
  */
-Aggregator *create_aggregator(xml_node *role_elem, std::unordered_map<std::string, std::string> *args)
+unique_ptr<Aggregator> create_aggregator(xml_node *role_elem, unordered_map<string, string> *args)
 {
-    Aggregator *role;
+    unique_ptr<Aggregator> aggregator;
     auto aggregator_type = role_elem->attribute("type").as_string();
 
     if (strcmp(aggregator_type, "simple") == 0)
     {
         XBT_INFO("With role: SimpleAggregator");
-        role = new SimpleAggregator(args);
+        aggregator = make_unique<SimpleAggregator>(args);
     }
     else if (strcmp(aggregator_type, "asynchronous") == 0)
     {
         XBT_INFO("With role: AsynchronousAggregator");
-        role = new AsynchronousAggregator(args);
+        aggregator = make_unique<AsynchronousAggregator>(args);
     }
 
-    return role; 
+    return aggregator; 
 }
 
 /**
@@ -104,9 +98,9 @@ Aggregator *create_aggregator(xml_node *role_elem, std::unordered_map<std::strin
  * @param role_elem XML element that contains role informations.
  * @return A pointer to the created Role.
  */
-Role *create_role(xml_node *role_elem)
+unique_ptr<Role> create_role(xml_node *role_elem)
 {
-    Role *role;
+    unique_ptr<Role> role;
 
     auto args_iter = role_elem->children();
     auto args = parse_arguments(&args_iter);
@@ -117,7 +111,7 @@ Role *create_role(xml_node *role_elem)
     }
     else if (strcmp(role_elem->name(), "trainer") == 0)
     {
-        role = new Trainer(args);
+        role = make_unique<Trainer>(args);
         XBT_INFO("With role: Trainer");
     }
     else if (strcmp(role_elem->name(), "proxy") == 0)
@@ -136,21 +130,21 @@ Role *create_role(xml_node *role_elem)
  * @param name The name of the current node.
  * @return A pointer to the created Node.
  */
-Node *create_node(xml_node *node_elem, node_name name, std::string topology)
+Node *create_node(xml_node *node_elem, node_name name, string topology)
 {
     XBT_INFO("------------------------------");
     XBT_INFO("Creating node: %s", name.c_str());
 
     xml_node role_elem = node_elem->first_child();
-    Role *role = create_role(&role_elem);
+    unique_ptr<Role> role = create_role(&role_elem);
 
     NodeInfo node_info = NodeInfo { .name = name, .role=role->get_role_type() };
 
     xml_node network_manager_elem = role_elem.next_sibling(); 
-    NetworkManager *network_manager = create_network_manager(&network_manager_elem, node_info, topology);
+    auto network_manager = create_network_manager(&network_manager_elem, node_info, topology);
 
     // Returning new falafels node
-    return new Node(role, network_manager);
+    return new Node(std::move(role), std::move(network_manager));
 }
 
 /**
@@ -158,17 +152,17 @@ Node *create_node(xml_node *node_elem, node_name name, std::string topology)
  * @param nodes_elem XML element that contains the list of nodes.
  * @param An unordered map with node_name as key and a pointer to the given Node.
  */
-void create_nodes(std::unordered_map<node_name, Node*> *nodes_map, xml_node *nodes_elem)
+void create_nodes(unordered_map<node_name, Node*> *nodes_map, xml_node *nodes_elem)
 {
     XBT_INFO("Creating falafels nodes...");
 
-    std::string topology = nodes_elem->attribute("topology").as_string();
+    string topology = nodes_elem->attribute("topology").as_string();
 
     // Loop through each (xml) node of the document to instanciate (simulated) nodes
     for (xml_node node_elem: nodes_elem->children("node"))
     {
         node_name name = node_elem.attribute("name").as_string();
-        Node *node     = create_node(&node_elem, name, topology);
+        Node *node = create_node(&node_elem, name, topology);
 
         nodes_map->insert({name, node});
     }
@@ -177,7 +171,7 @@ void create_nodes(std::unordered_map<node_name, Node*> *nodes_map, xml_node *nod
     for (xml_node node_elem: nodes_elem->children("node"))
     {
         node_name name = node_elem.attribute("name").as_string();
-        auto bootstrap_nodes = new std::vector<NodeInfo>(); 
+        auto bootstrap_nodes = new vector<NodeInfo>(); 
 
         // Loop through bootstrap nodes
         for (xml_node arg: node_elem.child("network-manager").children())
@@ -247,7 +241,7 @@ void init_constants(xml_node *constants_elem)
     XBT_INFO("-------------------------");
 }
 
-void load_config(const char* file_path, simgrid::s4u::Engine *e)
+unordered_map<node_name, Node*> *load_config(const char* file_path, simgrid::s4u::Engine *e)
 {
     xml_document doc;
     xml_parse_result result = doc.load_file(file_path);
@@ -260,16 +254,11 @@ void load_config(const char* file_path, simgrid::s4u::Engine *e)
 
     init_constants(&constants_elem);
 
-    auto nodes_map = new std::unordered_map<node_name, Node*>();
+    auto nodes_map = new unordered_map<node_name, Node*>();
 
     for (auto cluster: clusters_elem.children())
     {
         create_nodes(nodes_map, &cluster);  
     }
-    
-    for (auto [name, node] : *nodes_map)
-    {
-        XBT_INFO("Creating actor '%s'", name.c_str());
-        auto actor = simgrid::s4u::Actor::create(name, e->host_by_name(name), &node_runner, node);
-    }
+    return nodes_map; 
 }

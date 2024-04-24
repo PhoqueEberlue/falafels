@@ -1,18 +1,18 @@
 #include "node.hpp"
 #include <xbt/log.h>
 
+using namespace std;
+
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_node, "Messages specific for this example");
 
-Node::Node(Role *r, NetworkManager *nm)
+Node::Node(unique_ptr<Role> r, unique_ptr<NetworkManager> nm)
 {
-    this->role = r;
-    this->role->set_network_manager(nm);
+    this->role = std::move(r);
+    this->role->set_network_manager(std::move(nm));
 }
 
 Node::~Node()
 {
-    delete this->role->get_network_manager();
-    delete this->role;
 }
 
 NodeInfo Node::get_node_info()
@@ -21,17 +21,18 @@ NodeInfo Node::get_node_info()
     return this->role->get_network_manager()->get_my_node_info();
 }
 
-void Node::set_role(Role *r)
-{ 
-    // if we are changing to a new role
-    if (!this->role)
-    {
-        // Reassign the network manager to the new role 
-        r->set_network_manager(this->role->get_network_manager());
-
-        // And delete previous role
-        delete this->role;
-    }
-
-    this->role = r; 
-}
+// TODO: fix later
+// void Node::set_role(Role *r)
+// { 
+//     // if we are changing to a new role
+//     if (!this->role)
+//     {
+//         // Reassign the network manager to the new role 
+//         r->set_network_manager(this->role->get_network_manager());
+// 
+//         // And delete previous role
+//         delete this->role;
+//     }
+// 
+//     this->role = r; 
+// }

@@ -3,6 +3,7 @@
 #define FALAFELS_ROLE_HPP
 
 #include "../network_managers/nm.hpp"
+#include <memory>
 
 /**
  * Abstract class that defines a Node behaviour in a Federated Learning system.
@@ -14,7 +15,7 @@
 class Role
 {
 private:
-    NetworkManager *network_manager;
+    std::unique_ptr<NetworkManager> network_manager;
 public:
     Role(){}
     virtual ~Role(){}
@@ -25,13 +26,13 @@ public:
      * Sets the NetworkManager of the current Role.
      * @param nm NetworkManager
      */
-    void set_network_manager(NetworkManager *nm) { this->network_manager = nm; }
+    void set_network_manager(std::unique_ptr<NetworkManager> nm) { this->network_manager = std::move(nm); }
 
     /**
-     * Get the NetworkManager of the current Role.
+     * Get the NetworkManager of the current Role as a raw pointer (non-owning).
      * @return nm NetworkManager
      */
-    NetworkManager *get_network_manager() { return this->network_manager; }
+    NetworkManager *get_network_manager() { return this->network_manager.get(); }
 };
 
 #endif // !FALAFELS_ROLE_HPP

@@ -13,6 +13,7 @@ private:
     void send_local_model(node_name dst, node_name final_dst);
 public:
     Trainer(std::unordered_map<std::string, std::string> *args);
+    ~Trainer() {};
     void run();
     NodeRole get_role_type() { return NodeRole::Trainer; };
 };

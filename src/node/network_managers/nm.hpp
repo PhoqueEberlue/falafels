@@ -8,6 +8,8 @@
 #include <optional>
 #include <simgrid/forward.h>
 #include <simgrid/s4u/Mailbox.hpp>
+#include <tuple>
+#include <unordered_map>
 #include <vector>
 #include "../../protocol.hpp"
 
@@ -23,10 +25,12 @@ protected:
     /** get to be used for inherited classes of NetworkManager */
     std::unique_ptr<Packet> get(const std::optional<double> &timeout=std::nullopt);
 public:
-    NetworkManager(){}
+    NetworkManager();
 
     void send(std::shared_ptr<Packet>, node_name dst, const std::optional<double> &timeout=std::nullopt);
-    simgrid::s4u::CommPtr send_async(std::shared_ptr<Packet>, node_name);
+
+    void send_async(std::shared_ptr<Packet>, node_name);
+    void wait_last_comms(const std::optional<double> &timeout=std::nullopt);
 
     std::vector<NodeInfo> *get_bootstrap_nodes() { return this->bootstrap_nodes; }
     node_name get_my_node_name() { return this->my_node_info.name; }
@@ -41,7 +45,8 @@ public:
 
     /** get to be used by roles that will be override by the specific NetworkManager */
     virtual std::unique_ptr<Packet> get_packet(const std::optional<double> &timeout=std::nullopt) = 0;
-    virtual void wait_last_comms(const std::optional<double> &timeout=std::nullopt) = 0;
+private:
+    simgrid::s4u::ActivitySet *pending_async_comms;
 };
 
 namespace Filters {
