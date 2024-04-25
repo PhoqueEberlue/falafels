@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <format>
 #include <memory>
 #include <simgrid/Exception.hpp>
 #include <simgrid/forward.h>
@@ -10,6 +11,7 @@
 #include <simgrid/s4u/Engine.hpp>
 
 #include "ring_nm.hpp"
+#include "../../dot.hpp"
 
 using namespace std;
 
@@ -34,6 +36,11 @@ uint16_t RingNetworkManager::handle_registration_requests()
 {
     xbt_assert(this->my_node_info.role == NodeRole::Aggregator);
  
+    DOTGenerator::get_instance().add_to_cluster(
+        std::format("cluster-{}", this->my_node_info.name),
+        std::format("{} [label=\"{}\", color=green]", this->my_node_info.name, this->my_node_info.name)
+    );
+
     auto node_list_tmp = vector<NodeInfo>();
     
     unique_ptr<Packet> p;
@@ -80,7 +87,7 @@ uint16_t RingNetworkManager::handle_registration_requests()
         {
             left_n = node_list_tmp.at(i - 1);
             right_n = node_list_tmp.at(i + 1);
-        }
+        } 
 
         auto neigbours = vector<NodeInfo>();
         neigbours.push_back(left_n);
@@ -95,10 +102,17 @@ uint16_t RingNetworkManager::handle_registration_requests()
         ));
 
         this->send(res_p, node_list_tmp.at(i).name);
-    }
+    } 
 
-    XBT_INFO("Aggregator left node: %s", this->left_node.name.c_str());
-    XBT_INFO("Aggregator right node: %s", this->right_node.name.c_str());
+    DOTGenerator::get_instance().add_to_cluster(
+        std::format("cluster-{}", this->my_node_info.name),
+        std::format("{} -> {} [color=green]", this->my_node_info.name, this->left_node.name)
+    );
+
+    DOTGenerator::get_instance().add_to_cluster(
+        std::format("cluster-{}", this->my_node_info.name),
+        std::format("{} -> {} [color=green]", this->my_node_info.name, this->right_node.name)
+    );
 
     // Return the number of nodes that have been registered
     return node_list_tmp.size();
@@ -133,8 +147,22 @@ void RingNetworkManager::send_registration_request()
             XBT_INFO("Succesfully registered");
             this->left_node = reg_conf->node_list->at(0);
             this->right_node = reg_conf->node_list->at(1);
-            XBT_INFO("Adding %s as left node", this->left_node.name.c_str());
-            XBT_INFO("Adding %s as right node", this->right_node.name.c_str());
+
+            DOTGenerator::get_instance().add_to_cluster(
+                std::format("cluster-{}", bootstrap_node.name),
+                std::format("{} [label=\"{}\", color=yellow]", this->my_node_info.name, this->my_node_info.name)
+            );
+
+            DOTGenerator::get_instance().add_to_cluster(
+                std::format("cluster-{}", bootstrap_node.name),
+                std::format("{} -> {} [color=green]", this->my_node_info.name, this->left_node.name)
+            );
+
+            DOTGenerator::get_instance().add_to_cluster(
+                std::format("cluster-{}", bootstrap_node.name),
+                std::format("{} -> {} [color=green]", this->my_node_info.name, this->right_node.name)
+            );
+           
             break;
         }
     }

@@ -1,7 +1,7 @@
-#include "star_nm.hpp"
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <format>
 #include <iterator>
 #include <memory>
 #include <optional>
@@ -13,6 +13,9 @@
 #include <vector>
 #include <xbt/asserts.h>
 #include <xbt/log.h>
+
+#include "star_nm.hpp"
+#include "../../dot.hpp"
 
 using namespace std;
 
@@ -38,6 +41,11 @@ uint16_t StarNetworkManager::handle_registration_requests()
     uint16_t number_registration = 0;
     unique_ptr<Packet> p;
 
+    DOTGenerator::get_instance().add_to_cluster(
+        std::format("cluster-{}", this->my_node_info.name),
+        std::format("{} [label=\"{}\", color=green]", this->my_node_info.name, this->my_node_info.name)
+    );
+
     while (true) 
     {
         try 
@@ -51,9 +59,17 @@ uint16_t StarNetworkManager::handle_registration_requests()
 
         if (auto *reg_req = get_if<Packet::RegistrationRequest>(&p->op))
         {
-            this->connected_nodes->push_back(reg_req->node_to_register);
+            this->connected_nodes->push_back(reg_req->node_to_register); 
 
-            XBT_INFO("Added %s as a connected node", reg_req->node_to_register.name.c_str());
+            DOTGenerator::get_instance().add_to_cluster(
+                std::format("cluster-{}", this->my_node_info.name),
+                std::format("{} [label=\"{}\", color=yellow]", reg_req->node_to_register.name, reg_req->node_to_register.name)
+            );
+
+            DOTGenerator::get_instance().add_to_cluster(
+                std::format("cluster-{}", this->my_node_info.name),
+                std::format("{} -> {} [color=green]", this->my_node_info.name, reg_req->node_to_register.name)
+            );
 
             auto node_list = vector<NodeInfo>();
             node_list.push_back(this->my_node_info);
@@ -103,7 +119,6 @@ void StarNetworkManager::send_registration_request()
             for (auto node: *conf->node_list)
             {
                 this->connected_nodes->push_back(node);
-                XBT_INFO("Add connection to %s", node.name.c_str());
             }
 
             break;

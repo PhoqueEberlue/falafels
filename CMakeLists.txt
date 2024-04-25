@@ -46,6 +46,10 @@ set(falafels_files
     src/config_loader.cpp
     src/config_loader.hpp
     src/constants.hpp
+
+    src/dot.cpp
+    src/dot.hpp
+
     src/protocol.cpp
     src/protocol.hpp
 )

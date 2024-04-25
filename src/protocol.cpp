@@ -66,7 +66,7 @@ uint64_t Packet::get_packet_size()
     return this->packet_size;
 }
 
-const char *Packet::get_op_name()
+const char *Packet::get_op_name() const
 {
     return std::visit(overloaded {
         // Match every variant type because they all have op_name field
