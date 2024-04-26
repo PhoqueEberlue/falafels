@@ -7,36 +7,82 @@
     </constants>
     <clusters>
         <cluster topology="star">
-            <node name="Pyke">
-                <trainer type="simple"/>
-                <network-manager type="star">
-                    <arg name="bootstrap-node" value="Soraka"/>
-                </network-manager>
+            <node name="Rammus">
+                <aggregator type="simple">
+                    <network-manager>
+                        <arg/>
+                    </network-manager>
+                </aggregator>
             </node>
-            <node name="Morgana">
-                <trainer type="simple"/>
-                <network-manager type="star">
-                    <arg name="bootstrap-node" value="Soraka"/>
-                </network-manager>
-            </node>
-            <node name="Maokai">
-                <trainer type="simple"/>
-                <network-manager type="star">
-                    <arg name="bootstrap-node" value="Soraka"/>
-                </network-manager>
-            </node>
-            <node name="Zoe">
-                <trainer type="simple"/>
-                <network-manager type="star">
-                    <arg name="bootstrap-node" value="Soraka"/>
-                </network-manager>
-            </node>
-            <node name="Soraka">
-                <aggregator type="simple"/>
-                <network-manager type="star">
-                    <arg/>
-                </network-manager>
-            </node>
-        </cluster>
+
+            <cluster topology="star">
+                <node name="Pyke">
+                    <trainer type="simple"/>
+                    <network-manager>
+                        <arg name="bootstrap-node" value="Soraka"/>
+                    </network-manager>
+                </node>
+                <node name="Morgana">
+                    <trainer type="simple"/>
+                    <network-manager>
+                        <arg name="bootstrap-node" value="Soraka"/>
+                    </network-manager>
+                </node>
+                <node name="Maokai">
+                    <trainer type="simple"/>
+                    <network-manager>
+                        <arg name="bootstrap-node" value="Soraka"/>
+                    </network-manager>
+                </node>
+                <node name="Zoe">
+                    <trainer type="simple"/>
+                    <network-manager>
+                        <arg name="bootstrap-node" value="Soraka"/>
+                    </network-manager>
+                </node>
+                <node name="Soraka">
+                    <aggregator type="hierarchical">
+                        <arg name="central_aggregator_name" value="Rammus"/>
+                    </aggregator>
+                    <network-manager>
+                        <arg/>
+                    </network-manager>
+                </node>
+            </cluster>
+            <cluster topology="ring">
+                <node name="Illaoi">
+                    <trainer type="simple"/>
+                    <network-manager>
+                        <arg name="bootstrap-node" value="Evelynn"/>
+                    </network-manager>
+                </node>
+                <node name="Wukong">
+                    <trainer type="simple"/>
+                    <network-manager>
+                        <arg name="bootstrap-node" value="Evelynn"/>
+                    </network-manager>
+                </node>
+                <node name="Akali">
+                    <trainer type="simple"/>
+                    <network-manager>
+                        <arg name="bootstrap-node" value="Evelynn"/>
+                    </network-manager>
+                </node>
+                <node name="Neeko">
+                    <trainer type="simple"/>
+                    <network-manager>
+                        <arg name="bootstrap-node" value="Evelynn"/>
+                    </network-manager>
+                </node>
+                <node name="Evelynn">
+                    <aggregator type="hierarchical">
+                        <arg name="central_aggregator_name" value="Rammus"/>
+                    </aggregator>
+                    <network-manager>
+                        <arg/>
+                    </network-manager>
+                </node>
+            </cluster>
+        </cluster> 
     </clusters>
 </fried>

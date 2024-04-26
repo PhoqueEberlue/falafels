@@ -42,17 +42,20 @@ will receive its corresponding simgrid Host.
 
     <clusters>
 
-        <cluster topology="star">
-            <aggregators number="1" type="simple" host-profiles="big-server" link-profiles="fiber">
-                <network-manager type="star">
-                    <!--<arg name="" value=""/> -->
-                </network-manager>
-            </aggregators>
-
-            <trainers number="4" type="simple" host-profiles="average-computer,small-device" link-profiles="fiber,adsl">
-                <network-manager type="star"/>
-            </trainers>
+        <cluster name="star-cluster" topology="star">
+            <aggregators number="1" type="simple" host-profiles="big-server" link-profiles="fiber"/>
+            <trainers number="4" type="simple" host-profiles="average-computer,small-device" link-profiles="fiber,adsl"/>
         </cluster>
+
+        <cluster name="ring-cluster" topology="ring">
+            <aggregators number="1" type="simple" host-profiles="big-server" link-profiles="fiber"/>
+            <trainers number="4" type="simple" host-profiles="average-computer,small-device" link-profiles="fiber,adsl"/>
+        </cluster>
+
+        <aggregator type="simple" host-profiles="big-server" link-profiles="fiber">
+            <link name="star-cluster"/>
+            <link name="ring-cluster"/>
+        </aggregator>
 
     </clusters>
     

@@ -9,6 +9,7 @@
 
 #include "node/network_managers/nm.hpp"
 #include "node/roles/aggregator/asynchronous_aggregator.hpp"
+#include "node/roles/aggregator/hierarchical_aggregator.hpp"
 #include "node/roles/aggregator/simple_aggregator.hpp"
 #include "node/roles/trainer/trainer.hpp"
 #include "node/roles/proxy/proxy.hpp"
@@ -88,6 +89,11 @@ unique_ptr<Aggregator> create_aggregator(xml_node *role_elem, unordered_map<stri
     {
         XBT_INFO("With role: AsynchronousAggregator");
         aggregator = make_unique<AsynchronousAggregator>(args);
+    }
+    else if (strcmp(aggregator_type, "hierarchical") == 0)
+    {
+        XBT_INFO("With role: Hierarchical");
+        aggregator = make_unique<HierarchicalAggregator>(args);
     }
 
     return aggregator; 
@@ -192,6 +198,11 @@ void create_nodes(unordered_map<node_name, Node*> *nodes_map, xml_node *nodes_el
         // Set boostrap nodes
         nodes_map->at(name)->get_role()->get_network_manager()->set_bootstrap_nodes(bootstrap_nodes); 
     } 
+
+    for (auto cluster : nodes_elem->children("cluster"))
+    {
+        create_nodes(nodes_map, &cluster);
+    }
 }
 
 /**

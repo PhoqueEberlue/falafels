@@ -129,7 +129,8 @@ void NetworkManager::wait_last_comms(const optional<double> &timeout)
             // Wait finish pending comms before exiting with timeout in case of double send
             this->pending_async_comms->wait_all_for(*timeout);
         } 
-        catch (simgrid::TimeoutException) {
+        catch (simgrid::TimeoutException)
+        {
             XBT_INFO("Timeout");
         }
     }

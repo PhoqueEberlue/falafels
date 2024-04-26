@@ -19,8 +19,6 @@ public:
 
     std::unique_ptr<Packet> get_packet(const std::optional<double> &timeout=std::nullopt);
     void broadcast(std::shared_ptr<Packet>, FilterNode, const std::optional<double> &timeout=std::nullopt);
-
-    void set_bootstrap_nodes(std::vector<NodeInfo*> *nodes);
 };
 
 #endif // !FALAFELS_CENTRALIZED_NM_HPP

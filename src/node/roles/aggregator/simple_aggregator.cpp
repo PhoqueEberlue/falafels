@@ -14,6 +14,11 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_simple_aggregator, "Messages specific for this 
 SimpleAggregator::SimpleAggregator(std::unordered_map<std::string, std::string> *args)
 {
     // No arguments yet
+    this->args = args;
+}
+
+SimpleAggregator::~SimpleAggregator()
+{
     delete args;
 }
 

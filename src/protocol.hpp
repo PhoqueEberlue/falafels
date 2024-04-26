@@ -36,27 +36,32 @@ public:
     struct RegistrationConfirmation 
     { 
         std::shared_ptr<std::vector<NodeInfo>> node_list; // list of nodes attributed by the aggregator.
-        static constexpr std::string_view op_name = "REGISTRATION_CONFIRMATION"; // "\x1B[33mREGISTRATION_CONFIRMATION\033[0m\0";
+        static constexpr std::string_view op_name = "REGISTRATION_CONFIRMATION\0";
+        // static constexpr std::string_view op_name = "\x1B[33mREGISTRATION_CONFIRMATION\033[0m\0";
     };
     struct SendGlobalModel
     {
         uint8_t number_local_epochs; // number of local epochs the trainer should perform.
-        static constexpr std::string_view op_name = "SEND_GLOBAL_MODEL"; // "\x1B[34mSEND_GLOBAL_MODEL\033[0m\0";
+        static constexpr std::string_view op_name = "SEND_GLOBAL_MODEL\0";
+        // static constexpr std::string_view op_name = "\x1B[34mSEND_GLOBAL_MODEL\033[0m\0";
     };
     struct KillTrainer 
     {
-        static constexpr std::string_view op_name = "KILL_TRAINER"; // "\x1B[31mKILL_TRAINER\033[0m\0";
+        static constexpr std::string_view op_name = "KILL_TRAINER\0";
+        // static constexpr std::string_view op_name = "\x1B[31mKILL_TRAINER\033[0m\0";
     };
 
     /* Trainer operations */
     struct RegistrationRequest 
     { 
         NodeInfo node_to_register; // the node that the aggregator should register.
-        static constexpr std::string_view op_name = "REGISTRATION_REQUEST"; // \x1B[33mREGISTRATION_REQUEST\033[0m\0";
+        static constexpr std::string_view op_name = "REGISTRATION_REQUEST\0";
+        // static constexpr std::string_view op_name = "\x1B[33mREGISTRATION_REQUEST\033[0m\0";
     };
     struct SendLocalModel 
     {
-        static constexpr std::string_view op_name = "SEND_LOCAL_MODEL"; // "\x1B[32mSEND_LOCAL_MODEL\033[0m\0";
+        static constexpr std::string_view op_name = "SEND_LOCAL_MODEL\0";
+        // static constexpr std::string_view op_name = "\x1B[32mSEND_LOCAL_MODEL\033[0m\0";
     };
     /* -------------------------------------------------------------------------------------------- */
 

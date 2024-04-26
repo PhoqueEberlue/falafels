@@ -93,7 +93,8 @@ uint16_t StarNetworkManager::handle_registration_requests()
 
 void StarNetworkManager::send_registration_request()
 {
-    xbt_assert(this->my_node_info.role == NodeRole::Trainer);
+    // This assert is'nt true in the case of hierarchical aggregator...
+    // xbt_assert(this->my_node_info.role == NodeRole::Trainer);
 
     // Take the first bootstrap node, in a centralized topology we should have only one anyways.
     auto bootstrap_node = this->bootstrap_nodes->at(0);
