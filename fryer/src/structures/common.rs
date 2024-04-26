@@ -25,9 +25,6 @@ pub struct Arg {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct NetworkManager {
-    #[serde(rename = "@type")]
-    pub type_network_manager: String,
-
     #[serde(rename = "arg")]
     pub args: Option<Vec<Arg>>,
 }

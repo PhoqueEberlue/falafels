@@ -69,8 +69,8 @@ pub struct Trainers {
     pub host_profiles: String,
     #[serde(rename = "@link-profiles")]
     pub link_profiles: String,
-    #[serde(rename = "network-manager")]
-    pub network_manager: NetworkManager,
+    #[serde(rename = "network-manager", skip_serializing_if = "Option::is_none")]
+    pub network_manager: Option<NetworkManager>,
     #[serde(rename = "arg")]
     pub args: Option<Vec<Arg>>,
 }
@@ -85,8 +85,8 @@ pub struct Aggregators {
     pub host_profiles: String,
     #[serde(rename = "@link-profiles")]
     pub link_profiles: String,
-    #[serde(rename = "network-manager")]
-    pub network_manager: NetworkManager,
+    #[serde(rename = "network-manager", skip_serializing_if = "Option::is_none")]
+    pub network_manager: Option<NetworkManager>,
     #[serde(rename = "arg")]
     pub args: Option<Vec<Arg>>,
 }

@@ -136,10 +136,15 @@ impl Fryer {
                 args: cluster_param.trainers.args.clone(),
             });
 
+            let nm = match &cluster_param.trainers.network_manager {
+                Some(nm) => nm.clone(),
+                None => common::NetworkManager { args: None },
+            };
+
             let node = fried::Node {
                 name: self.pick_node_name(),
                 role,
-                network_manager: cluster_param.trainers.network_manager.clone(),
+                network_manager: nm,
             };
 
             res.push(node);
@@ -158,10 +163,15 @@ impl Fryer {
                 args: cluster_param.aggregators.args.clone(),
             });
 
+            let nm = match &cluster_param.trainers.network_manager {
+                Some(nm) => nm.clone(),
+                None => common::NetworkManager { args: None },
+            };
+
             let aggregator_node = fried::Node {
                 name: self.pick_node_name(),
                 role,
-                network_manager: cluster_param.aggregators.network_manager.clone(),
+                network_manager: nm,
             };
 
             res.push(aggregator_node);
