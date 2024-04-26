@@ -26,6 +26,8 @@ set(falafels_files
     src/node/roles/aggregator/aggregator.hpp
     src/node/roles/aggregator/asynchronous_aggregator.cpp
     src/node/roles/aggregator/asynchronous_aggregator.hpp
+    src/node/roles/aggregator/hierarchical_aggregator.cpp
+    src/node/roles/aggregator/hierarchical_aggregator.hpp
     src/node/roles/aggregator/simple_aggregator.cpp
     src/node/roles/aggregator/simple_aggregator.hpp
 
