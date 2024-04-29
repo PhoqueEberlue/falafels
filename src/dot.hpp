@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "utils/utils.hpp"
 #include "protocol.hpp"
 
 class DOTGenerator

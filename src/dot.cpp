@@ -28,6 +28,9 @@ DOTGenerator::~DOTGenerator()
 
 void DOTGenerator::add_to_cluster(string cluster_name, string line)
 {
+    // Replace hierarchical_ namespace, because on the graph they represent the same node
+    replace_all(line, "hierarchical_", "");
+
     if (this->cluster_map->contains(cluster_name))
     {
         this->cluster_map->at(cluster_name)->push_back(line);
@@ -40,6 +43,9 @@ void DOTGenerator::add_to_cluster(string cluster_name, string line)
 
 void DOTGenerator::add_to_state(double current_time, string line)
 {
+    // Replace hierarchical_ namespace, because on the graph they represent the same node
+    replace_all(line, "hierarchical_", "");
+
     if (this->dot_states->contains(current_time))
     {
         this->dot_states->at(current_time)->push_back(line);
