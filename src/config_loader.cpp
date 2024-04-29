@@ -199,6 +199,7 @@ void create_nodes(unordered_map<node_name, Node*> *nodes_map, xml_node *nodes_el
         nodes_map->at(name)->get_role()->get_network_manager()->set_bootstrap_nodes(bootstrap_nodes); 
     } 
 
+    // Create sub-clusters nodes
     for (auto cluster : nodes_elem->children("cluster"))
     {
         create_nodes(nodes_map, &cluster);
