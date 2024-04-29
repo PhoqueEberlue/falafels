@@ -68,7 +68,7 @@ void AsynchronousAggregator::broadcast_global_model()
         )
     ));
 
-    nm->broadcast(p, Filters::trainers);
+    nm->broadcast(p, Filters::trainers_and_aggregators);
 }
 
 /* Sends the global model to every start_nodes */
@@ -116,5 +116,5 @@ void AsynchronousAggregator::send_kills()
         Packet::KillTrainer()
     ));
 
-    nm->broadcast(p, Filters::trainers);
+    nm->broadcast(p, Filters::trainers_and_aggregators);
 }

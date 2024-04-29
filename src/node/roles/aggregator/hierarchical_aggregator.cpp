@@ -32,7 +32,7 @@ void HierarchicalAggregator::run()
     auto my_node_info = this->get_network_manager()->get_my_node_info();
 
     // Create a new node name to be used for the mailbox that will be receiving and sending to the central aggregator
-    my_node_info.name = format("hierarchical-{}", my_node_info.name);
+    my_node_info.name = format("hierarchical_{}", my_node_info.name);
     this->central_nm = make_unique<StarNetworkManager>(my_node_info);
 
     // Set the centra_aggregator_name as bootstrap node so we can register to it when the hierarchical_aggregator is run.
@@ -49,14 +49,9 @@ void HierarchicalAggregator::run()
     this->number_client_training = 
         this->get_network_manager()->handle_registration_requests();
  
-
-
-    auto current_sim_time = simgrid::s4u::Engine::get_instance()->get_clock();
-
-
     unique_ptr<Packet> p;
 
-    while (simgrid::s4u::Engine::get_instance()->get_clock() < current_sim_time + Constants::DURATION_TRAINING_PHASE)
+    while (true)
     {
         p = this->central_nm->get_packet();
 
@@ -69,9 +64,11 @@ void HierarchicalAggregator::run()
             this->aggregate(number_local_models);
             this->send_model_to_central_aggregator(p->src);
         }
+        else if (auto *op_kill = get_if<Packet::KillTrainer>(&p->op)) {
+            this->send_kills();
+            break;
+        }
     } 
-
-    this->send_kills();
 
     this->print_end_report();
 }

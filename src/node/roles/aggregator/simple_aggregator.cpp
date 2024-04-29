@@ -58,7 +58,7 @@ void SimpleAggregator::send_global_model()
         )
     ));
 
-    this->get_network_manager()->broadcast(p, Filters::trainers);
+    this->get_network_manager()->broadcast(p, Filters::trainers_and_aggregators);
 }
 
 uint64_t SimpleAggregator::wait_local_models()
@@ -92,5 +92,5 @@ void SimpleAggregator::send_kills()
         Packet::KillTrainer()
     ));
 
-    this->get_network_manager()->broadcast(p, Filters::trainers);
+    this->get_network_manager()->broadcast(p, Filters::trainers_and_aggregators);
 }
