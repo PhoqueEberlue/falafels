@@ -73,7 +73,6 @@ uint16_t StarNetworkManager::handle_registration_requests()
 
             auto node_list = vector<NodeInfo>();
             node_list.push_back(this->my_node_info);
-            XBT_INFO("node list : %s", node_list.at(0).name.c_str());
 
             auto res_p = make_shared<Packet>(Packet(
                 this->get_my_node_name(), p->final_dst,
