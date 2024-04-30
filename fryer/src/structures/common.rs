@@ -35,6 +35,8 @@ pub enum AggregatorType {
     Simple,
     #[serde(rename = "asynchronous")]
     Asynchronous,
+    #[serde(rename = "hierarchical")]
+    Hierarchical,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]

@@ -19,6 +19,8 @@ pub struct Clusters {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Cluster {
+    #[serde(rename = "@name")]
+    pub name: String,
     #[serde(rename = "@topology")]
     pub topology: ClusterTopology,
     #[serde(rename = "node")]

@@ -45,6 +45,7 @@ pub struct LinkProfile {
     pub props: Vec<Prop>,
 
 }
+
 #[derive(Deserialize, Debug)]
 pub struct Clusters {
     #[serde(rename = "cluster")]
@@ -53,10 +54,20 @@ pub struct Clusters {
 
 #[derive(Deserialize, Debug)]
 pub struct Cluster {
+    #[serde(rename = "@name")]
+    pub name: String,
     #[serde(rename = "@topology")]
     pub topology: ClusterTopology,
-    pub trainers: Trainers,
+    pub trainers: Option<Trainers>,
     pub aggregators: Aggregators,
+    #[serde(rename = "connected-to")]
+    pub connections: Option<Vec<ConnectedTo>>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ConnectedTo {
+    #[serde(rename = "@cluster-name")]
+    pub cluster_name: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]

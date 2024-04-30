@@ -94,14 +94,25 @@ impl<'a> Platformer<'a> {
         let mut links = Vec::<Link>::new();
         let mut routes = Vec::<Route>::new();
 
+        // Trainers can be optional when defining a cluster with only "connected-to"
+        let trainers_host_profiles = match &raw_cluster.trainers {
+            Some(t) => t.host_profiles.clone(),
+            None => String::from(""),
+        };
+
+        let trainers_link_profiles = match &raw_cluster.trainers {
+            Some(t) => t.link_profiles.clone(),
+            None => String::from(""),
+        };
+
         let mut profile_handler_host = ProfilesHandler::new(
-            &raw_cluster.trainers.host_profiles,
+            &trainers_host_profiles,
             &raw_cluster.aggregators.host_profiles,
             &self.rf.profiles.host_profiles,
         );
 
         let mut profile_handler_link = ProfilesHandler::new(
-            &raw_cluster.trainers.link_profiles,
+            &trainers_link_profiles,
             &raw_cluster.aggregators.link_profiles,
             &self.rf.profiles.link_profiles,
         );

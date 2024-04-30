@@ -1,9 +1,11 @@
+use crate::structures::{fried::RoleEnum, raw::ConnectedTo};
+
 use super::structures::{common, fried, raw};
 use core::panic;
 use quick_xml::de::from_str;
 use rand::{self, RngCore, SeedableRng};
 use serde::Serialize;
-use std::fs;
+use std::{borrow::BorrowMut, fs};
 
 /// Tool to fry falafels.
 /// Load a raw-falafels file to produce fried-falafels file.
@@ -51,13 +53,25 @@ impl Fryer {
             names_list.is_list_big_enough(Fryer::count_total_number_nodes(&rf.clusters));
         }
 
-        let mut clusters = Vec::<fried::Cluster>::new();
+        let mut fried_clusters = Vec::<fried::Cluster>::new();
 
-        for cluster in &rf.clusters.list {
+        for raw_cluster in &rf.clusters.list {
             // Create cluster nodes
-            let cluster = self.create_cluster(&cluster);
+            let fried_cluster = self.create_cluster(&raw_cluster);
             // Append them to the other nodes
-            clusters.push(cluster);
+            fried_clusters.push(fried_cluster);
+        }
+
+        for (i, raw_cluster) in rf.clusters.list.iter().enumerate() {
+            if let Some(connections) = &raw_cluster.connections {
+
+                // Get the corresponding raw/fried clusters with current raw index, and get first
+                // node (because it should have only one aggregator)
+                let aggregator_some = fried_clusters.get(i).unwrap().nodes.get(0);
+                let aggregator_name = aggregator_some.unwrap().name.clone();
+
+                Fryer::resolve_connections(&connections, fried_clusters.as_mut(), &aggregator_name);
+            }
         }
 
         // Create FriedFalafels
@@ -67,7 +81,7 @@ impl Fryer {
             // Cloning constants because no treatment needed
             constants: rf.constants.clone(),
             // Assigning our nodes
-            clusters: fried::Clusters { list: clusters },
+            clusters: fried::Clusters { list: fried_clusters },
         };
 
         println!("Falafels ready! 🧆");
@@ -75,12 +89,35 @@ impl Fryer {
         ff
     }
 
+    // VERY VERY VERY VERY UGLY
+    fn resolve_connections(connections: &Vec<ConnectedTo>, fried_clusters: &mut Vec<fried::Cluster>, central_aggregator_name: &String) {
+        for connected_to in connections {
+            for fried_cluster in fried_clusters.iter_mut() {
+
+                if fried_cluster.name == connected_to.cluster_name {
+
+                    for node in fried_cluster.nodes.iter_mut() {
+                        if let RoleEnum::Aggregator(a) = node.role.borrow_mut() { 
+                            let args = a.args.get_or_insert_with(|| Vec::<common::Arg>::new());
+                            args.push(
+                                common::Arg { 
+                                    name: String::from("central_aggregator_name"), 
+                                    value: central_aggregator_name.clone() 
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /// Count the total number of nodes in every clusters
     fn count_total_number_nodes(clusters: &raw::Clusters) -> u16 {
         clusters
             .list
             .iter()
-            .map(|c| c.trainers.number + c.aggregators.number)
+            .map(|c| match &c.trainers { Some(t) => t.number, None => 0 } + c.aggregators.number)
             .sum::<u16>()
     }
 
@@ -93,6 +130,7 @@ impl Fryer {
         );
 
         let mut fried_cluster = fried::Cluster {
+            name: cluster.name.clone(),
             nodes: Vec::new(),
             topology: cluster.topology.clone(),
         };
@@ -129,25 +167,30 @@ impl Fryer {
     fn create_trainer_nodes(&mut self, cluster_param: &raw::Cluster) -> Vec<fried::Node> {
         let mut res = Vec::<fried::Node>::new();
 
-        // Creating the trainers(s)
-        for _ in 0..cluster_param.trainers.number {
-            let role = fried::RoleEnum::Trainer(fried::Trainer {
-                trainer_type: cluster_param.trainers.trainer_type.clone(),
-                args: cluster_param.trainers.args.clone(),
-            });
+        match &cluster_param.trainers {
+            Some(trainers) => {
+                // Creating the trainers(s)
+                for _ in 0..trainers.number {
+                    let role = fried::RoleEnum::Trainer(fried::Trainer {
+                        trainer_type: trainers.trainer_type.clone(),
+                        args: trainers.args.clone(),
+                    });
 
-            let nm = match &cluster_param.trainers.network_manager {
-                Some(nm) => nm.clone(),
-                None => common::NetworkManager { args: None },
-            };
+                    let nm = match &trainers.network_manager {
+                        Some(nm) => nm.clone(),
+                        None => common::NetworkManager { args: None },
+                    };
 
-            let node = fried::Node {
-                name: self.pick_node_name(),
-                role,
-                network_manager: nm,
-            };
+                    let node = fried::Node {
+                        name: self.pick_node_name(),
+                        role,
+                        network_manager: nm,
+                    };
 
-            res.push(node);
+                    res.push(node);
+                }
+            },
+            None => {},
         }
 
         res
@@ -163,7 +206,7 @@ impl Fryer {
                 args: cluster_param.aggregators.args.clone(),
             });
 
-            let nm = match &cluster_param.trainers.network_manager {
+            let nm = match &cluster_param.aggregators.network_manager {
                 Some(nm) => nm.clone(),
                 None => common::NetworkManager { args: None },
             };
