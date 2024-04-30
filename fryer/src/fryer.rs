@@ -65,12 +65,14 @@ impl Fryer {
         for (i, raw_cluster) in rf.clusters.list.iter().enumerate() {
             if let Some(connections) = &raw_cluster.connections {
 
+                let cluster_names = connections.iter().map(|con| con.cluster_name.clone()).collect();
+
                 // Get the corresponding raw/fried clusters with current raw index, and get first
                 // node (because it should have only one aggregator)
                 let aggregator_some = fried_clusters.get(i).unwrap().nodes.get(0);
                 let aggregator_name = aggregator_some.unwrap().name.clone();
 
-                Fryer::resolve_connections(&connections, fried_clusters.as_mut(), &aggregator_name);
+                Fryer::resolve_connections(cluster_names, fried_clusters.as_mut(), &aggregator_name);
             }
         }
 
@@ -90,24 +92,29 @@ impl Fryer {
     }
 
     // VERY VERY VERY VERY UGLY
-    fn resolve_connections(connections: &Vec<ConnectedTo>, fried_clusters: &mut Vec<fried::Cluster>, central_aggregator_name: &String) {
-        for connected_to in connections {
-            for fried_cluster in fried_clusters.iter_mut() {
+    fn resolve_connections(
+        cluster_to_connect: Vec<String>, 
+        fried_clusters: &mut Vec<fried::Cluster>, 
+        central_aggregator_name: &String
+    ) {
+        for fried_cluster in fried_clusters.iter_mut() {
+            // if current fried_cluster name is contained in the cluster to connect
+            if cluster_to_connect.contains(&fried_cluster.name) {
 
-                if fried_cluster.name == connected_to.cluster_name {
+                fried_cluster.nodes.iter_mut().for_each(|node| {
+                    if let RoleEnum::Aggregator(a) = node.role.borrow_mut() { 
+                        // Get mut ref of existing vector of arguments OR create an empty one and return its mut ref
+                        let args = a.args.get_or_insert_with(|| Vec::<common::Arg>::new());
 
-                    for node in fried_cluster.nodes.iter_mut() {
-                        if let RoleEnum::Aggregator(a) = node.role.borrow_mut() { 
-                            let args = a.args.get_or_insert_with(|| Vec::<common::Arg>::new());
-                            args.push(
-                                common::Arg { 
-                                    name: String::from("central_aggregator_name"), 
-                                    value: central_aggregator_name.clone() 
-                                }
-                            )
-                        }
+                        // Add argument with value of the central_aggregator_name
+                        args.push(
+                            common::Arg { 
+                                name: String::from("central_aggregator_name"), 
+                                value: central_aggregator_name.clone() 
+                            }
+                        );
                     }
-                }
+                });
             }
         }
     }
