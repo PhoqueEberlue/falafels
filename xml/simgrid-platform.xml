@@ -43,7 +43,7 @@
             <prop id="wattage_per_state" value="200.0:193.33333333333333:400.0, 193.0:190.0:370.0, 190.0:190.0:250.0"/>
             <prop id="wattage_off" value="50"/>
         </host>
-        <host id="Rammus" speed="500.0Mf,250.0Mf,100.0Mf" core="32" pstate="0">
+        <host id="Ahri" speed="500.0Mf,250.0Mf,100.0Mf" core="32" pstate="0">
             <prop id="wattage_per_state" value="200.0:193.33333333333333:400.0, 193.0:190.0:370.0, 190.0:190.0:250.0"/>
             <prop id="wattage_off" value="50"/>
         </host>
@@ -121,7 +121,7 @@
         <route src="Evelynn" dst="zone1-router">
             <link_ctn id="10"/>
         </route>
-        <route src="Rammus" dst="zone1-router">
+        <route src="Ahri" dst="zone1-router">
             <link_ctn id="11"/>
         </route>
     </zone>

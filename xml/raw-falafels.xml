@@ -40,22 +40,23 @@ will receive its corresponding simgrid Host.
         </link-profile>
     </profiles>
 
-    <clusters>
+    <clusters> 
 
-        <cluster name="star-cluster" topology="star">
-            <aggregators number="1" type="simple" host-profiles="big-server" link-profiles="fiber"/>
+        <cluster name="sub-cluster-star" topology="star">
+            <aggregators number="1" type="hierarchical" host-profiles="big-server" link-profiles="fiber"/>
             <trainers number="4" type="simple" host-profiles="average-computer,small-device" link-profiles="fiber,adsl"/>
         </cluster>
 
-        <cluster name="ring-cluster" topology="ring">
-            <aggregators number="1" type="simple" host-profiles="big-server" link-profiles="fiber"/>
+        <cluster name="sub-cluster-ring" topology="ring">
+            <aggregators number="1" type="hierarchical" host-profiles="big-server" link-profiles="fiber"/>
             <trainers number="4" type="simple" host-profiles="average-computer,small-device" link-profiles="fiber,adsl"/>
         </cluster>
 
-        <aggregator type="simple" host-profiles="big-server" link-profiles="fiber">
-            <link name="star-cluster"/>
-            <link name="ring-cluster"/>
-        </aggregator>
+        <cluster name="main-cluster" topology="star">
+            <aggregators number="1" type="simple" host-profiles="big-server" link-profiles="fiber"/>
+            <connected-to cluster-name="sub-cluster-star"/>
+            <connected-to cluster-name="sub-cluster-ring"/>
+        </cluster>
 
     </clusters>
     
