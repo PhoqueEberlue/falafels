@@ -24,15 +24,15 @@ RingNetworkManager::RingNetworkManager(NodeInfo node_info)
     // Initializing our mailbox
     this->mailbox = simgrid::s4u::Mailbox::by_name(node_info.name);
 
-    this->received_packets = new vector<packet_id>();
+    this->received_packet_ids = new vector<packet_id>();
 }
 
 RingNetworkManager::~RingNetworkManager()
 {
-    delete this->received_packets;
+    delete this->received_packet_ids;
 };
 
-uint16_t RingNetworkManager::handle_registration_requests()
+void RingNetworkManager::handle_registration_requests()
 {
     xbt_assert(this->my_node_info.role == NodeRole::Aggregator);
  
@@ -41,52 +41,30 @@ uint16_t RingNetworkManager::handle_registration_requests()
         std::format("{} [label=\"{}\", color=green]", this->my_node_info.name, this->my_node_info.name)
     );
 
-    auto node_list_tmp = vector<NodeInfo>();
-    
-    unique_ptr<Packet> p;
- 
-    // ---------- Wait for registrations ----------
-    while (true) 
-    {
-        try 
-        {
-            p = this->get(Constants::REGISTRATION_TIMEOUT);
-        }
-        catch (simgrid::TimeoutException)
-        {
-            break;
-        }
-
-        if (auto *reg_req = get_if<Packet::RegistrationRequest>(&p->op))
-        {
-            node_list_tmp.push_back(reg_req->node_to_register); 
-        }
-    }
-
     NodeInfo left_n;
     NodeInfo right_n;
 
     // ---------- Create connections and send them ----------
-    for (int i = 0; i < node_list_tmp.size(); i++)
+    for (int i = 0; i < this->registration_requests->size(); i++)
     {
         // Handle edges -> link to the current node to close the ring
         if (i == 0)
         {
             left_n = this->my_node_info;
-            right_n = node_list_tmp.at(i + 1);
-            this->right_node = node_list_tmp.at(i);
+            right_n = this->registration_requests->at(i + 1).node_to_register;
+            this->right_node = this->registration_requests->at(i).node_to_register;
         }
-        else if (i == node_list_tmp.size() - 1) 
+        else if (i == this->registration_requests->size() - 1) 
         {
-            left_n = node_list_tmp.at(i - 1);
+            left_n = this->registration_requests->at(i - 1).node_to_register;
             right_n = this->my_node_info;
-            this->left_node = node_list_tmp.at(i);
+            this->left_node = this->registration_requests->at(i).node_to_register;
         }
         // Normal case we take i-1 and i+1 as neigbours
         else 
         {
-            left_n = node_list_tmp.at(i - 1);
-            right_n = node_list_tmp.at(i + 1);
+            left_n = this->registration_requests->at(i - 1).node_to_register;
+            right_n = this->registration_requests->at(i + 1).node_to_register;
         } 
 
         auto neigbours = vector<NodeInfo>();
@@ -95,13 +73,13 @@ uint16_t RingNetworkManager::handle_registration_requests()
 
         auto res_p = make_shared<Packet>(Packet(
             this->get_my_node_name(), 
-            node_list_tmp.at(i).name, // Sent the packt to the current node
+            this->registration_requests->at(i).node_to_register.name, // Sent the packt to the current node
             Packet::RegistrationConfirmation(
                 make_shared<vector<NodeInfo>>(neigbours)
             )
         ));
 
-        this->send(res_p, node_list_tmp.at(i).name);
+        this->send_async(res_p);
     } 
 
     DOTGenerator::get_instance().add_to_cluster(
@@ -113,9 +91,6 @@ uint16_t RingNetworkManager::handle_registration_requests()
         std::format("cluster-{}", this->my_node_info.name),
         std::format("{} -> {} [color=green]", this->my_node_info.name, this->right_node.name)
     );
-
-    // Return the number of nodes that have been registered
-    return node_list_tmp.size();
 }
 
 void RingNetworkManager::send_registration_request()
@@ -133,95 +108,82 @@ void RingNetworkManager::send_registration_request()
     ));
 
     // Send the request
-    this->send(p, bootstrap_node.name);
+    this->send_async(p);
+}
 
-    unique_ptr<Packet> response;
+void RingNetworkManager::handle_registration_confirmation(const Packet::RegistrationConfirmation &confirmation)
+{
+    XBT_INFO("Succesfully registered");
 
-    // Wait for confirmation 
-    while (true) 
+    auto bootstrap_node = this->bootstrap_nodes->at(0);
+
+    this->left_node = confirmation.node_list->at(0);
+    this->right_node = confirmation.node_list->at(1);
+
+    DOTGenerator::get_instance().add_to_cluster(
+        std::format("cluster-{}", bootstrap_node.name),
+        std::format("{} [label=\"{}\", color=yellow]", this->my_node_info.name, this->my_node_info.name)
+    );
+
+    DOTGenerator::get_instance().add_to_cluster(
+        std::format("cluster-{}", bootstrap_node.name),
+        std::format("{} -> {} [color=green]", this->my_node_info.name, this->left_node.name)
+    );
+
+    DOTGenerator::get_instance().add_to_cluster(
+        std::format("cluster-{}", bootstrap_node.name),
+        std::format("{} -> {} [color=green]", this->my_node_info.name, this->right_node.name)
+    );
+}
+
+void RingNetworkManager::route_packet(std::unique_ptr<Packet> packet)
+{
+    // Check that the packet haven't been already received
+    if(!this->is_duplicated(packet))
     {
-        response = this->get();
-
-        if (auto *reg_conf = get_if<Packet::RegistrationConfirmation>(&response->op))
+        // if the packet has broadcast enabled or if dst is not for the current node
+        if (packet->broadcast || packet->final_dst != this->get_my_node_name())
         {
-            XBT_INFO("Succesfully registered");
-            this->left_node = reg_conf->node_list->at(0);
-            this->right_node = reg_conf->node_list->at(1);
-
-            DOTGenerator::get_instance().add_to_cluster(
-                std::format("cluster-{}", bootstrap_node.name),
-                std::format("{} [label=\"{}\", color=yellow]", this->my_node_info.name, this->my_node_info.name)
-            );
-
-            DOTGenerator::get_instance().add_to_cluster(
-                std::format("cluster-{}", bootstrap_node.name),
-                std::format("{} -> {} [color=green]", this->my_node_info.name, this->left_node.name)
-            );
-
-            DOTGenerator::get_instance().add_to_cluster(
-                std::format("cluster-{}", bootstrap_node.name),
-                std::format("{} -> {} [color=green]", this->my_node_info.name, this->right_node.name)
-            );
-           
-            break;
+            this->redirect(packet);
         }
+        // else route the packet to the local Role
+        else
+        {
+            this->put_received_packet(std::move(packet));
+        }
+
+        // Add to received packets
+        this->received_packet_ids->push_back(packet->id);
+    }
+    else 
+    {
+        XBT_INFO("Discarding packet %lu: duplicate", packet->id);
     }
 }
 
-void RingNetworkManager::broadcast(shared_ptr<Packet> packet, FilterNode filter, const optional<double> &timeout) 
+void RingNetworkManager::broadcast(shared_ptr<Packet> packet) 
 {
     uint16_t res = 0;
 
     // Send to left node
-    if (filter(&this->left_node))
+    if ((*packet->filter)(&this->left_node))
     {
-        this->send(packet, this->left_node.name, timeout);
+        this->send_async(packet);
         res++;
     }
 
     // Send to right node
-    if (filter(&this->right_node))
+    if ((*packet->filter)(&this->right_node))
     {
-        this->send(packet, this->right_node.name, timeout);
+        this->send_async(packet);
         res++;
     }
 }
 
 bool RingNetworkManager::is_duplicated(std::unique_ptr<Packet> &packet)
 {
-    auto r = this->received_packets;
+    auto r = this->received_packet_ids;
     return find(r->begin(), r->end(), packet->id) != r->end();
-}
-
-unique_ptr<Packet> RingNetworkManager::get_packet(const optional<double> &timeout)
-{
-    unique_ptr<Packet> p;
-    bool cond = true;
- 
-    while (cond)
-    {
-        p = this->get(timeout);
- 
-        // Check that the packet haven't been already received
-        if(!this->is_duplicated(p))
-        {
-            // if the packet has broadcast enabled or if dst is not for the current node
-            if (p->final_dst == "BROADCAST" || p->final_dst != this->get_my_node_name())
-            {
-                this->redirect(p);
-            }
-
-            // Add to received packets
-            this->received_packets->push_back(p->id);
-            cond = false;
-        }
-        else 
-        {
-            XBT_INFO("Discarding packet %lu: duplicate", p->id);
-        }
-    }
- 
-    return p;
 }
 
 void RingNetworkManager::redirect(unique_ptr<Packet> &p)
@@ -240,7 +202,10 @@ void RingNetworkManager::redirect(unique_ptr<Packet> &p)
         // Send to the left 
         dst = this->left_node.name;
     }
+
+    new_p->dst = dst;
     
     // Note that the final dest stays the same.
-    this->send_async(new_p, dst);
+    // We specify is_redirected to true to prevent the orginal src from being overwritten.
+    this->send_async(new_p, true);
 }

@@ -34,60 +34,41 @@ StarNetworkManager::~StarNetworkManager()
     delete this->connected_nodes;
 };
 
-uint16_t StarNetworkManager::handle_registration_requests()
+void StarNetworkManager::handle_registration_requests()
 {
     xbt_assert(this->my_node_info.role == NodeRole::Aggregator);
-
-    uint16_t number_registration = 0;
-    unique_ptr<Packet> p;
 
     DOTGenerator::get_instance().add_to_cluster(
         std::format("cluster-{}", this->my_node_info.name),
         std::format("{} [label=\"{}\", color=green]", this->my_node_info.name, this->my_node_info.name)
     );
 
-    while (true) 
+    for (auto request : *this->registration_requests)
     {
-        try 
-        {
-            p = this->get(Constants::REGISTRATION_TIMEOUT);
-        }
-        catch (simgrid::TimeoutException)
-        {
-            break;
-        }
+        this->connected_nodes->push_back(request.node_to_register); 
 
-        if (auto *reg_req = get_if<Packet::RegistrationRequest>(&p->op))
-        {
-            this->connected_nodes->push_back(reg_req->node_to_register); 
+        DOTGenerator::get_instance().add_to_cluster(
+            std::format("cluster-{}", this->my_node_info.name),
+            std::format("{} [label=\"{}\", color=yellow]", request.node_to_register.name, request.node_to_register.name)
+        );
 
-            DOTGenerator::get_instance().add_to_cluster(
-                std::format("cluster-{}", this->my_node_info.name),
-                std::format("{} [label=\"{}\", color=yellow]", reg_req->node_to_register.name, reg_req->node_to_register.name)
-            );
+        DOTGenerator::get_instance().add_to_cluster(
+            std::format("cluster-{}", this->my_node_info.name),
+            std::format("{} -> {} [color=green]", this->my_node_info.name, request.node_to_register.name)
+        );
 
-            DOTGenerator::get_instance().add_to_cluster(
-                std::format("cluster-{}", this->my_node_info.name),
-                std::format("{} -> {} [color=green]", this->my_node_info.name, reg_req->node_to_register.name)
-            );
+        auto node_list = vector<NodeInfo>();
+        node_list.push_back(this->my_node_info);
 
-            auto node_list = vector<NodeInfo>();
-            node_list.push_back(this->my_node_info);
+        auto res_p = make_shared<Packet>(Packet(
+            this->get_my_node_name(), request.node_to_register.name,
+            Packet::RegistrationConfirmation(
+                make_shared<vector<NodeInfo>>(node_list)
+            )
+        ));
 
-            auto res_p = make_shared<Packet>(Packet(
-                this->get_my_node_name(), p->final_dst,
-                Packet::RegistrationConfirmation(
-                    make_shared<vector<NodeInfo>>(node_list)
-                )
-            ));
-
-            this->send(res_p, p->src);
-
-            number_registration += 1;
-        }
+        this->send_async(res_p);
     }
-
-    return number_registration;
 }
 
 void StarNetworkManager::send_registration_request()
@@ -105,47 +86,35 @@ void StarNetworkManager::send_registration_request()
         )
     ));
 
-    this->send(p, bootstrap_node.name);
+    this->send_async(p);
+}
 
-    unique_ptr<Packet> response;
 
-    while (true) 
+void StarNetworkManager::handle_registration_confirmation(const Packet::RegistrationConfirmation &confirmation)
+{
+    XBT_INFO("node list : %s", confirmation.node_list->at(0).name.c_str());
+
+    for (auto node: *confirmation.node_list)
     {
-        response = this->get();
-
-        if (auto *conf = get_if<Packet::RegistrationConfirmation>(&response->op))
-        {
-            XBT_INFO("node list : %s", conf->node_list->at(0).name.c_str());
-            for (auto node: *conf->node_list)
-            {
-                this->connected_nodes->push_back(node);
-            }
-
-            break;
-        }
+        this->connected_nodes->push_back(node);
     }
 }
 
-void StarNetworkManager::broadcast(shared_ptr<Packet> packet, FilterNode filter, const optional<double> &timeout)
+void StarNetworkManager::broadcast(shared_ptr<Packet> packet)
 {
     for(auto node_info : *this->connected_nodes)
     {
-        if (filter(&node_info))
+        if ((*packet->filter)(&node_info))
         {
-            if (timeout)
-            {
-                this->send(packet, node_info.name, *timeout);
-            }
-            else
-            {
-                this->send(packet, node_info.name);
-            }
+            this->send_async(packet);
         }
     }
 }
 
-unique_ptr<Packet> StarNetworkManager::get_packet(const optional<double> &timeout)
+/**  
+ * In star_nm we route everything to the Role.
+ */
+void StarNetworkManager::route_packet(unique_ptr<Packet> packet)
 {
-    // Here we don't need to do more stuff than calling base NetworkManager's get.
-    return this->get(timeout);
+    this->put_received_packet(std::move(packet));
 }

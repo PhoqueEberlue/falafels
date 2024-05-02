@@ -2,6 +2,7 @@
 #define FALAFELS_PROTOCOL_HPP
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -19,7 +20,7 @@ enum class NodeRole
 {
     Aggregator,
     Trainer,
-    Proxy
+    // Proxy
 };
 
 struct NodeInfo
@@ -27,6 +28,21 @@ struct NodeInfo
     node_name name;
     NodeRole role;
 };
+
+using NodeFilter = std::function<bool(NodeInfo*)>;
+
+namespace Filters {
+    static bool trainers(NodeInfo *node_info)
+    {
+        return node_info->role == NodeRole::Trainer;
+    }
+
+    static bool trainers_and_aggregators(NodeInfo *node_info)
+    {
+        return node_info->role == NodeRole::Trainer || 
+               node_info->role == NodeRole::Aggregator;
+    }
+}
 
 class Packet 
 {
@@ -86,12 +102,21 @@ public:
     const Operation op;
 
     /** Const src and dst */
-    const node_name original_src;
+    node_name original_src;
     const node_name final_dst;
 
     /** Writable src and dst, usefull in a peer-to-peer scenario */
     node_name src;
     node_name dst;
+
+    /** Flag indicating if the packet should be broadcasted */
+    const bool broadcast;
+
+    /** NodeFilter used when broadcast flag is enabled */
+    const std::optional<NodeFilter> filter;
+
+    /** Flag indicating if the packet should be send to a bootstrap node */
+    const bool bootstrap;
 
     /** Unique packet identifier */
     packet_id id = 0;
@@ -100,7 +125,14 @@ public:
      * both by the cloned packet and the original one. */
     Packet *clone();
 
-    Packet(node_name src, node_name dst, Operation op);
+    /** Packet constructor with node name used as destinations and final destination */
+    Packet(node_name dst, node_name final_dst, Operation op);
+
+    /** Broadcast packet constructor taking NodeFilter instead of concrete destinations */
+    Packet(NodeFilter filter, Operation op);
+
+    /** Bootstrap packet constructor, simply sending the packet to a bootstrap node */
+    Packet(Operation op);
 
     ~Packet() {}
 private:

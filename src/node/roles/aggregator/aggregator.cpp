@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <xbt/log.h>
 
 #include "aggregator.hpp"
@@ -5,16 +6,25 @@
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_aggregator, "Messages specific for this example");
 
-/**
- * Simulate the aggregation execution by multiplying the number of models to aggregate
- * by a constant value indicating the number of flops for one model aggregation.
+/** 
+ * Launch the aggregating activity or test if the current one has finished.
+ * Returns true when aggregation is finished.
  */
-void Aggregator::aggregate(uint64_t number_models)
+bool Aggregator::aggregate() 
 {
-    double flops = Constants::GLOBAL_MODEL_AGGREGATING_FLOPS * number_models;
-    XBT_INFO("Starting aggregation with flops value: %f", flops);
-    simgrid::s4u::this_actor::execute(flops);
-    this->number_aggregated_model += number_models;
+    // if aggregating activity doesn't exists
+    if (this->aggregating_activity == nullptr)
+    {
+        /** Simulate the aggregation execution by multiplying the number of models to aggregate
+            by a constant value indicating the number of flops for one model aggregation. */
+        double flops = Constants::GLOBAL_MODEL_AGGREGATING_FLOPS * this->number_local_models;
+        XBT_INFO("Starting aggregation with flops value: %f", flops);
+
+        this->aggregating_activity = simgrid::s4u::this_actor::exec_async(flops);
+        this->number_aggregated_model += this->number_local_models;
+    }
+
+    return this->aggregating_activity->test(); 
 }
 
 void Aggregator::print_end_report() 

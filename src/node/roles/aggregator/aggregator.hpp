@@ -8,6 +8,14 @@
 class Aggregator : public Role 
 {
 protected:
+    using State = enum
+    {
+        WAITING_LOCAL_MODELS,
+        AGGREGATING,
+    };
+
+    State state;
+
     /** Value indicating the number of local epochs that the aggregator will ask the trainers to do. */
     uint8_t number_local_epochs = 3;
 
@@ -20,12 +28,20 @@ protected:
     /** The actual number of trainers */
     uint16_t number_client_training = 0;
 
-    void aggregate(uint64_t number_models);
+    /** Number of the local models collected at a moment in time */
+    uint64_t number_local_models = 0;    
+
+    simgrid::s4u::ExecPtr aggregating_activity = nullptr;
+
+    /** Time when the aggregator has been initialized */
+    double initialization_time;
+
+    bool aggregate();
     void print_end_report();
 public:
     Aggregator() {}
     virtual ~Aggregator() {}
-    virtual void run() = 0;
+    virtual bool run() = 0;
     NodeRole get_role_type() { return NodeRole::Aggregator; };
 };
 
