@@ -4,17 +4,20 @@
 
 #include "../role.hpp"
 #include <cstdint>
+#include <simgrid/forward.h>
+#include <simgrid/s4u/Exec.hpp>
 
 class Aggregator : public Role 
 {
 protected:
     using State = enum
     {
+        INITIALIZING,
         WAITING_LOCAL_MODELS,
         AGGREGATING,
     };
 
-    State state;
+    State state = INITIALIZING;
 
     /** Value indicating the number of local epochs that the aggregator will ask the trainers to do. */
     uint8_t number_local_epochs = 3;
@@ -23,7 +26,7 @@ protected:
     uint16_t number_global_epochs = 0;
 
     /** Number of local model aggregated, used to compute the global number of epochs. */
-    uint64_t number_aggregated_model = 0;
+    uint64_t number_aggregated_models = 0;
 
     /** The actual number of trainers */
     uint16_t number_client_training = 0;
@@ -41,7 +44,7 @@ protected:
 public:
     Aggregator() {}
     virtual ~Aggregator() {}
-    virtual bool run() = 0;
+    virtual void run() = 0;
     NodeRole get_role_type() { return NodeRole::Aggregator; };
 };
 

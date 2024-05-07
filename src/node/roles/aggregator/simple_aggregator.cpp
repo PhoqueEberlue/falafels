@@ -1,6 +1,8 @@
 #include <cstdint>
 #include <memory>
+#include <simgrid/s4u/Actor.hpp>
 #include <simgrid/s4u/Engine.hpp>
+#include <simgrid/s4u/Mailbox.hpp>
 #include <variant>
 #include <xbt/log.h>
 
@@ -24,21 +26,32 @@ SimpleAggregator::~SimpleAggregator()
     delete args;
 }
 
-bool SimpleAggregator::run()
+void SimpleAggregator::run()
 {
-    // SET THIS
-    this->number_client_training = NULL; // TODO
+    if (!this->still_has_activities)
+        return;
 
     // Stop aggregating and send kills to the trainers
     if (simgrid::s4u::Engine::get_instance()->get_clock() > this->initialization_time + Constants::DURATION_TRAINING_PHASE)
     {
         this->send_kills();
         this->print_end_report();
-        return false;
+        this->still_has_activities = false;
     }
 
     switch (this->state)
     {
+        case INITIALIZING:
+            if (auto e = this->get_nm_event())
+            {
+                if (auto *conneted_event = get_if<NetworkManager::ClusterConnected>(e->get()))
+                {
+                    this->number_client_training = conneted_event->number_client_connected;
+                    this->send_global_model();
+                    this->state = WAITING_LOCAL_MODELS;
+                }
+            }
+            break;
         case WAITING_LOCAL_MODELS:
             if (auto packet = this->get_received_packet())
             {
@@ -63,32 +76,30 @@ bool SimpleAggregator::run()
             }
             break;
     }
-
-    return true;
 }
 
 
 /* Sends the global model to every trainers */
 void SimpleAggregator::send_global_model()
 {
-    // Send global model with broadcast
-    auto p = make_shared<Packet>(Packet(
-        Filters::trainers_and_aggregators,
-        Packet::SendGlobalModel(
-            this->number_local_epochs
+    this->put_to_be_sent_packet(
+        Packet(
+            // Send global model with broadcast because we specify a filter instead of a dst
+            Filters::trainers_and_aggregators,
+            Packet::SendGlobalModel(
+                this->number_local_epochs
+            )
         )
-    ));
-
-    this->put_to_be_sent_packet(p);
+    );
 }
 
 void SimpleAggregator::send_kills()
 {
-    // Send kills with broadcast
-    auto p = make_shared<Packet>(Packet(
-        Filters::trainers_and_aggregators,
-        Packet::KillTrainer()
-    ));
-
-    this->put_to_be_sent_packet(p);
+    this->put_to_be_sent_packet(
+        Packet(
+            // Send kills with broadcast
+            Filters::trainers_and_aggregators,
+            Packet::KillTrainer()
+        )
+    );
 }

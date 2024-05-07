@@ -19,7 +19,7 @@ protected:
 public:
     SimpleAggregator(std::unordered_map<std::string, std::string> *args);
     ~SimpleAggregator();
-    bool run();
+    void run();
 };
 
 #endif // !FALAFELS_SIMPLE_AGGREGATOR_HPP

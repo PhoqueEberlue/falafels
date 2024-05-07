@@ -12,11 +12,12 @@ class Trainer : public Role
 protected:
     using State = enum
     {
+        INITIALIZING,
         WAITING_GLOBAL_MODEL,
         TRAINING,
     };
 
-    State state;
+    State state = INITIALIZING;
 
     // TODO: find a better way to pass arguments between states
     node_name dst;
@@ -32,7 +33,7 @@ private:
 public:
     Trainer(std::unordered_map<std::string, std::string> *args);
     ~Trainer() {};
-    bool run();
+    void run();
     NodeRole get_role_type() { return NodeRole::Trainer; };
 };
 

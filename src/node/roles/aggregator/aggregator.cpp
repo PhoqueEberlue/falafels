@@ -1,4 +1,4 @@
-#include <cstdint>
+#include <xbt/asserts.h>
 #include <xbt/log.h>
 
 #include "aggregator.hpp"
@@ -21,17 +21,27 @@ bool Aggregator::aggregate()
         XBT_INFO("Starting aggregation with flops value: %f", flops);
 
         this->aggregating_activity = simgrid::s4u::this_actor::exec_async(flops);
-        this->number_aggregated_model += this->number_local_models;
+        this->number_aggregated_models += this->number_local_models;
     }
 
-    return this->aggregating_activity->test(); 
+    if (this->aggregating_activity->test())
+    {
+        this->aggregating_activity = nullptr;
+        return true;
+    }
+    else
+    {
+        return false; 
+    }
 }
 
 void Aggregator::print_end_report() 
 {
-    this->number_global_epochs = this->number_aggregated_model / this->number_client_training;
+    xbt_assert(this->number_client_training > 0, "Cannot print end report because the Aggregator had 0 or less client training.");
 
-    XBT_INFO("Number of model aggregated: %lu", this->number_aggregated_model);
+    this->number_global_epochs = this->number_aggregated_models / this->number_client_training;
+
+    XBT_INFO("Number of model aggregated: %lu", this->number_aggregated_models);
     XBT_INFO("Number of client that were training: %u", this->number_client_training);
     XBT_INFO("Number of global epochs done: %u", this->number_global_epochs);
 }
