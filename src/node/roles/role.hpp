@@ -19,16 +19,20 @@ class Role
 private:
     std::shared_ptr<std::queue<std::unique_ptr<Packet>>> received_packets;
     std::shared_ptr<std::queue<std::shared_ptr<Packet>>> to_be_sent_packets;
+    std::shared_ptr<std::queue<std::unique_ptr<NetworkManager::Event>>> nm_events;
 public:
+    bool still_has_activities = true;
     Role(){}
     virtual ~Role(){}
-    virtual bool run() = 0;
+    virtual void run() = 0;
     virtual NodeRole get_role_type() = 0;
 
     std::optional<std::unique_ptr<Packet>> get_received_packet();
-    void put_to_be_sent_packet(std::shared_ptr<Packet> packet);
+    void put_to_be_sent_packet(Packet packet);
+    std::optional<std::unique_ptr<NetworkManager::Event>> get_nm_event();
     void set_queues(std::shared_ptr<std::queue<std::unique_ptr<Packet>>> received, 
-                    std::shared_ptr<std::queue<std::shared_ptr<Packet>>> to_be_sent);
+                    std::shared_ptr<std::queue<std::shared_ptr<Packet>>> to_be_sent,
+                    std::shared_ptr<std::queue<std::unique_ptr<NetworkManager::Event>>> nm_events);
 };
 
 #endif // !FALAFELS_ROLE_HPP
