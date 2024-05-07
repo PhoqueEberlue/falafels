@@ -14,9 +14,10 @@ Node::Node(unique_ptr<Role> r, unique_ptr<NetworkManager> nm)
 
     auto received_packets = make_shared<queue<unique_ptr<Packet>>>();
     auto to_be_sent_packets = make_shared<queue<shared_ptr<Packet>>>();
+    auto nm_events = make_shared<queue<unique_ptr<NetworkManager::Event>>>();
 
-    this->role->set_queues(received_packets, to_be_sent_packets);
-    this->network_manager->set_queues(received_packets, to_be_sent_packets);
+    this->role->set_queues(received_packets, to_be_sent_packets, nm_events);
+    this->network_manager->set_queues(received_packets, to_be_sent_packets, nm_events);
 }
 
 Node::~Node()
@@ -28,17 +29,26 @@ void Node::run()
 {
     while(true)
     {
-        // break when the role has been killed
-        if(!this->role->run())
-            break;
+        this->role->run();
 
-        this->network_manager->run();
+        if (!this->network_manager->run())
+            break;
     }
 }
 
 NodeInfo Node::get_node_info()
 { 
     return this->network_manager->get_my_node_info();
+}
+
+NetworkManager *Node::get_network_manager()
+{
+    return this->network_manager.get();
+}
+
+void Node::set_bootstrap_nodes(std::vector<NodeInfo> *nodes)
+{
+    this->network_manager->set_bootstrap_nodes(nodes);
 }
 
 // TODO: fix later

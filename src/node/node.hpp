@@ -44,6 +44,11 @@ public:
      */
     void run();
 
+    NetworkManager *get_network_manager();
+
+
+    void set_bootstrap_nodes(std::vector<NodeInfo> *nodes);
+
     /**
      * Set the Node's Role.
      * @param r New Role for the current Node.
