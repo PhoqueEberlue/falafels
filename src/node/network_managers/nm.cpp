@@ -6,6 +6,7 @@
 #include <simgrid/Exception.hpp>
 #include <simgrid/forward.h>
 #include <simgrid/s4u/Activity.hpp>
+#include <simgrid/s4u/Actor.hpp>
 #include <simgrid/s4u/Engine.hpp>
 #include <unordered_map>
 #include <vector>
@@ -20,12 +21,14 @@ using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_network_manager, "Messages specific for this example");
 
-NetworkManager::NetworkManager()
+NetworkManager::NetworkManager(NodeInfo node_info)
 {
     this->pending_async_put = new simgrid::s4u::ActivitySet();
 
-    // Set first get_async
-    this->pending_async_get = this->mailbox->get_async();
+    this->my_node_info = node_info;
+
+    // Initializing our mailbox
+    this->mailbox = simgrid::s4u::Mailbox::by_name(this->my_node_info.name);
 
     this->registration_requests = new vector<Packet::RegistrationRequest>();
 }
@@ -52,12 +55,19 @@ void NetworkManager::put_received_packet(unique_ptr<Packet> packet)
     this->received_packets->push(std::move(packet));
 }
 
+void NetworkManager::put_nm_event(Event e)
+{
+    this->nm_events->push(make_unique<Event>(e));
+}
+
 void NetworkManager::set_queues(
     shared_ptr<queue<unique_ptr<Packet>>> received, 
-    shared_ptr<queue<shared_ptr<Packet>>> to_be_sent)
+    shared_ptr<queue<shared_ptr<Packet>>> to_be_sent,
+    shared_ptr<queue<unique_ptr<Event>>> nm_events)
 {
     this->received_packets = received;
     this->to_be_sent_packets = to_be_sent;
+    this->nm_events = nm_events;
 }
 
 void NetworkManager::set_bootstrap_nodes(vector<NodeInfo> *nodes)
@@ -65,8 +75,10 @@ void NetworkManager::set_bootstrap_nodes(vector<NodeInfo> *nodes)
     this->bootstrap_nodes = nodes;
 }
 
-void NetworkManager::run()
-{
+bool NetworkManager::run()
+{ 
+    simgrid::s4u::this_actor::sleep_for(0.1);
+
     switch (this->state)
     {
         case INITIALIZING:
@@ -92,8 +104,8 @@ void NetworkManager::run()
             }
             break;
         case WAITING_REGISTRATION_REQUEST:
-            if (!this->time)
-                *this->time = simgrid::s4u::Engine::get_instance()->get_clock();
+            if (!this->time.has_value())
+                this->time = simgrid::s4u::Engine::get_instance()->get_clock();
 
             if (auto packet = this->try_get())
             {
@@ -105,7 +117,7 @@ void NetworkManager::run()
             }
 
             // At some point, stop listening for registration requests and end this state
-            if (simgrid::s4u::Engine::get_instance()->get_clock() - *this->time > 2)
+            if (simgrid::s4u::Engine::get_instance()->get_clock() - *this->time > Constants::REGISTRATION_TIMEOUT) 
             {
                 this->handle_registration_requests();
                 this->state = RUNNING;
@@ -114,22 +126,39 @@ void NetworkManager::run()
         case RUNNING:
             if (auto packet = this->try_get())
             {
+                if (auto *kill = get_if<Packet::KillTrainer>(&(*packet)->op))
+                {
+                    this->state = KILLING;
+                }
                 this->route_packet(std::move(*packet));
             }
 
             if (auto p = this->get_to_be_sent_packet())
             {
+                if (auto *kill = get_if<Packet::KillTrainer>(&(*p)->op))
+                {
+                    this->state = KILLING;
+                }
+
                 this->send_packet(*p);
             }
             break;
+        case KILLING:
+            this->pending_async_put->wait_all();
+            return false;
     }
+    return true;
 }
 
 optional<unique_ptr<Packet>> NetworkManager::try_get()
 {
+    if (!this->pending_async_get)
+        this->pending_async_get = this->mailbox->get_async();
+
     if (this->pending_async_get->test())
     {
-        auto p = this->pending_async_get->get_data<Packet>();
+        auto p = static_cast<Packet*>(this->pending_async_get->get_payload());
+        XBT_INFO("%s <--%s(%lu)--- %s", p->dst.c_str(), p->get_op_name(), p->id, p->src.c_str());
         this->pending_async_get = this->mailbox->get_async();
 
         auto unique_packet = make_unique<Packet>(*p);
@@ -168,12 +197,12 @@ void NetworkManager::send_async(shared_ptr<Packet> packet, bool is_redirected)
 
     DOTGenerator::get_instance().add_to_state(
         simgrid::s4u::Engine::get_instance()->get_clock(), 
-        std::format("{} -> {} [label=\"{} (async)\", style=dotted];", p_clone->src, p_clone->dst, p_clone->get_op_name())
+        std::format("{} -> {} [label=\"{}\", style=dotted];", p_clone->src, p_clone->dst, p_clone->get_op_name())
     );
 
-    XBT_INFO("%s ---%s(%lu)--> %s (async)", p_clone->src.c_str(), p_clone->get_op_name(), p_clone->id, p_clone->dst.c_str());
+    XBT_INFO("%s ---%s(%lu)--> %s", p_clone->src.c_str(), p_clone->get_op_name(), p_clone->id, p_clone->dst.c_str());
 
-    auto comm =  receiver_mailbox->put_async(p_clone, p_clone->get_packet_size());
+    auto comm = receiver_mailbox->put_async(p_clone, p_clone->get_packet_size());
     
     this->pending_async_put->push(comm);
 }
