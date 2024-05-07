@@ -98,8 +98,8 @@ public:
     const Operation op;
 
     /** Const src and dst */
-    node_name original_src;
-    node_name final_dst;
+    node_name original_src = "";
+    node_name final_dst = "";
 
     /** Writable src and dst, usefull in a peer-to-peer scenario */
     node_name src;
