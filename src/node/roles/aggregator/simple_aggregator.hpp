@@ -6,15 +6,9 @@
 
 class SimpleAggregator : public Aggregator
 {
-private:
-    // Arguments passed to the constructor.
-    // They are kept here because subclass could have to use them.
-    // Its the highest class responsability to delete them.
-    std::unordered_map<std::string, std::string> *args;
-protected:
 public:
     SimpleAggregator(std::unordered_map<std::string, std::string> *args);
-    ~SimpleAggregator();
+    ~SimpleAggregator() {}
     void run();
 };
 

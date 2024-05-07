@@ -17,12 +17,6 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_simple_aggregator, "Messages specific for this 
 SimpleAggregator::SimpleAggregator(std::unordered_map<std::string, std::string> *args)
 {
     this->initialization_time = simgrid::s4u::Engine::get_instance()->get_clock();
-    // No arguments yet
-    this->args = args;
-}
-
-SimpleAggregator::~SimpleAggregator()
-{
     delete args;
 }
 
