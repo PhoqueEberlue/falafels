@@ -16,16 +16,15 @@
 
 #include "star_nm.hpp"
 #include "../../dot.hpp"
+#include "nm.hpp"
 
 using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_star_nm, "Messages specific for this example");
 
-StarNetworkManager::StarNetworkManager(NodeInfo node_info)
+StarNetworkManager::StarNetworkManager(NodeInfo node_info) : NetworkManager(node_info)
 {
     this->my_node_info = node_info;
-    // Initializing our mailbox
-    this->mailbox = simgrid::s4u::Mailbox::by_name(this->my_node_info.name);
     this->connected_nodes = new vector<NodeInfo>();
 }
 
@@ -61,7 +60,7 @@ void StarNetworkManager::handle_registration_requests()
         node_list.push_back(this->my_node_info);
 
         auto res_p = make_shared<Packet>(Packet(
-            this->get_my_node_name(), request.node_to_register.name,
+            request.node_to_register.name, request.node_to_register.name,
             Packet::RegistrationConfirmation(
                 make_shared<vector<NodeInfo>>(node_list)
             )
@@ -69,6 +68,8 @@ void StarNetworkManager::handle_registration_requests()
 
         this->send_async(res_p);
     }
+
+    this->put_nm_event(ClusterConnected { .number_client_connected=(uint16_t)this->registration_requests->size() });
 }
 
 void StarNetworkManager::send_registration_request()
@@ -80,7 +81,7 @@ void StarNetworkManager::send_registration_request()
     auto bootstrap_node = this->bootstrap_nodes->at(0);
 
     auto p = make_shared<Packet>(Packet(
-        this->get_my_node_name(), bootstrap_node.name,
+        bootstrap_node.name, bootstrap_node.name,
         Packet::RegistrationRequest(
             this->my_node_info
         )
@@ -92,12 +93,12 @@ void StarNetworkManager::send_registration_request()
 
 void StarNetworkManager::handle_registration_confirmation(const Packet::RegistrationConfirmation &confirmation)
 {
-    XBT_INFO("node list : %s", confirmation.node_list->at(0).name.c_str());
-
     for (auto node: *confirmation.node_list)
     {
         this->connected_nodes->push_back(node);
     }
+
+    this->put_nm_event(NodeConnected {});
 }
 
 void StarNetworkManager::broadcast(shared_ptr<Packet> packet)
@@ -106,6 +107,7 @@ void StarNetworkManager::broadcast(shared_ptr<Packet> packet)
     {
         if ((*packet->filter)(&node_info))
         {
+            packet->dst = node_info.name;
             this->send_async(packet);
         }
     }

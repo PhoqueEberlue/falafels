@@ -21,8 +21,6 @@ public:
     void handle_registration_confirmation(const Packet::RegistrationConfirmation &confirmation);
 
     void route_packet(std::unique_ptr<Packet> packet);
-
-    std::unique_ptr<Packet> get_packet(const std::optional<double> &timeout=std::nullopt);
     void broadcast(std::shared_ptr<Packet>);
 };
 
