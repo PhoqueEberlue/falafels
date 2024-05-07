@@ -9,6 +9,8 @@
 
 class Aggregator : public Role 
 {
+private:
+    simgrid::s4u::ExecPtr training_activity;
 protected:
     using State = enum
     {
@@ -45,6 +47,9 @@ public:
     Aggregator() {}
     virtual ~Aggregator() {}
     virtual void run() = 0;
+
+    void send_global_model();
+    void send_kills();
     NodeRole get_role_type() { return NodeRole::Aggregator; };
 };
 

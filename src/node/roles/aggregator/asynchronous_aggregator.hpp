@@ -11,10 +11,10 @@ private:
     /** Value between 0.0 and 1.0 indicating the proportion of local models needed before initializing an aggregation round */
     float proportion_threshold = 0.5;
 
-    void send_global_model(node_name dst, node_name final_dst);
-    std::tuple<node_name, node_name> wait_local_model();
-    void send_kills();
-    void broadcast_global_model();
+    node_name src_save;
+    node_name original_src_save;
+
+    void send_global_model_to(node_name dst, node_name final_dst);
 public:
     AsynchronousAggregator(std::unordered_map<std::string, std::string> *args);
     ~AsynchronousAggregator() {};

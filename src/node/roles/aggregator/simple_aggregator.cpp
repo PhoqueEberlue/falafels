@@ -77,29 +77,3 @@ void SimpleAggregator::run()
             break;
     }
 }
-
-
-/* Sends the global model to every trainers */
-void SimpleAggregator::send_global_model()
-{
-    this->put_to_be_sent_packet(
-        Packet(
-            // Send global model with broadcast because we specify a filter instead of a dst
-            Filters::trainers_and_aggregators,
-            Packet::SendGlobalModel(
-                this->number_local_epochs
-            )
-        )
-    );
-}
-
-void SimpleAggregator::send_kills()
-{
-    this->put_to_be_sent_packet(
-        Packet(
-            // Send kills with broadcast
-            Filters::trainers_and_aggregators,
-            Packet::KillTrainer()
-        )
-    );
-}

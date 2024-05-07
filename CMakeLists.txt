@@ -26,17 +26,18 @@ set(falafels_files
     src/node/roles/aggregator/aggregator.hpp
     src/node/roles/aggregator/asynchronous_aggregator.cpp
     src/node/roles/aggregator/asynchronous_aggregator.hpp
-    src/node/roles/aggregator/hierarchical_aggregator.cpp
-    src/node/roles/aggregator/hierarchical_aggregator.hpp
+    # src/node/roles/aggregator/hierarchical_aggregator.cpp
+    # src/node/roles/aggregator/hierarchical_aggregator.hpp
     src/node/roles/aggregator/simple_aggregator.cpp
     src/node/roles/aggregator/simple_aggregator.hpp
 
-    src/node/roles/proxy/proxy.cpp
-    src/node/roles/proxy/proxy.hpp
+    # src/node/roles/proxy/proxy.cpp
+    # src/node/roles/proxy/proxy.hpp
 
     src/node/roles/trainer/trainer.cpp
     src/node/roles/trainer/trainer.hpp
 
+    src/node/roles/role.cpp
     src/node/roles/role.hpp
     
     src/node/node.cpp

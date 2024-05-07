@@ -45,3 +45,28 @@ void Aggregator::print_end_report()
     XBT_INFO("Number of client that were training: %u", this->number_client_training);
     XBT_INFO("Number of global epochs done: %u", this->number_global_epochs);
 }
+
+/* Sends the global model to every trainers */
+void Aggregator::send_global_model()
+{
+    this->put_to_be_sent_packet(
+        Packet(
+            // Send global model with broadcast because we specify a filter instead of a dst
+            Filters::trainers_and_aggregators,
+            Packet::SendGlobalModel(
+                this->number_local_epochs
+            )
+        )
+    );
+}
+
+void Aggregator::send_kills()
+{
+    this->put_to_be_sent_packet(
+        Packet(
+            // Send kills with broadcast
+            Filters::trainers_and_aggregators,
+            Packet::KillTrainer()
+        )
+    );
+}
