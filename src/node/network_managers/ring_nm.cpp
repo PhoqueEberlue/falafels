@@ -12,18 +12,14 @@
 
 #include "ring_nm.hpp"
 #include "../../dot.hpp"
+#include "nm.hpp"
 
 using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_ring_nm, "Messages specific for this example");
 
-RingNetworkManager::RingNetworkManager(NodeInfo node_info)
+RingNetworkManager::RingNetworkManager(NodeInfo node_info) : NetworkManager(node_info)
 { 
-    this->my_node_info = node_info;
-
-    // Initializing our mailbox
-    this->mailbox = simgrid::s4u::Mailbox::by_name(node_info.name);
-
     this->received_packet_ids = new vector<packet_id>();
 }
 
@@ -72,7 +68,7 @@ void RingNetworkManager::handle_registration_requests()
         neigbours.push_back(right_n);
 
         auto res_p = make_shared<Packet>(Packet(
-            this->get_my_node_name(), 
+            this->registration_requests->at(i).node_to_register.name, // Sent the packt to the current node
             this->registration_requests->at(i).node_to_register.name, // Sent the packt to the current node
             Packet::RegistrationConfirmation(
                 make_shared<vector<NodeInfo>>(neigbours)
@@ -91,6 +87,8 @@ void RingNetworkManager::handle_registration_requests()
         std::format("cluster-{}", this->my_node_info.name),
         std::format("{} -> {} [color=green]", this->my_node_info.name, this->right_node.name)
     );
+
+    this->put_nm_event(ClusterConnected { .number_client_connected=(uint16_t)this->registration_requests->size() });
 }
 
 void RingNetworkManager::send_registration_request()
@@ -101,7 +99,7 @@ void RingNetworkManager::send_registration_request()
     auto bootstrap_node = this->bootstrap_nodes->at(0);
 
     auto p = make_shared<Packet>(Packet(
-        this->get_my_node_name(), bootstrap_node.name, 
+        bootstrap_node.name, bootstrap_node.name, 
         Packet::RegistrationRequest(
             this->my_node_info
         )
@@ -134,6 +132,8 @@ void RingNetworkManager::handle_registration_confirmation(const Packet::Registra
         std::format("cluster-{}", bootstrap_node.name),
         std::format("{} -> {} [color=green]", this->my_node_info.name, this->right_node.name)
     );
+
+    this->put_nm_event(NodeConnected {});
 }
 
 void RingNetworkManager::route_packet(std::unique_ptr<Packet> packet)
@@ -141,19 +141,20 @@ void RingNetworkManager::route_packet(std::unique_ptr<Packet> packet)
     // Check that the packet haven't been already received
     if(!this->is_duplicated(packet))
     {
+        // Add to received packets
+        this->received_packet_ids->push_back(packet->id);
+
         // if the packet has broadcast enabled or if dst is not for the current node
         if (packet->broadcast || packet->final_dst != this->get_my_node_name())
         {
             this->redirect(packet);
         }
-        // else route the packet to the local Role
-        else
+
+        // if final dst is empty, then the msg has to be delivered to everyone
+        if (packet->final_dst == "" || packet->final_dst == this->get_my_node_name())
         {
             this->put_received_packet(std::move(packet));
         }
-
-        // Add to received packets
-        this->received_packet_ids->push_back(packet->id);
     }
     else 
     {
@@ -168,6 +169,7 @@ void RingNetworkManager::broadcast(shared_ptr<Packet> packet)
     // Send to left node
     if ((*packet->filter)(&this->left_node))
     {
+        packet->dst = this->left_node.name;
         this->send_async(packet);
         res++;
     }
@@ -175,6 +177,7 @@ void RingNetworkManager::broadcast(shared_ptr<Packet> packet)
     // Send to right node
     if ((*packet->filter)(&this->right_node))
     {
+        packet->dst = this->right_node.name;
         this->send_async(packet);
         res++;
     }

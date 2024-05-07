@@ -144,7 +144,10 @@ bool NetworkManager::run()
             }
             break;
         case KILLING:
-            this->pending_async_put->wait_all();
+            // TBH implementing kill isn't very interesting and will not play a lot in electric consumption.
+            // It might be a loss of time.....
+            this->wait_last_comms(1);
+            // this->pending_async_put->wait_all();
             return false;
     }
     return true;
@@ -207,24 +210,24 @@ void NetworkManager::send_async(shared_ptr<Packet> packet, bool is_redirected)
     this->pending_async_put->push(comm);
 }
 
-// void NetworkManager::wait_last_comms(const optional<double> &timeout)
-// {
-//     if (!timeout)
-//     {
-//         this->pending_async_comms->wait_all();
-//     }
-//     else
-//     {
-//         try
-//         {
-//             // Wait finish pending comms before exiting with timeout in case of double send
-//             this->pending_async_comms->wait_all_for(*timeout);
-//         } 
-//         catch (simgrid::TimeoutException)
-//         {
-//             XBT_INFO("Timeout");
-//         }
-//     }
-// 
-//     this->pending_async_comms->clear();
-// }
+void NetworkManager::wait_last_comms(const optional<double> &timeout)
+{
+    if (!timeout)
+    {
+        this->pending_async_put->wait_all();
+    }
+    else
+    {
+        try
+        {
+            // Wait finish pending comms before exiting with timeout in case of double send
+            this->pending_async_put->wait_all_for(*timeout);
+        } 
+        catch (simgrid::TimeoutException)
+        {
+            XBT_INFO("Timeout");
+        }
+    }
+
+    this->pending_async_put->clear();
+}
