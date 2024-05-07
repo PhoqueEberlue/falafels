@@ -1,30 +1,30 @@
-#include "protocol.hpp"
 #include <cstdint>
+#include <format>
 #include <optional>
 #include <variant>
 #include <xbt/asserts.h>
 #include <xbt/log.h>
+
+#include "protocol.hpp"
+#include "utils/utils.hpp"
 
 using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_falafels_protocol, "Messages specific for this example");
 
 Packet::Packet(node_name dst, node_name final_dst, Operation op) : 
-    dst(dst), final_dst(dst), op(op), broadcast(false), bootstrap(false)
+    dst(dst), final_dst(final_dst), op(op), broadcast(false)
 { 
-    this->id = this->total_packet_number;
-    this->total_packet_number += 1;
+    this->init();
 }
 
 Packet::Packet(NodeFilter filter, Operation op) : 
-    filter(filter), op(op), broadcast(true), bootstrap(false)
+    filter(filter), op(op), broadcast(true)
 {
-    this->id = this->total_packet_number;
-    this->total_packet_number += 1;
+    this->init();
 }
 
-Packet::Packet(Operation op) : 
-    op(op), broadcast(false), bootstrap(true)
+void Packet::init()
 {
     this->id = this->total_packet_number;
     this->total_packet_number += 1;
@@ -72,6 +72,8 @@ uint64_t Packet::get_packet_size()
                 result += Constants::MODEL_SIZE_BYTES;
             }
         }, this->op);
+
+        this->packet_size = result;
     }
 
     return this->packet_size;
@@ -95,8 +97,6 @@ const char *Packet::get_op_name() const
 Packet *Packet::clone()
 {
     Packet *res;
-
-    if (this->bootstrap) XBT_ERROR("Bootstrap packet shouldn't be cloned");
 
     if (this->filter)
         res = new Packet(*this->filter, this->op);

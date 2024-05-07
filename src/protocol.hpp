@@ -52,38 +52,34 @@ public:
     struct RegistrationConfirmation 
     { 
         std::shared_ptr<std::vector<NodeInfo>> node_list; // list of nodes attributed by the aggregator.
-        static constexpr std::string_view op_name = "REGISTRATION_CONFIRMATION\0";
-        // static constexpr std::string_view op_name = "\x1B[33mREGISTRATION_CONFIRMATION\033[0m\0";
+        // static constexpr std::string_view op_name = "REGISTRATION_CONFIRMATION\0";
+        static constexpr std::string_view op_name = "\x1B[33mREGISTRATION_CONFIRMATION\033[0m\0";
     };
     struct SendGlobalModel
     {
         uint8_t number_local_epochs; // number of local epochs the trainer should perform.
-        static constexpr std::string_view op_name = "SEND_GLOBAL_MODEL\0";
-        // static constexpr std::string_view op_name = "\x1B[34mSEND_GLOBAL_MODEL\033[0m\0";
+        // static constexpr std::string_view op_name = "SEND_GLOBAL_MODEL\0";
+        static constexpr std::string_view op_name = "\x1B[34mSEND_GLOBAL_MODEL\033[0m\0";
     };
     struct KillTrainer 
     {
-        static constexpr std::string_view op_name = "KILL_TRAINER\0";
-        // static constexpr std::string_view op_name = "\x1B[31mKILL_TRAINER\033[0m\0";
+        // static constexpr std::string_view op_name = "KILL_TRAINER\0";
+        static constexpr std::string_view op_name = "\x1B[31mKILL_TRAINER\033[0m\0";
     };
 
     /* Trainer operations */
     struct RegistrationRequest 
     { 
         NodeInfo node_to_register; // the node that the aggregator should register.
-        static constexpr std::string_view op_name = "REGISTRATION_REQUEST\0";
-        // static constexpr std::string_view op_name = "\x1B[33mREGISTRATION_REQUEST\033[0m\0";
+        // static constexpr std::string_view op_name = "REGISTRATION_REQUEST\0";
+        static constexpr std::string_view op_name = "\x1B[33mREGISTRATION_REQUEST\033[0m\0";
     };
     struct SendLocalModel 
     {
-        static constexpr std::string_view op_name = "SEND_LOCAL_MODEL\0";
-        // static constexpr std::string_view op_name = "\x1B[32mSEND_LOCAL_MODEL\033[0m\0";
+        // static constexpr std::string_view op_name = "SEND_LOCAL_MODEL\0";
+        static constexpr std::string_view op_name = "\x1B[32mSEND_LOCAL_MODEL\033[0m\0";
     };
-    /* -------------------------------------------------------------------------------------------- */
-
-    // Tool to use lambdas in std::visit, see: https://en.cppreference.com/w/cpp/utility/variant/visit
-    template<class... Ts>
-    struct overloaded : Ts... { using Ts::operator()...; };
+    /* -------------------------------------------------------------------------------------------- */ 
 
     // Definition of our Operation variant
     typedef std::variant<
@@ -103,7 +99,7 @@ public:
 
     /** Const src and dst */
     node_name original_src;
-    const node_name final_dst;
+    node_name final_dst;
 
     /** Writable src and dst, usefull in a peer-to-peer scenario */
     node_name src;
@@ -115,9 +111,6 @@ public:
     /** NodeFilter used when broadcast flag is enabled */
     const std::optional<NodeFilter> filter;
 
-    /** Flag indicating if the packet should be send to a bootstrap node */
-    const bool bootstrap;
-
     /** Unique packet identifier */
     packet_id id = 0;
 
@@ -125,17 +118,16 @@ public:
      * both by the cloned packet and the original one. */
     Packet *clone();
 
-    /** Packet constructor with node name used as destinations and final destination */
+    /** Packet constructor both final and intermediate destination, used for peer-to-peer communications with several hops */
     Packet(node_name dst, node_name final_dst, Operation op);
 
     /** Broadcast packet constructor taking NodeFilter instead of concrete destinations */
     Packet(NodeFilter filter, Operation op);
 
-    /** Bootstrap packet constructor, simply sending the packet to a bootstrap node */
-    Packet(Operation op);
-
     ~Packet() {}
 private:
+    /** Intialize fields of a packet */
+    void init();
 
     /** Use to generate new packet ids */
     static inline packet_id total_packet_number = 0;
