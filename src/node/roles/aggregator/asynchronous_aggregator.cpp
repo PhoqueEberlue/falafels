@@ -16,8 +16,6 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_asynchronous_aggregator, "Messages specific for
 
 AsynchronousAggregator::AsynchronousAggregator(std::unordered_map<std::string, std::string> *args)
 {
-    this->initialization_time = simgrid::s4u::Engine::get_instance()->get_clock();
-
     // Parsing arguments
     for (auto &[key, value]: *args)
     {

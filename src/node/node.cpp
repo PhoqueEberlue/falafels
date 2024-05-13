@@ -1,6 +1,8 @@
 #include "node.hpp"
 #include "network_managers/nm.hpp"
 #include <memory>
+#include <utility>
+#include <vector>
 #include <xbt/log.h>
 
 using namespace std;
@@ -10,7 +12,10 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_node, "Messages specific for this example");
 Node::Node(unique_ptr<Role> r, unique_ptr<NetworkManager> nm)
 {
     this->role = std::move(r);
-    this->network_manager = std::move(nm);
+    this->network_managers = new vector<unique_ptr<NetworkManager>>();
+    this->network_managers->push_back(std::move(nm));
+
+    if (this->role->get_role_type() == NodeRole::Aggregator)
 
     // Creates queues to enable communication between Role and NM.
     auto received_packets = make_shared<queue<unique_ptr<Packet>>>();
@@ -18,7 +23,7 @@ Node::Node(unique_ptr<Role> r, unique_ptr<NetworkManager> nm)
     auto nm_events = make_shared<queue<unique_ptr<NetworkManager::Event>>>();
 
     this->role->set_queues(received_packets, to_be_sent_packets, nm_events);
-    this->network_manager->set_queues(received_packets, to_be_sent_packets, nm_events);
+    this->network_managers->set_queues(received_packets, to_be_sent_packets, nm_events);
 }
 
 void Node::run()
@@ -28,19 +33,19 @@ void Node::run()
         this->role->run();
 
         // Breaks when NetworkManager run() returns false
-        if (!this->network_manager->run())
+        if (!this->network_managers->run())
             break;
     }
 }
 
 NodeInfo Node::get_node_info()
 { 
-    return this->network_manager->get_my_node_info();
+    return this->network_managers->get_my_node_info();
 }
 
 void Node::set_bootstrap_nodes(std::vector<NodeInfo> *nodes)
 {
-    this->network_manager->set_bootstrap_nodes(nodes);
+    this->network_managers->set_bootstrap_nodes(nodes);
 }
 
 // TODO: fix later

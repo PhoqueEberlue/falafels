@@ -23,7 +23,7 @@ class Node
 {
 private:
     std::unique_ptr<Role> role;
-    std::unique_ptr<NetworkManager> network_manager; 
+    std::vector<std::unique_ptr<NetworkManager>> *network_managers; 
 public:
     /**
      * Node constructor

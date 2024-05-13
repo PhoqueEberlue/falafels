@@ -4,10 +4,10 @@
 
 #include <memory>
 
-#include "simple_aggregator.hpp"
+#include "aggregator.hpp"
 #include "../../network_managers/star_nm.hpp"
 
-class HierarchicalAggregator : public SimpleAggregator 
+class HierarchicalAggregator : public Aggregator 
 {
 private:
     node_name central_aggregator_name;

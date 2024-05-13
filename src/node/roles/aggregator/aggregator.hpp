@@ -65,7 +65,7 @@ protected:
      */
     void send_kills();
 public:
-    Aggregator() {} 
+    Aggregator();
     virtual ~Aggregator() {} 
 
     NodeRole get_role_type() { return NodeRole::Aggregator; };

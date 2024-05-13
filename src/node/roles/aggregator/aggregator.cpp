@@ -1,3 +1,4 @@
+#include <simgrid/s4u/Engine.hpp>
 #include <xbt/asserts.h>
 #include <xbt/log.h>
 
@@ -5,6 +6,11 @@
 #include "../../../constants.hpp"
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_aggregator, "Messages specific for this example");
+
+Aggregator::Aggregator()
+{
+    this->initialization_time = simgrid::s4u::Engine::get_instance()->get_clock();
+}
 
 bool Aggregator::aggregate() 
 {
