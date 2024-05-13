@@ -8,6 +8,9 @@
 #include "utils/utils.hpp"
 #include "protocol.hpp"
 
+/**
+ * Singleton used to generate DOT files that can render graphs of the simulation.
+ */
 class DOTGenerator
 {
 public:

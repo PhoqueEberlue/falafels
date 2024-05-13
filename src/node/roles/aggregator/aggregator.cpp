@@ -6,10 +6,6 @@
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_aggregator, "Messages specific for this example");
 
-/** 
- * Launch the aggregating activity or test if the current one has finished.
- * Returns true when aggregation is finished.
- */
 bool Aggregator::aggregate() 
 {
     // if aggregating activity doesn't exists
@@ -46,7 +42,6 @@ void Aggregator::print_end_report()
     XBT_INFO("Number of global epochs done: %u", this->number_global_epochs);
 }
 
-/* Sends the global model to every trainers */
 void Aggregator::send_global_model()
 {
     this->put_to_be_sent_packet(

@@ -32,21 +32,20 @@ public:
      */
     Node(std::unique_ptr<Role> r, std::unique_ptr<NetworkManager> nm);
 
-    Node() {};
     /**
-     * Delete node's NetworkManager and Role.
+     * Node's NetworkManager and Role are deleted implicitly with the unique pointers.
      */
-    ~Node();
+    ~Node() {};
 
     /**
      * Main function to execute the Node's behaviour.
-     * Call the run function of the Role and NetworkManager(s).
+     * Call the run function of the Role and NetworkManager.
      */
     void run();
 
-    NetworkManager *get_network_manager();
-
-
+    /**
+     * Call set_bootstrap_nodes() of the Node's NetworkManager.
+     */
     void set_bootstrap_nodes(std::vector<NodeInfo> *nodes);
 
     /**

@@ -99,9 +99,13 @@ Packet *Packet::clone()
     Packet *res;
 
     if (this->filter)
+    {
         res = new Packet(*this->filter, this->op);
+    }
     else
+    {
         res = new Packet(this->dst, this->final_dst, this->op);
+    }
 
     res->id = this->id;
     res->packet_size = this->packet_size;

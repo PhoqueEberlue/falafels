@@ -18,6 +18,7 @@ AsynchronousAggregator::AsynchronousAggregator(std::unordered_map<std::string, s
 {
     this->initialization_time = simgrid::s4u::Engine::get_instance()->get_clock();
 
+    // Parsing arguments
     for (auto &[key, value]: *args)
     {
         switch (str2int(key.c_str()))
@@ -49,8 +50,10 @@ void AsynchronousAggregator::run()
     switch (this->state)
     {
         case INITIALIZING:
+            // If a NetworkManager event is available
             if (auto e = this->get_nm_event())
             {
+                // If type of event is ClusterConnected it means that every node have been connected to us
                 if (auto *conneted_event = get_if<NetworkManager::ClusterConnected>(e->get()))
                 {
                     this->number_client_training = conneted_event->number_client_connected;
@@ -60,8 +63,10 @@ void AsynchronousAggregator::run()
             }
             break;
         case WAITING_LOCAL_MODELS:
+            // If a packet have been received
             if (auto packet = this->get_received_packet())
             {
+                // If the operation is a SendLocalModel
                 if (auto *send_local = get_if<Packet::SendLocalModel>(&(*packet)->op))
                 {
                     this->number_local_models = 1;
@@ -72,6 +77,7 @@ void AsynchronousAggregator::run()
             }
             break;
         case AGGREGATING:
+            // If the aggregating activity has finished (start it if not launched)
             if (this->aggregate())
             {
                 this->send_global_model_to(this->src_save, this->original_src_save);
@@ -82,7 +88,6 @@ void AsynchronousAggregator::run()
     }
 }
 
-/* Sends the global model to every start_nodes */
 void AsynchronousAggregator::send_global_model_to(node_name dst, node_name final_dst)
 {
     auto p = Packet(

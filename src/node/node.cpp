@@ -12,6 +12,7 @@ Node::Node(unique_ptr<Role> r, unique_ptr<NetworkManager> nm)
     this->role = std::move(r);
     this->network_manager = std::move(nm);
 
+    // Creates queues to enable communication between Role and NM.
     auto received_packets = make_shared<queue<unique_ptr<Packet>>>();
     auto to_be_sent_packets = make_shared<queue<shared_ptr<Packet>>>();
     auto nm_events = make_shared<queue<unique_ptr<NetworkManager::Event>>>();
@@ -20,17 +21,13 @@ Node::Node(unique_ptr<Role> r, unique_ptr<NetworkManager> nm)
     this->network_manager->set_queues(received_packets, to_be_sent_packets, nm_events);
 }
 
-Node::~Node()
-{
-}
-
-
 void Node::run()
 {
     while(true)
     {
         this->role->run();
 
+        // Breaks when NetworkManager run() returns false
         if (!this->network_manager->run())
             break;
     }
@@ -39,11 +36,6 @@ void Node::run()
 NodeInfo Node::get_node_info()
 { 
     return this->network_manager->get_my_node_info();
-}
-
-NetworkManager *Node::get_network_manager()
-{
-    return this->network_manager.get();
 }
 
 void Node::set_bootstrap_nodes(std::vector<NodeInfo> *nodes)

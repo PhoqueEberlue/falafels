@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
     // Using our own deployment function instead of simgrid's one
     // e.load_deployment(argv[2]);
 
-    auto nodes_map = load_config(argv[2], &e); 
+    auto nodes_map = load_config(argv[2]); 
 
     for (auto [name, node] : *nodes_map)
     {

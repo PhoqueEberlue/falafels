@@ -31,13 +31,16 @@ void SimpleAggregator::run()
         this->send_kills();
         this->print_end_report();
         this->still_has_activities = false;
+        return;
     }
 
     switch (this->state)
     {
         case INITIALIZING:
+            // If a NetworkManager event is available
             if (auto e = this->get_nm_event())
             {
+                // If type of event is ClusterConnected it means that every node have been connected to us
                 if (auto *conneted_event = get_if<NetworkManager::ClusterConnected>(e->get()))
                 {
                     this->number_client_training = conneted_event->number_client_connected;
@@ -46,9 +49,11 @@ void SimpleAggregator::run()
                 }
             }
             break;
-        case WAITING_LOCAL_MODELS:
+        case WAITING_LOCAL_MODELS: 
+            // If a packet have been received
             if (auto packet = this->get_received_packet())
             {
+                // If the packet's operation is a SendLocalModel
                 if (auto *send_local = get_if<Packet::SendLocalModel>(&(*packet)->op))
                 {
                     this->number_local_models += 1;
@@ -62,6 +67,7 @@ void SimpleAggregator::run()
             }
             break;
         case AGGREGATING:
+            // If the aggregating activity has finished (start it if not launched)
             if (this->aggregate())
             {
                 this->number_local_models = 0;

@@ -24,7 +24,6 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_star_nm, "Messages specific for this example");
 
 StarNetworkManager::StarNetworkManager(NodeInfo node_info) : NetworkManager(node_info)
 {
-    this->my_node_info = node_info;
     this->connected_nodes = new vector<NodeInfo>();
 }
 
@@ -105,6 +104,7 @@ void StarNetworkManager::broadcast(shared_ptr<Packet> packet)
 {
     for(auto node_info : *this->connected_nodes)
     {
+        // Apply the filter function and send if it returned true
         if ((*packet->filter)(&node_info))
         {
             packet->dst = node_info.name;
@@ -113,10 +113,8 @@ void StarNetworkManager::broadcast(shared_ptr<Packet> packet)
     }
 }
 
-/**  
- * In star_nm we route everything to the Role.
- */
 void StarNetworkManager::route_packet(unique_ptr<Packet> packet)
 {
+    // In star_nm we route everything to the Role.
     this->put_received_packet(std::move(packet));
 }

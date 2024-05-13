@@ -7,12 +7,12 @@
 #include "protocol.hpp"
 
 /**
- * Load a falafels deployment file.
+ * Load a fried falafels deployment file.
  * Creates nodes and initialize constants.
  *
- * @param file_path Falafels deployment file path
- * @param e Simgrid Engine
+ * @param file path to the fried falafels deployment file.
+ * @return A map pairing each created node pointer with its name as a key
  */
-std::unordered_map<node_name, Node*> *load_config(const char* file_path, simgrid::s4u::Engine *e);
+std::unordered_map<node_name, Node*> *load_config(const char* file_path);
 
 #endif // !FALAFELS_CONFIG_LOADER_HPP

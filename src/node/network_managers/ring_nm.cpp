@@ -3,7 +3,6 @@
 #include <memory>
 #include <simgrid/Exception.hpp>
 #include <simgrid/forward.h>
-#include <variant>
 #include <vector>
 #include <xbt/asserts.h>
 #include <xbt/ex.h>
@@ -40,7 +39,7 @@ void RingNetworkManager::handle_registration_requests()
     NodeInfo left_n;
     NodeInfo right_n;
 
-    // ---------- Create connections and send them ----------
+    // ---------- Creating connections ----------
     for (int i = 0; i < this->registration_requests->size(); i++)
     {
         // Handle edges -> link to the current node to close the ring
@@ -68,13 +67,14 @@ void RingNetworkManager::handle_registration_requests()
         neigbours.push_back(right_n);
 
         auto res_p = make_shared<Packet>(Packet(
-            this->registration_requests->at(i).node_to_register.name, // Sent the packt to the current node
-            this->registration_requests->at(i).node_to_register.name, // Sent the packt to the current node
+            this->registration_requests->at(i).node_to_register.name, // Sent the packet to the current node
+            this->registration_requests->at(i).node_to_register.name, // Sent the packet to the current node
             Packet::RegistrationConfirmation(
                 make_shared<vector<NodeInfo>>(neigbours)
             )
         ));
 
+        // Sending the packet
         this->send_async(res_p);
     } 
 
@@ -88,7 +88,9 @@ void RingNetworkManager::handle_registration_requests()
         std::format("{} -> {} [color=green]", this->my_node_info.name, this->right_node.name)
     );
 
-    this->put_nm_event(ClusterConnected { .number_client_connected=(uint16_t)this->registration_requests->size() });
+    this->put_nm_event(
+        ClusterConnected { .number_client_connected=(uint16_t)this->registration_requests->size() }
+    );
 }
 
 void RingNetworkManager::send_registration_request()
@@ -139,7 +141,7 @@ void RingNetworkManager::handle_registration_confirmation(const Packet::Registra
 void RingNetworkManager::route_packet(std::unique_ptr<Packet> packet)
 {
     // Check that the packet haven't been already received
-    if(!this->is_duplicated(packet))
+    if(!this->is_duplicated(packet->id))
     {
         // Add to received packets
         this->received_packet_ids->push_back(packet->id);
@@ -150,8 +152,9 @@ void RingNetworkManager::route_packet(std::unique_ptr<Packet> packet)
             this->redirect(packet);
         }
 
-        // if final dst is empty, then the msg has to be delivered to everyone
-        if (packet->final_dst == "" || packet->final_dst == this->get_my_node_name())
+        // if its a broadcast, then the msg has to be delivered to everyone (including us)
+        // or if the final dst is equal to our name, then we are the final_dst.
+        if (packet->broadcast || packet->final_dst == this->get_my_node_name())
         {
             this->put_received_packet(std::move(packet));
         }
@@ -166,7 +169,7 @@ void RingNetworkManager::broadcast(shared_ptr<Packet> packet)
 {
     uint16_t res = 0;
 
-    // Send to left node
+    // Apply filter function and send to left node
     if ((*packet->filter)(&this->left_node))
     {
         packet->dst = this->left_node.name;
@@ -174,7 +177,7 @@ void RingNetworkManager::broadcast(shared_ptr<Packet> packet)
         res++;
     }
 
-    // Send to right node
+    // Apply filter function and send to right node
     if ((*packet->filter)(&this->right_node))
     {
         packet->dst = this->right_node.name;
@@ -183,10 +186,12 @@ void RingNetworkManager::broadcast(shared_ptr<Packet> packet)
     }
 }
 
-bool RingNetworkManager::is_duplicated(std::unique_ptr<Packet> &packet)
+bool RingNetworkManager::is_duplicated(const packet_id id)
 {
     auto r = this->received_packet_ids;
-    return find(r->begin(), r->end(), packet->id) != r->end();
+
+    // Try to find the id on the list
+    return find(r->begin(), r->end(), id) != r->end();
 }
 
 void RingNetworkManager::redirect(unique_ptr<Packet> &p)
@@ -208,7 +213,7 @@ void RingNetworkManager::redirect(unique_ptr<Packet> &p)
 
     new_p->dst = dst;
     
-    // Note that the final dest stays the same.
+    // Note that the final dst stays the same.
     // We specify is_redirected to true to prevent the orginal src from being overwritten.
     this->send_async(new_p, true);
 }

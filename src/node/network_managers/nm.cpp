@@ -21,11 +21,9 @@ using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_network_manager, "Messages specific for this example");
 
-NetworkManager::NetworkManager(NodeInfo node_info)
+NetworkManager::NetworkManager(NodeInfo node_info) : my_node_info(node_info)
 {
     this->pending_async_put = new simgrid::s4u::ActivitySet();
-
-    this->my_node_info = node_info;
 
     // Initializing our mailbox
     this->mailbox = simgrid::s4u::Mailbox::by_name(this->my_node_info.name);
@@ -104,8 +102,8 @@ bool NetworkManager::run()
             }
             break;
         case WAITING_REGISTRATION_REQUEST:
-            if (!this->time.has_value())
-                this->time = simgrid::s4u::Engine::get_instance()->get_clock();
+            if (!this->start_time.has_value())
+                this->start_time = simgrid::s4u::Engine::get_instance()->get_clock();
 
             if (auto packet = this->try_get())
             {
@@ -117,7 +115,7 @@ bool NetworkManager::run()
             }
 
             // At some point, stop listening for registration requests and end this state
-            if (simgrid::s4u::Engine::get_instance()->get_clock() - *this->time > Constants::REGISTRATION_TIMEOUT) 
+            if (simgrid::s4u::Engine::get_instance()->get_clock() - *this->start_time > Constants::REGISTRATION_TIMEOUT) 
             {
                 this->handle_registration_requests();
                 this->state = RUNNING;
@@ -198,7 +196,15 @@ void NetworkManager::send_async(shared_ptr<Packet> packet, bool is_redirected)
 
     // Only write original source when sending packets created by the current node.
     if (!is_redirected)
+    {
         p_clone->original_src = this->get_my_node_name();
+        XBT_INFO("%s ---%s(%lu)--> %s", p_clone->src.c_str(), p_clone->get_op_name(), p_clone->id, p_clone->dst.c_str());
+    }
+    else
+    {
+        p_clone->original_src = packet->original_src;
+        XBT_INFO("%s ---%s(%lu)--> %s [REDIRECT]", p_clone->src.c_str(), p_clone->get_op_name(), p_clone->id, p_clone->dst.c_str());
+    }
 
     auto receiver_mailbox = simgrid::s4u::Mailbox::by_name(p_clone->dst);
 
@@ -207,31 +213,8 @@ void NetworkManager::send_async(shared_ptr<Packet> packet, bool is_redirected)
         std::format("{} -> {} [label=\"{}\", style=dotted];", p_clone->src, p_clone->dst, p_clone->get_op_name())
     );
 
-    XBT_INFO("%s ---%s(%lu)--> %s", p_clone->src.c_str(), p_clone->get_op_name(), p_clone->id, p_clone->dst.c_str());
 
     auto comm = receiver_mailbox->put_async(p_clone, p_clone->get_packet_size());
     
     this->pending_async_put->push(comm);
-}
-
-void NetworkManager::wait_last_comms(const optional<double> &timeout)
-{
-    if (!timeout)
-    {
-        this->pending_async_put->wait_all();
-    }
-    else
-    {
-        try
-        {
-            // Wait finish pending comms before exiting with timeout in case of double send
-            this->pending_async_put->wait_all_for(*timeout);
-        } 
-        catch (simgrid::TimeoutException)
-        {
-            XBT_INFO("Timeout");
-        }
-    }
-
-    this->pending_async_put->clear();
 }

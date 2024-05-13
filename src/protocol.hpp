@@ -48,7 +48,7 @@ class Packet
 {
 public: 
     /* --------------------- Operation and their data to be stored in variant --------------------- */
-    /* Aggregator operations */
+    /* |||||| Aggregator operations |||||| */
     struct RegistrationConfirmation 
     { 
         std::shared_ptr<std::vector<NodeInfo>> node_list; // list of nodes attributed by the aggregator.
@@ -67,7 +67,7 @@ public:
         static constexpr std::string_view op_name = "\x1B[31mKILL_TRAINER\033[0m\0";
     };
 
-    /* Trainer operations */
+    /* |||||| Trainer operations |||||| */
     struct RegistrationRequest 
     { 
         NodeInfo node_to_register; // the node that the aggregator should register.
@@ -82,19 +82,21 @@ public:
     /* -------------------------------------------------------------------------------------------- */ 
 
     // Definition of our Operation variant
-    typedef std::variant<
+    using Operation = std::variant<
         RegistrationConfirmation,
         SendGlobalModel,
         KillTrainer,
         RegistrationRequest,
         SendLocalModel
-    > Operation;
+    >;
+
     /** Compute the simulated size of a packet by following the pointers stored in the data union */
     uint64_t get_packet_size();
 
     /** Get the printable name of Packet's Operation */
     const char* get_op_name() const;
     
+    /** Packet's operation, storing pontential values corresponding on the variant member */
     const Operation op;
 
     /** Const src and dst */
@@ -132,7 +134,7 @@ private:
     /** Use to generate new packet ids */
     static inline packet_id total_packet_number = 0;
 
-    /** "cache" variable to prevent computing the packet's size multiple times */
+    /** Cache variable to prevent computing the packet's size multiple times */
     uint64_t packet_size = 0;
 };
 

@@ -19,10 +19,6 @@ Trainer::Trainer(std::unordered_map<std::string, std::string> *args)
     delete args;
 }
 
-/** 
- * Launch the training activity or test if the current one has finished.
- * Performs number_local_epochs training before return true.
- */
 bool Trainer::train() 
 {
     double flops = Constants::LOCAL_MODEL_TRAINING_FLOPS;
@@ -70,8 +66,10 @@ void Trainer::run()
     switch (this->state)
     {
         case INITIALIZING:
+            // If event available
             if (auto e = this->get_nm_event())
             {
+                // If type of event is NodeConnected it means that our node is connected :)
                 if (auto *conneted_event = get_if<NetworkManager::NodeConnected>(e->get()))
                 {
                     this->state = WAITING_GLOBAL_MODEL;
@@ -79,18 +77,24 @@ void Trainer::run()
             }
             break;
         case WAITING_GLOBAL_MODEL:
+            // If packet have been received 
             if (auto packet = this->get_received_packet())
             {
+                // If the operation is a SendGlobalModel
                 if (auto *op_glob = get_if<Packet::SendGlobalModel>(&(*packet)->op))
                 {
+                    // Get the source to be able to send the local model later
                     this->dst = (*packet)->src;
                     this->final_dst = (*packet)->original_src;
+
+                    // Set the number of local epochs
                     this->number_local_epochs = op_glob->number_local_epochs;
                     this->state = TRAINING;
                 }
             }
             break;
         case TRAINING:
+            // If the training activity has finished (start it if not launched)
             if (this->train())
             {
                 this->send_local_model(this->dst, this->final_dst);

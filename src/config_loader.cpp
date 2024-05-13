@@ -45,15 +45,15 @@ unordered_map<string, string> *parse_arguments(xml_object_range<xml_node_iterato
 /**
  * Create a network manager with the correct type.
  * @param network_manager_elem XML element that contains network manager informations.
- * @param name Name of the Node that will be associated to this network manager.
+ * @param node_info NodeInfo of the Node that will be associated to this network manager.
+ * @param topology Topology used in the Node's network.
  * @return A pointer to the created NetworkManager.
  */
 unique_ptr<NetworkManager> create_network_manager(xml_node *network_manager_elem, NodeInfo node_info, string topology)
 {
     unique_ptr<NetworkManager> network_manager;
 
-    // auto nm_type = network_manager_elem->attribute("type").as_string();
-    // for now, topology of the cluster implies the NM type
+    // Topology of the cluster implies the NM type
     auto nm_type = topology.c_str();
 
     if (strcmp(nm_type, "star") == 0)
@@ -73,6 +73,7 @@ unique_ptr<NetworkManager> create_network_manager(xml_node *network_manager_elem
 /**
  * Create an aggregator with the correct type.
  * @param aggregator_elem XML element that contains aggregator informations.
+ * @param args aggregator's arguments already parsed.
  * @return A pointer to the created aggregator.
  */
 unique_ptr<Aggregator> create_aggregator(xml_node *role_elem, unordered_map<string, string> *args)
@@ -134,6 +135,7 @@ unique_ptr<Role> create_role(xml_node *role_elem)
  * Create a single node with its respectful configuration.
  * @param node_elem XML element that contains node informations.
  * @param name The name of the current node.
+ * @param topology Topology used in the Node's network.
  * @return A pointer to the created Node.
  */
 Node *create_node(xml_node *node_elem, node_name name, string topology)
@@ -155,8 +157,8 @@ Node *create_node(xml_node *node_elem, node_name name, string topology)
 
 /**
  * Create nodes with their respectful configuration and updates the unordered map.
- * @param nodes_elem XML element that contains the list of nodes.
  * @param An unordered map with node_name as key and a pointer to the given Node.
+ * @param nodes_elem XML element that contains the list of nodes.
  */
 void create_nodes(unordered_map<node_name, Node*> *nodes_map, xml_node *nodes_elem)
 {
@@ -201,7 +203,7 @@ void create_nodes(unordered_map<node_name, Node*> *nodes_map, xml_node *nodes_el
 }
 
 /**
- * Set a constant in the Constant Class
+ * Set a constant in the Constant Class.
  * @param name Constant's name
  * @param value Constant's value
  */
@@ -226,6 +228,9 @@ void set_constant(const xml_attribute *name, xml_attribute *value)
         case str2int("DURATION_TRAINING_PHASE"):
             Constants::DURATION_TRAINING_PHASE = value->as_double();
             break;
+        case str2int("REGISTRATION_TIMEOUT"):
+            Constants::REGISTRATION_TIMEOUT = value->as_double();
+            break;
     }
 }
 
@@ -247,12 +252,17 @@ void init_constants(xml_node *constants_elem)
     XBT_INFO("-------------------------");
 }
 
-unordered_map<node_name, Node*> *load_config(const char* file_path, simgrid::s4u::Engine *e)
+/**
+ * Loads a fried falafels deployment file.
+ * @param file path to the fried falafels deployment file.
+ * @return A map pairing each created node pointer with its name as a key
+ */
+unordered_map<node_name, Node*> *load_config(const char* file_path)
 {
     xml_document doc;
     xml_parse_result result = doc.load_file(file_path);
 
-    xbt_assert(result != 0, "Error while loading falafels xml file");
+    xbt_assert(result != 0, "Error while loading fried falafels deployment file");
 
     xml_node root_elem = doc.child("fried");
     xml_node constants_elem = root_elem.child("constants");
