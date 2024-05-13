@@ -43,6 +43,7 @@ void AsynchronousAggregator::run()
         this->send_kills();
         this->print_end_report();
         this->still_has_activities = false;
+        return;
     }
 
     switch (this->state)

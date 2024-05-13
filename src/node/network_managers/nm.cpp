@@ -126,6 +126,7 @@ bool NetworkManager::run()
         case RUNNING:
             if (auto packet = this->try_get())
             {
+                // Case where we receive Kill
                 if (auto *kill = get_if<Packet::KillTrainer>(&(*packet)->op))
                 {
                     this->state = KILLING;
@@ -135,6 +136,7 @@ bool NetworkManager::run()
 
             if (auto p = this->get_to_be_sent_packet())
             {
+                // Case where we send kill to someone else
                 if (auto *kill = get_if<Packet::KillTrainer>(&(*p)->op))
                 {
                     this->state = KILLING;
@@ -146,7 +148,9 @@ bool NetworkManager::run()
         case KILLING:
             // TBH implementing kill isn't very interesting and will not play a lot in electric consumption.
             // It might be a loss of time.....
-            this->wait_last_comms(1);
+            this->pending_async_put->clear();
+            //this->pending_async_put->wait_all_for(2);
+            // this->wait_last_comms(1);
             // this->pending_async_put->wait_all();
             return false;
     }
