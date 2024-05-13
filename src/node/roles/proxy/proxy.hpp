@@ -10,7 +10,7 @@ private:
     void redirect();
 public:
     Proxy();
-    void run();
+    bool run();
     NodeRole get_role_type() { return NodeRole::Proxy; };
 };
 

@@ -9,10 +9,10 @@
 
 #include "node/network_managers/nm.hpp"
 #include "node/roles/aggregator/asynchronous_aggregator.hpp"
-#include "node/roles/aggregator/hierarchical_aggregator.hpp"
+// #include "node/roles/aggregator/hierarchical_aggregator.hpp"
 #include "node/roles/aggregator/simple_aggregator.hpp"
 #include "node/roles/trainer/trainer.hpp"
-#include "node/roles/proxy/proxy.hpp"
+// #include "node/roles/proxy/proxy.hpp"
 #include "node/network_managers/star_nm.hpp"
 #include "node/network_managers/ring_nm.hpp"
 #include "config_loader.hpp"
@@ -93,7 +93,7 @@ unique_ptr<Aggregator> create_aggregator(xml_node *role_elem, unordered_map<stri
     else if (strcmp(aggregator_type, "hierarchical") == 0)
     {
         XBT_INFO("With role: Hierarchical");
-        aggregator = make_unique<HierarchicalAggregator>(args);
+        // aggregator = make_unique<HierarchicalAggregator>(args);
     }
 
     return aggregator; 
@@ -196,7 +196,7 @@ void create_nodes(unordered_map<node_name, Node*> *nodes_map, xml_node *nodes_el
         }
 
         // Set boostrap nodes
-        nodes_map->at(name)->get_role()->get_network_manager()->set_bootstrap_nodes(bootstrap_nodes); 
+        nodes_map->at(name)->set_bootstrap_nodes(bootstrap_nodes); 
     }
 }
 

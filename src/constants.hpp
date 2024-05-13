@@ -14,7 +14,7 @@ public:
     /** Simulated model size that will be sent through the network as a packet. */
     inline static uint64_t MODEL_SIZE_BYTES = 2000;
 
-    /** Number of flops for aggregating one local model with the global one. */
+    /** Number of flops for aggregating ONE local model with the global one. */
     inline static double GLOBAL_MODEL_AGGREGATING_FLOPS = 1000000.0;
 
     /** Number of flops for training a local model. */

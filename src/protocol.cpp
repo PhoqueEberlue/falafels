@@ -1,20 +1,31 @@
-#include "protocol.hpp"
 #include <cstdint>
-#include <memory>
+#include <format>
 #include <optional>
-#include <string>
-#include <string_view>
 #include <variant>
 #include <xbt/asserts.h>
 #include <xbt/log.h>
+
+#include "protocol.hpp"
+#include "utils/utils.hpp"
 
 using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_falafels_protocol, "Messages specific for this example");
 
-Packet::Packet(node_name src, node_name dst, Operation op) : 
-    original_src(src), final_dst(dst), op(op)
+Packet::Packet(node_name dst, node_name final_dst, Operation op) : 
+    dst(dst), final_dst(final_dst), op(op), broadcast(false)
 { 
+    this->init();
+}
+
+Packet::Packet(NodeFilter filter, Operation op) : 
+    filter(filter), op(op), broadcast(true)
+{
+    this->init();
+}
+
+void Packet::init()
+{
     this->id = this->total_packet_number;
     this->total_packet_number += 1;
 }
@@ -61,6 +72,8 @@ uint64_t Packet::get_packet_size()
                 result += Constants::MODEL_SIZE_BYTES;
             }
         }, this->op);
+
+        this->packet_size = result;
     }
 
     return this->packet_size;
@@ -68,13 +81,14 @@ uint64_t Packet::get_packet_size()
 
 const char *Packet::get_op_name() const
 {
-    return std::visit(overloaded {
+    return std::visit(
         // Match every variant type because they all have op_name field
-        [](auto op) -> const char * 
+        [](auto op) -> const char *
         {
             return op.op_name.data();
-        },
-    }, this->op);
+        }, 
+        this->op
+    );
 }
 
 /**
@@ -82,7 +96,13 @@ const char *Packet::get_op_name() const
  */
 Packet *Packet::clone()
 {
-    Packet *res = new Packet(this->original_src, this->final_dst, this->op);
+    Packet *res;
+
+    if (this->filter)
+        res = new Packet(*this->filter, this->op);
+    else
+        res = new Packet(this->dst, this->final_dst, this->op);
+
     res->id = this->id;
     res->packet_size = this->packet_size;
 

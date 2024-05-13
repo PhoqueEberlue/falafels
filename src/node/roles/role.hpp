@@ -4,6 +4,8 @@
 
 #include "../network_managers/nm.hpp"
 #include <memory>
+#include <optional>
+#include <queue>
 
 /**
  * Abstract class that defines a Node behaviour in a Federated Learning system.
@@ -15,24 +17,22 @@
 class Role
 {
 private:
-    std::unique_ptr<NetworkManager> network_manager;
+    std::shared_ptr<std::queue<std::unique_ptr<Packet>>> received_packets;
+    std::shared_ptr<std::queue<std::shared_ptr<Packet>>> to_be_sent_packets;
+    std::shared_ptr<std::queue<std::unique_ptr<NetworkManager::Event>>> nm_events;
 public:
+    bool still_has_activities = true;
     Role(){}
     virtual ~Role(){}
     virtual void run() = 0;
     virtual NodeRole get_role_type() = 0;
-    
-    /**
-     * Sets the NetworkManager of the current Role.
-     * @param nm NetworkManager
-     */
-    void set_network_manager(std::unique_ptr<NetworkManager> nm) { this->network_manager = std::move(nm); }
 
-    /**
-     * Get the NetworkManager of the current Role as a raw pointer (non-owning).
-     * @return nm NetworkManager
-     */
-    NetworkManager *get_network_manager() { return this->network_manager.get(); }
+    std::optional<std::unique_ptr<Packet>> get_received_packet();
+    void put_to_be_sent_packet(Packet packet);
+    std::optional<std::unique_ptr<NetworkManager::Event>> get_nm_event();
+    void set_queues(std::shared_ptr<std::queue<std::unique_ptr<Packet>>> received, 
+                    std::shared_ptr<std::queue<std::shared_ptr<Packet>>> to_be_sent,
+                    std::shared_ptr<std::queue<std::unique_ptr<NetworkManager::Event>>> nm_events);
 };
 
 #endif // !FALAFELS_ROLE_HPP

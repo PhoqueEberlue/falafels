@@ -4,6 +4,7 @@
 #include <memory>
 #include <simgrid/s4u/Actor.hpp>
 #include <simgrid/s4u/Engine.hpp>
+#include <vector>
 #include <xbt/log.h>
 #include "roles/role.hpp"
 
@@ -17,12 +18,12 @@
  * - We want to support multiple networking algoritms in order to work with centralized, decentralized and semi-decentralized Federated Learning.
  * 
  * Thus, a node is constituted of a Role and a NetworkManager.
- * The NetworkManager is actually stored in the Role because this last need it... though we might want to change that later by sharing the NetworkManager's reference.
  */
 class Node
 {
 private:
     std::unique_ptr<Role> role;
+    std::unique_ptr<NetworkManager> network_manager; 
 public:
     /**
      * Node constructor
@@ -39,9 +40,14 @@ public:
 
     /**
      * Main function to execute the Node's behaviour.
-     * Call the run function of the associated role of the node.
+     * Call the run function of the Role and NetworkManager(s).
      */
-    void run() { this->role->run(); }
+    void run();
+
+    NetworkManager *get_network_manager();
+
+
+    void set_bootstrap_nodes(std::vector<NodeInfo> *nodes);
 
     /**
      * Set the Node's Role.
@@ -56,7 +62,7 @@ public:
     Role *get_role() { return role.get(); }
 
     /**
-     * Allocate a NodeInfo struct representing Node's information.
+     * Return a NodeInfo struct representing Node's information.
      * @return NodeInfo*.
      */
     NodeInfo get_node_info();
