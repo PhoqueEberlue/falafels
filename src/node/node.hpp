@@ -7,6 +7,7 @@
 #include <vector>
 #include <xbt/log.h>
 #include "roles/role.hpp"
+#include "network_managers/nm.hpp"
 
 /**
  * A Node represent an entity in the simulation world of falafels.
@@ -23,7 +24,7 @@ class Node
 {
 private:
     std::unique_ptr<Role> role;
-    std::vector<std::unique_ptr<NetworkManager>> *network_managers; 
+    std::unique_ptr<NetworkManager> network_manager; 
 public:
     /**
      * Node constructor
