@@ -7,9 +7,10 @@
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_aggregator, "Messages specific for this example");
 
-Aggregator::Aggregator()
+Aggregator::Aggregator(node_name name)
 {
     this->initialization_time = simgrid::s4u::Engine::get_instance()->get_clock();
+    this->my_node_name = name;
 }
 
 bool Aggregator::aggregate() 
@@ -50,7 +51,7 @@ void Aggregator::print_end_report()
 
 void Aggregator::send_global_model()
 {
-    this->put_to_be_sent_packet(
+    this->mc->put_to_be_sent_packet(
         Packet(
             // Send global model with broadcast because we specify a filter instead of a dst
             Filters::trainers_and_aggregators,
@@ -63,7 +64,7 @@ void Aggregator::send_global_model()
 
 void Aggregator::send_kills()
 {
-    this->put_to_be_sent_packet(
+    this->mc->put_to_be_sent_packet(
         Packet(
             // Send kills with broadcast
             Filters::trainers_and_aggregators,

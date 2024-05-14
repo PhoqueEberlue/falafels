@@ -14,7 +14,7 @@ using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_simple_aggregator, "Messages specific for this example");
 
-SimpleAggregator::SimpleAggregator(std::unordered_map<std::string, std::string> *args)
+SimpleAggregator::SimpleAggregator(std::unordered_map<std::string, std::string> *args, node_name name) : Aggregator(name)
 {
     // No args needed
     delete args;
@@ -38,10 +38,10 @@ void SimpleAggregator::run()
     {
         case INITIALIZING:
             // If a NetworkManager event is available
-            if (auto e = this->get_nm_event())
+            if (auto e = this->mc->get_nm_event())
             {
                 // If type of event is ClusterConnected it means that every node have been connected to us
-                if (auto *conneted_event = get_if<NetworkManager::ClusterConnected>(e->get()))
+                if (auto *conneted_event = get_if<Mediator::ClusterConnected>(e->get()))
                 {
                     this->number_client_training = conneted_event->number_client_connected;
                     this->send_global_model();
@@ -51,7 +51,7 @@ void SimpleAggregator::run()
             break;
         case WAITING_LOCAL_MODELS: 
             // If a packet have been received
-            if (auto packet = this->get_received_packet())
+            if (auto packet = this->mc->get_received_packet())
             {
                 // If the packet's operation is a SendLocalModel
                 if (auto *send_local = get_if<Packet::SendLocalModel>(&(*packet)->op))
