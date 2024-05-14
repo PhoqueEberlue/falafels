@@ -88,8 +88,8 @@ void RingNetworkManager::handle_registration_requests()
         std::format("{} -> {} [color=green]", this->my_node_info.name, this->right_node.name)
     );
 
-    this->put_nm_event(
-        ClusterConnected { .number_client_connected=(uint16_t)this->registration_requests->size() }
+    this->mp->put_nm_event(
+        Mediator::ClusterConnected { .number_client_connected=(uint16_t)this->registration_requests->size() }
     );
 }
 
@@ -135,7 +135,7 @@ void RingNetworkManager::handle_registration_confirmation(const Packet::Registra
         std::format("{} -> {} [color=green]", this->my_node_info.name, this->right_node.name)
     );
 
-    this->put_nm_event(NodeConnected {});
+    this->mp->put_nm_event(Mediator::NodeConnected {});
 }
 
 void RingNetworkManager::route_packet(std::unique_ptr<Packet> packet)
@@ -156,7 +156,7 @@ void RingNetworkManager::route_packet(std::unique_ptr<Packet> packet)
         // or if the final dst is equal to our name, then we are the final_dst.
         if (packet->broadcast || packet->final_dst == this->get_my_node_name())
         {
-            this->put_received_packet(std::move(packet));
+            this->mp->put_received_packet(std::move(packet));
         }
     }
     else 

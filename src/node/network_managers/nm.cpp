@@ -1,5 +1,4 @@
 #include "nm.hpp"
-#include <algorithm>
 #include <format>
 #include <memory>
 #include <optional>
@@ -8,7 +7,6 @@
 #include <simgrid/s4u/Activity.hpp>
 #include <simgrid/s4u/Actor.hpp>
 #include <simgrid/s4u/Engine.hpp>
-#include <unordered_map>
 #include <vector>
 #include <xbt/log.h>
 #include <xbt/asserts.h>
@@ -38,36 +36,6 @@ NetworkManager::~NetworkManager()
     delete this->registration_requests;
 }
 
-optional<shared_ptr<Packet>> NetworkManager::get_to_be_sent_packet()
-{
-    if (this->to_be_sent_packets->empty())
-        return nullopt;
-
-    auto p = std::move(this->to_be_sent_packets->front());
-    this->to_be_sent_packets->pop();
-    return p;
-}
-
-void NetworkManager::put_received_packet(unique_ptr<Packet> packet)
-{
-    this->received_packets->push(std::move(packet));
-}
-
-void NetworkManager::put_nm_event(Event e)
-{
-    this->nm_events->push(make_unique<Event>(e));
-}
-
-void NetworkManager::set_queues(
-    shared_ptr<queue<unique_ptr<Packet>>> received, 
-    shared_ptr<queue<shared_ptr<Packet>>> to_be_sent,
-    shared_ptr<queue<unique_ptr<Event>>> nm_events)
-{
-    this->received_packets = received;
-    this->to_be_sent_packets = to_be_sent;
-    this->nm_events = nm_events;
-}
-
 void NetworkManager::set_bootstrap_nodes(vector<NodeInfo> *nodes)
 {
     this->bootstrap_nodes = nodes;
@@ -75,7 +43,7 @@ void NetworkManager::set_bootstrap_nodes(vector<NodeInfo> *nodes)
 
 bool NetworkManager::run()
 { 
-    simgrid::s4u::this_actor::sleep_for(0.1);
+    simgrid::s4u::this_actor::sleep_for(0.01);
 
     switch (this->state)
     {
@@ -132,7 +100,7 @@ bool NetworkManager::run()
                 this->route_packet(std::move(*packet));
             }
 
-            if (auto p = this->get_to_be_sent_packet())
+            if (auto p = this->mp->get_to_be_sent_packet())
             {
                 // Case where we send kill to someone else
                 if (auto *kill = get_if<Packet::KillTrainer>(&(*p)->op))
