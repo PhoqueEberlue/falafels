@@ -31,6 +31,8 @@ void Node::run()
 {
     while(true)
     {
+        simgrid::s4u::this_actor::sleep_for(0.01);
+
         this->role->run();
 
         // Breaks when NetworkManager run() returns false

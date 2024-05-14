@@ -43,7 +43,7 @@ void NetworkManager::set_bootstrap_nodes(vector<NodeInfo> *nodes)
 
 bool NetworkManager::run()
 { 
-    simgrid::s4u::this_actor::sleep_for(0.01);
+    // simgrid::s4u::this_actor::sleep_for(0.01);
 
     switch (this->state)
     {
