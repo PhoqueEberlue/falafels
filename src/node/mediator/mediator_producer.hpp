@@ -6,6 +6,13 @@
 
 using namespace std;
 
+/**
+ * MediatorProducer is the end to be used my Networkmanagers.
+ * It can:
+ * - Put received packets
+ * - Put Network events
+ * - Get packets to be sent
+ */
 class MediatorProducer : public Mediator
 {
 public:
