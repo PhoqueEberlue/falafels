@@ -9,7 +9,7 @@
 
 #include "node/network_managers/nm.hpp"
 #include "node/roles/aggregator/asynchronous_aggregator.hpp"
-// #include "node/roles/aggregator/hierarchical_aggregator.hpp"
+#include "node/roles/aggregator/hierarchical_aggregator.hpp"
 #include "node/roles/aggregator/simple_aggregator.hpp"
 #include "node/roles/trainer/trainer.hpp"
 // #include "node/roles/proxy/proxy.hpp"
@@ -76,7 +76,7 @@ unique_ptr<NetworkManager> create_network_manager(xml_node *network_manager_elem
  * @param args aggregator's arguments already parsed.
  * @return A pointer to the created aggregator.
  */
-unique_ptr<Aggregator> create_aggregator(xml_node *role_elem, unordered_map<string, string> *args)
+unique_ptr<Aggregator> create_aggregator(xml_node *role_elem, unordered_map<string, string> *args, node_name name)
 {
     unique_ptr<Aggregator> aggregator;
     auto aggregator_type = role_elem->attribute("type").as_string();
@@ -84,17 +84,17 @@ unique_ptr<Aggregator> create_aggregator(xml_node *role_elem, unordered_map<stri
     if (strcmp(aggregator_type, "simple") == 0)
     {
         XBT_INFO("With role: SimpleAggregator");
-        aggregator = make_unique<SimpleAggregator>(args);
+        aggregator = make_unique<SimpleAggregator>(args, name);
     }
     else if (strcmp(aggregator_type, "asynchronous") == 0)
     {
         XBT_INFO("With role: AsynchronousAggregator");
-        aggregator = make_unique<AsynchronousAggregator>(args);
+        aggregator = make_unique<AsynchronousAggregator>(args, name);
     }
     else if (strcmp(aggregator_type, "hierarchical") == 0)
     {
         XBT_INFO("With role: Hierarchical");
-        // aggregator = make_unique<HierarchicalAggregator>(args);
+        aggregator = make_unique<HierarchicalAggregator>(args, name);
     }
 
     return aggregator; 
@@ -105,7 +105,7 @@ unique_ptr<Aggregator> create_aggregator(xml_node *role_elem, unordered_map<stri
  * @param role_elem XML element that contains role informations.
  * @return A pointer to the created Role.
  */
-unique_ptr<Role> create_role(xml_node *role_elem)
+unique_ptr<Role> create_role(xml_node *role_elem, node_name name)
 {
     unique_ptr<Role> role;
 
@@ -114,11 +114,11 @@ unique_ptr<Role> create_role(xml_node *role_elem)
 
     if (strcmp(role_elem->name(), "aggregator") == 0)
     {
-        role = create_aggregator(role_elem, args);
+        role = create_aggregator(role_elem, args, name);
     }
     else if (strcmp(role_elem->name(), "trainer") == 0)
     {
-        role = make_unique<Trainer>(args);
+        role = make_unique<Trainer>(args, name);
         XBT_INFO("With role: Trainer");
     }
     else if (strcmp(role_elem->name(), "proxy") == 0)
@@ -144,7 +144,7 @@ Node *create_node(xml_node *node_elem, node_name name, string topology)
     XBT_INFO("Creating node: %s", name.c_str());
 
     xml_node role_elem = node_elem->first_child();
-    unique_ptr<Role> role = create_role(&role_elem);
+    unique_ptr<Role> role = create_role(&role_elem, name);
 
     NodeInfo node_info = NodeInfo { .name = name, .role=role->get_role_type() };
 
