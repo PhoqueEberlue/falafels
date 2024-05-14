@@ -15,6 +15,7 @@
 // #include "node/roles/proxy/proxy.hpp"
 #include "node/network_managers/star_nm.hpp"
 #include "node/network_managers/ring_nm.hpp"
+#include "node/network_managers/full_nm.hpp"
 #include "config_loader.hpp"
 #include "constants.hpp"
 #include "protocol.hpp"
@@ -63,6 +64,10 @@ unique_ptr<NetworkManager> create_network_manager(xml_node *network_manager_elem
     else if (strcmp(nm_type, "ring") == 0)
     {
         network_manager = make_unique<RingNetworkManager>(node_info);
+    }
+    else if (strcmp(nm_type, "full") == 0)
+    {
+        network_manager = make_unique<FullyConnectedNetworkManager>(node_info);
     }
 
     XBT_INFO("With %s network manager", nm_type);

@@ -5,6 +5,13 @@
 
 using namespace std;
 
+/**
+ * MediatorConsumer is the end to be used my Roles.
+ * It can:
+ * - Get packet received by the Networkmanager (The Producer)
+ * - Get event from the Networkmanager
+ * - Put packets to be sent by the Networkmanager
+ */
 class MediatorConsumer : public Mediator
 {
 public:
@@ -30,7 +37,7 @@ public:
         this->to_be_sent_packets->push(make_shared<Packet>(packet));
     }
 
-    /** Optionally get a NMEvent if available */
+    /** Optionally get a NetworkManager Event if available */
     std::optional<std::unique_ptr<Event>> get_nm_event()
     {
         if (this->nm_events->empty())
