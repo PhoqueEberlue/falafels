@@ -14,10 +14,8 @@ using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_asynchronous_aggregator, "Messages specific for this example");
 
-AsynchronousAggregator::AsynchronousAggregator(std::unordered_map<std::string, std::string> *args)
+AsynchronousAggregator::AsynchronousAggregator(std::unordered_map<std::string, std::string> *args, node_name name) : Aggregator(name)
 {
-    this->initialization_time = simgrid::s4u::Engine::get_instance()->get_clock();
-
     // Parsing arguments
     for (auto &[key, value]: *args)
     {
@@ -51,10 +49,10 @@ void AsynchronousAggregator::run()
     {
         case INITIALIZING:
             // If a NetworkManager event is available
-            if (auto e = this->get_nm_event())
+            if (auto e = this->mc->get_nm_event())
             {
                 // If type of event is ClusterConnected it means that every node have been connected to us
-                if (auto *conneted_event = get_if<NetworkManager::ClusterConnected>(e->get()))
+                if (auto *conneted_event = get_if<Mediator::ClusterConnected>(e->get()))
                 {
                     this->number_client_training = conneted_event->number_client_connected;
                     this->send_global_model();
@@ -64,7 +62,7 @@ void AsynchronousAggregator::run()
             break;
         case WAITING_LOCAL_MODELS:
             // If a packet have been received
-            if (auto packet = this->get_received_packet())
+            if (auto packet = this->mc->get_received_packet())
             {
                 // If the operation is a SendLocalModel
                 if (auto *send_local = get_if<Packet::SendLocalModel>(&(*packet)->op))
@@ -97,5 +95,5 @@ void AsynchronousAggregator::send_global_model_to(node_name dst, node_name final
         )
     );
 
-    this->put_to_be_sent_packet(p);
+    this->mc->put_to_be_sent_packet(p);
 }

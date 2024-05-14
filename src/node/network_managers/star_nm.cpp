@@ -68,7 +68,7 @@ void StarNetworkManager::handle_registration_requests()
         this->send_async(res_p);
     }
 
-    this->put_nm_event(ClusterConnected { .number_client_connected=(uint16_t)this->registration_requests->size() });
+    this->mp->put_nm_event(Mediator::ClusterConnected { .number_client_connected=(uint16_t)this->registration_requests->size() });
 }
 
 void StarNetworkManager::send_registration_request()
@@ -97,7 +97,7 @@ void StarNetworkManager::handle_registration_confirmation(const Packet::Registra
         this->connected_nodes->push_back(node);
     }
 
-    this->put_nm_event(NodeConnected {});
+    this->mp->put_nm_event(Mediator::NodeConnected {});
 }
 
 void StarNetworkManager::broadcast(shared_ptr<Packet> packet)
@@ -116,5 +116,5 @@ void StarNetworkManager::broadcast(shared_ptr<Packet> packet)
 void StarNetworkManager::route_packet(unique_ptr<Packet> packet)
 {
     // In star_nm we route everything to the Role.
-    this->put_received_packet(std::move(packet));
+    this->mp->put_received_packet(std::move(packet));
 }

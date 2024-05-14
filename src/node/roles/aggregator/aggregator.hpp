@@ -10,16 +10,6 @@
 class Aggregator : public Role 
 {
 protected:
-    using State = enum
-    {
-        INITIALIZING,
-        WAITING_LOCAL_MODELS,
-        AGGREGATING,
-    };
-
-    /** State of the Aggregator */
-    State state = INITIALIZING;
-
     /** Value indicating the number of local epochs that the aggregator will ask the trainers to do. */
     uint8_t number_local_epochs = 3;
 
@@ -65,7 +55,7 @@ protected:
      */
     void send_kills();
 public:
-    Aggregator() {} 
+    Aggregator(node_name name);
     virtual ~Aggregator() {} 
 
     NodeRole get_role_type() { return NodeRole::Aggregator; };

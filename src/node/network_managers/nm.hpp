@@ -15,21 +15,10 @@
 #include <variant>
 #include <vector>
 #include "../../protocol.hpp"
+#include "../mediator/mediator_producer.hpp"
 
 class NetworkManager 
-{
-public:
-    struct NodeConnected
-    {
-    };
-
-    /** Event thrown when our node is acting as a bootstrap node, indicating that all nodes were connected to us */
-    struct ClusterConnected
-    {
-        uint16_t number_client_connected;
-    };
-
-    using Event = std::variant<NodeConnected, ClusterConnected>;
+{ 
 protected: 
     using State = enum
     {
@@ -42,6 +31,8 @@ protected:
 
     /** State of the NetworkManager */
     State state = INITIALIZING;
+
+    std::unique_ptr<MediatorProducer> mp;
 
     /** Vector of nodes to connect to when launching the NetworkManager. Used by Trainers that knows in advance 
         one of the aggregators */
@@ -60,22 +51,15 @@ protected:
     simgrid::s4u::ActivitySet *pending_async_put;
 
     /** Single get communication activity that listens incoming communications */
-    simgrid::s4u::CommPtr pending_async_get;
-
-    /** Optionally get packet to be sent if some */
-    std::optional<std::shared_ptr<Packet>> get_to_be_sent_packet();
-
-    /** Put a packet received by the network to the received packets */
-    void put_received_packet(std::unique_ptr<Packet> packet);
-
-    /** Put a new event */
-    void put_nm_event(Event e);
+    simgrid::s4u::CommPtr pending_async_get; 
 public:  
     NetworkManager(NodeInfo node_info);
     virtual ~NetworkManager();
 
     /** Run one step of the NetworkManager */
     bool run();   
+
+    void set_mediator_producer(std::unique_ptr<MediatorProducer> mp) { this->mp = std::move(mp); };
 
     /** Get NetworkManager's NodeInfo */
     NodeInfo get_my_node_info() { return this->my_node_info; }
@@ -85,12 +69,7 @@ public:
 
     /** Set bootstrap_nodes */
     void set_bootstrap_nodes(std::vector<NodeInfo> *nodes);
-
-    /** Set queues to communicate with the Role */
-    void set_queues(std::shared_ptr<std::queue<std::unique_ptr<Packet>>> received, 
-                    std::shared_ptr<std::queue<std::shared_ptr<Packet>>> to_be_sent,
-                    std::shared_ptr<std::queue<std::unique_ptr<Event>>> nm_events);
-
+ 
     /** Wrapper function that either sends as broadcast or normally */
     void send_packet(std::shared_ptr<Packet> p);
 
@@ -118,15 +97,6 @@ public:
 private:
     /** Simgrid mailbox associated to the NetworkManager */
     simgrid::s4u::Mailbox *mailbox;
-
-    /** Queue of the received packets that the role will be able to retrieve */
-    std::shared_ptr<std::queue<std::unique_ptr<Packet>>> received_packets;
-
-    /** Queue of the packets to be sent by the NetworkManager */
-    std::shared_ptr<std::queue<std::shared_ptr<Packet>>> to_be_sent_packets;
-
-    /** Queue of events that the NetworkManager can create */
-    std::shared_ptr<std::queue<std::unique_ptr<Event>>> nm_events;
 
     /** Try to get a Packet from the Network, optionally returning a packet */
     std::optional<std::unique_ptr<Packet>> try_get();

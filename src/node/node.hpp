@@ -7,6 +7,7 @@
 #include <vector>
 #include <xbt/log.h>
 #include "roles/role.hpp"
+#include "network_managers/nm.hpp"
 
 /**
  * A Node represent an entity in the simulation world of falafels.

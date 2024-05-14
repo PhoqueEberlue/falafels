@@ -43,7 +43,7 @@ protected:
     /** Send the local model to (dst, final_dst) */
     void send_local_model(node_name dst, node_name final_dst);
 public:
-    Trainer(std::unordered_map<std::string, std::string> *args);
+    Trainer(std::unordered_map<std::string, std::string> *args, node_name);
     ~Trainer() {};
 
     /** Run one step of the trainer. */
