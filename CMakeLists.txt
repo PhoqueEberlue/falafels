@@ -15,6 +15,10 @@ find_package(SimGrid REQUIRED)
 include_directories(${SimGrid_INCLUDE_DIR})
 
 set(falafels_files
+    src/node/mediator/mediator.hpp
+    src/node/mediator/mediator_consumer.hpp
+    src/node/mediator/mediator_producer.hpp
+
     src/node/network_managers/nm.cpp
     src/node/network_managers/nm.hpp
     src/node/network_managers/ring_nm.cpp
@@ -26,8 +30,8 @@ set(falafels_files
     src/node/roles/aggregator/aggregator.hpp
     src/node/roles/aggregator/asynchronous_aggregator.cpp
     src/node/roles/aggregator/asynchronous_aggregator.hpp
-    # src/node/roles/aggregator/hierarchical_aggregator.cpp
-    # src/node/roles/aggregator/hierarchical_aggregator.hpp
+    src/node/roles/aggregator/hierarchical_aggregator.cpp
+    src/node/roles/aggregator/hierarchical_aggregator.hpp
     src/node/roles/aggregator/simple_aggregator.cpp
     src/node/roles/aggregator/simple_aggregator.hpp
 
@@ -37,7 +41,6 @@ set(falafels_files
     src/node/roles/trainer/trainer.cpp
     src/node/roles/trainer/trainer.hpp
 
-    src/node/roles/role.cpp
     src/node/roles/role.hpp
     
     src/node/node.cpp
