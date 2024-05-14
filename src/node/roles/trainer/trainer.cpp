@@ -13,8 +13,10 @@ using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_trainer, "Messages specific for this example");
 
-Trainer::Trainer(std::unordered_map<std::string, std::string> *args) 
+Trainer::Trainer(std::unordered_map<std::string, std::string> *args, node_name name) 
 {
+    this->my_node_name = name;
+
     // No arguments yet
     delete args;
 }
@@ -53,7 +55,7 @@ bool Trainer::train()
 
 void Trainer::send_local_model(node_name dst, node_name final_dst)
 {
-    this->put_to_be_sent_packet(
+    this->mc->put_to_be_sent_packet(
         Packet(
             dst, final_dst,
             Packet::SendLocalModel()
@@ -67,10 +69,10 @@ void Trainer::run()
     {
         case INITIALIZING:
             // If event available
-            if (auto e = this->get_nm_event())
+            if (auto e = this->mc->get_nm_event())
             {
                 // If type of event is NodeConnected it means that our node is connected :)
-                if (auto *conneted_event = get_if<NetworkManager::NodeConnected>(e->get()))
+                if (auto *conneted_event = get_if<Mediator::NodeConnected>(e->get()))
                 {
                     this->state = WAITING_GLOBAL_MODEL;
                 }
@@ -78,7 +80,7 @@ void Trainer::run()
             break;
         case WAITING_GLOBAL_MODEL:
             // If packet have been received 
-            if (auto packet = this->get_received_packet())
+            if (auto packet = this->mc->get_received_packet())
             {
                 // If the operation is a SendGlobalModel
                 if (auto *op_glob = get_if<Packet::SendGlobalModel>(&(*packet)->op))
