@@ -40,6 +40,17 @@ will receive its corresponding simgrid Host.
         </link-profile>
     </profiles>
 
+    <!--
+    <clusters> 
+
+        <cluster name="cluster-star" topology="star">
+            <aggregators number="1" type="simple" host-profiles="big-server" link-profiles="fiber"/>
+            <trainers number="4" type="simple" host-profiles="average-computer,small-device" link-profiles="fiber,adsl"/>
+        </cluster>
+
+    </clusters> 
+    -->
+
     <clusters> 
 
         <cluster name="sub-cluster-star" topology="star">
@@ -59,5 +70,5 @@ will receive its corresponding simgrid Host.
         </cluster>
 
     </clusters>
-    
+
 </raw>
