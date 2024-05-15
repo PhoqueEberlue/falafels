@@ -24,11 +24,11 @@ bool Aggregator::aggregate()
         XBT_INFO("Starting aggregation with flops value: %f", flops);
 
         this->aggregating_activity = simgrid::s4u::this_actor::exec_async(flops);
-        this->number_aggregated_models += this->number_local_models;
     }
 
     if (this->aggregating_activity->test())
     {
+        this->number_aggregated_models += this->number_local_models;
         this->aggregating_activity = nullptr;
         return true;
     }

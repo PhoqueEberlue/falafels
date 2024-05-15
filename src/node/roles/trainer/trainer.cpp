@@ -27,7 +27,10 @@ bool Trainer::train()
 
     // if uninitialized
     if (this->training_activity == nullptr)
+    {
+        XBT_INFO("Epoch %i ====> ...", this->current_local_epoch);
         this->training_activity = simgrid::s4u::this_actor::exec_async(flops);
+    }
 
     // if current training activity is finished
     if (this->training_activity->test())
@@ -45,6 +48,7 @@ bool Trainer::train()
         else
         {
             this->current_local_epoch = 0;
+            this->training_activity = nullptr;
             // Return true when the last activity have been finished
             return true;
         }
