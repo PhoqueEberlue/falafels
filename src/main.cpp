@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
     /* Run the simulation */
     e.run();
 
-    DOTGenerator::get_instance().generate_state_files();
+    // DOTGenerator::get_instance().generate_state_files();
 
     delete nodes_map;
 

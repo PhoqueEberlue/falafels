@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <simgrid/forward.h>
 #include <simgrid/s4u/Exec.hpp>
+#include <simgrid/s4u/ActivitySet.hpp>
 
 class Aggregator : public Role 
 {
@@ -17,7 +18,7 @@ protected:
     uint16_t number_global_epochs = 0;
 
     /** Number of local model aggregated, used to compute the global number of epochs. */
-    uint64_t number_aggregated_models = 0;
+    uint64_t total_aggregated_models = 0;
 
     /** The actual number of trainers */
     uint16_t number_client_training = 0;
@@ -26,7 +27,10 @@ protected:
     uint64_t number_local_models = 0;    
 
     /** Simgrid activity representing the training */
-    simgrid::s4u::ExecPtr aggregating_activity = nullptr;
+    simgrid::s4u::ActivitySet *aggregating_activities;
+
+    /** Number of aggregated models on one aggregation task */
+    uint64_t current_number_aggregated_models = 0;
 
     /** Time when the aggregator has been initialized */
     double initialization_time;
@@ -34,16 +38,16 @@ protected:
     /** Boolean indicating if the Aggregator still has activities to perform */
     bool still_has_activities = true;
 
+    /**
+     * Launch one aggregation step in parallel, sharing activities among the Host's cores.
+     */
+    void launch_one_aggregation(); 
+
     /** 
      * Launch the aggregating activity or test if the current one has finished.
      * @return true when aggregation is finished, otherwise false.
      */
     bool aggregate();
-
-    /**
-     * Print a report with some number of the process
-     */
-    void print_end_report();
 
     /** 
      * Sends the global model with a broadcast. It should sent it to every connected nodes of our cluster.
@@ -54,6 +58,16 @@ protected:
      * Sends kills request with a broadcast. Used at the end of the simulation to terminate the connected nodes.
      */
     void send_kills();
+
+    /**
+     * Print a report with some number of the process
+     */
+    void print_end_report();
+
+    /**
+     * Checks if the training phase should stop
+     */
+    bool check_end_condition();
 public:
     Aggregator(node_name name);
     virtual ~Aggregator() {} 

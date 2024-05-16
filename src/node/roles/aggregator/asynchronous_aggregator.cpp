@@ -36,9 +36,9 @@ void AsynchronousAggregator::run()
     if (!this->still_has_activities)
         return;
 
-    // Stop aggregating and send kills to the trainers
-    if (simgrid::s4u::Engine::get_instance()->get_clock() > this->initialization_time + Constants::DURATION_TRAINING_PHASE)
+    if (this->check_end_condition())
     {
+        // Stop aggregating and send kills to the trainers
         this->send_kills();
         this->print_end_report();
         this->still_has_activities = false;

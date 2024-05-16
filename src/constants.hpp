@@ -23,8 +23,14 @@ public:
     /** Timeout for the registration phase */
     inline static double REGISTRATION_TIMEOUT = 2.0;
 
-    /** Duration in seconds for the training phase */
-    inline static double DURATION_TRAINING_PHASE = 10.0;
+    /* -------------------------- SIMULATION ENDING CONDITIONS -------------------------- */
+    /*                        Exactly one condition should be defined                     */
+
+    /** Duration in seconds for the training phase. -1.0 when the feature isn't used */
+    inline static double END_CONDITION_DURATION_TRAINING_PHASE = -1.0;
+
+    /** Number of global epochs before the simulation ends. 0 when the feature isn't used */
+    inline static uint64_t END_CONDITION_NUMBER_GLOBAL_EPOCHS = 10;
 };
 
 #endif // !CONSTANTS_HPP

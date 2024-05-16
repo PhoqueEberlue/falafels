@@ -11,42 +11,67 @@ Aggregator::Aggregator(node_name name)
 {
     this->initialization_time = simgrid::s4u::Engine::get_instance()->get_clock();
     this->my_node_name = name;
+    this->aggregating_activities = new simgrid::s4u::ActivitySet();
+}
+
+void Aggregator::launch_one_aggregation()
+{
+    XBT_INFO("Starting aggregation of model %lu", this->current_number_aggregated_models);
+    this->current_number_aggregated_models += 1;
+
+    double flops = Constants::GLOBAL_MODEL_AGGREGATING_FLOPS;
+
+    int nb_core = simgrid::s4u::this_actor::get_host()->get_core_count();
+    double nb_flops_per_aggregation = flops / nb_core;
+
+    XBT_DEBUG("flops / nb_core = nb_flops_per_aggregation: %f / %i = %f", flops, nb_core, nb_flops_per_aggregation);
+    
+    // Launch exactly nb_core parallel tasks
+    for (int i = 0; i < nb_core; i++)
+    {
+        this->aggregating_activities->push(simgrid::s4u::this_actor::exec_async(nb_flops_per_aggregation));
+    }
 }
 
 bool Aggregator::aggregate() 
 {
     // if aggregating activity doesn't exists
-    if (this->aggregating_activity == nullptr)
+    if (this->aggregating_activities->empty())
     {
-        /** Simulate the aggregation execution by multiplying the number of models to aggregate
-            by a constant value indicating the number of flops for one model aggregation. */
-        double flops = Constants::GLOBAL_MODEL_AGGREGATING_FLOPS * this->number_local_models;
-        XBT_INFO("Starting aggregation with flops value: %f", flops);
-
-        this->aggregating_activity = simgrid::s4u::this_actor::exec_async(flops);
+        this->launch_one_aggregation();
     }
 
-    if (this->aggregating_activity->test())
+    // Test if any activity finished
+    auto activity = this->aggregating_activities->test_any();
+
+    // If the activity isn't nullptr, remove it for the ActivitySet
+    if (activity != nullptr)
     {
-        this->number_aggregated_models += this->number_local_models;
-        this->aggregating_activity = nullptr;
-        return true;
+        this->aggregating_activities->erase(activity);
     }
-    else
+
+    // Then test if the set is empty
+    if (this->aggregating_activities->empty())
     {
-        return false; 
+        // if we need to perform more model aggregation, start a new aggregation task
+        if (this->current_number_aggregated_models < this->number_local_models)
+        {
+            this->launch_one_aggregation();
+        }
+        else
+        {
+            // Increment the number of aggregated models
+            this->total_aggregated_models += this->number_local_models;
+            // Reset the current number of aggregated models
+            this->current_number_aggregated_models = 0;
+            // Compute the number of global epochs
+            this->number_global_epochs = this->total_aggregated_models / this->number_client_training;
+            // Return true when the last activity have been finished
+            return true;
+        }
     }
-}
 
-void Aggregator::print_end_report() 
-{
-    xbt_assert(this->number_client_training > 0, "Cannot print end report because the Aggregator had 0 or less client training.");
-
-    this->number_global_epochs = this->number_aggregated_models / this->number_client_training;
-
-    XBT_INFO("Number of model aggregated: %lu", this->number_aggregated_models);
-    XBT_INFO("Number of client that were training: %u", this->number_client_training);
-    XBT_INFO("Number of global epochs done: %u", this->number_global_epochs);
+    return false; 
 }
 
 void Aggregator::send_global_model()
@@ -72,3 +97,28 @@ void Aggregator::send_kills()
         )
     );
 }
+
+bool Aggregator::check_end_condition()
+{ 
+    if (Constants::END_CONDITION_DURATION_TRAINING_PHASE != -1.0)
+    {
+        return simgrid::s4u::Engine::get_instance()->get_clock() > this->initialization_time + Constants::END_CONDITION_DURATION_TRAINING_PHASE;
+    }
+    else if (Constants::END_CONDITION_NUMBER_GLOBAL_EPOCHS != 0)
+    {
+        return this->number_global_epochs >= Constants::END_CONDITION_NUMBER_GLOBAL_EPOCHS;        
+    }
+    else
+    {
+        // Always crash when we reach this branch
+        xbt_assert(false, "No END_CONDITION have been defined");
+    }
+}
+
+void Aggregator::print_end_report() 
+{
+    XBT_INFO("Number of model aggregated: %lu", this->total_aggregated_models);
+    XBT_INFO("Number of client that were training: %u", this->number_client_training);
+    XBT_INFO("Number of global epochs done: %u", this->number_global_epochs);
+}
+

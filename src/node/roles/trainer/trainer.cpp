@@ -8,6 +8,7 @@
 #include <xbt/log.h>
 #include "trainer.hpp"
 #include "simgrid/s4u/Exec.hpp"
+#include "simgrid/s4u/Host.hpp"
 
 using namespace std;
 
@@ -16,39 +17,59 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_trainer, "Messages specific for this example");
 Trainer::Trainer(std::unordered_map<std::string, std::string> *args, node_name name) 
 {
     this->my_node_name = name;
+    this->training_activities = new simgrid::s4u::ActivitySet();
 
     // No arguments yet
     delete args;
 }
 
-bool Trainer::train() 
+void Trainer::launch_one_epoch()
 {
     double flops = Constants::LOCAL_MODEL_TRAINING_FLOPS;
 
-    // if uninitialized
-    if (this->training_activity == nullptr)
+    XBT_INFO("Epoch %i ====> ...", this->current_local_epoch);
+    this->current_local_epoch += 1;
+    
+    int nb_core = simgrid::s4u::this_actor::get_host()->get_core_count();
+    double nb_flops_per_epoch = flops / nb_core;
+
+    XBT_DEBUG("flops / nb_core = nb_flops_per_epoch: %f / %i = %f", flops, nb_core, nb_flops_per_epoch);
+    
+    // Launch exactly nb_core parallel tasks
+    for (int i = 0; i < nb_core; i++)
     {
-        XBT_INFO("Epoch %i ====> ...", this->current_local_epoch);
-        this->training_activity = simgrid::s4u::this_actor::exec_async(flops);
+        this->training_activities->push(simgrid::s4u::this_actor::exec_async(nb_flops_per_epoch));
+    }
+}
+
+bool Trainer::train() 
+{
+    // if no activities running
+    if (this->training_activities->empty())
+    {
+        this->launch_one_epoch();
     }
 
-    // if current training activity is finished
-    if (this->training_activity->test())
+    // Test if any activity finished
+    auto activity = this->training_activities->test_any();
+
+    // If the activity isn't nullptr, remove it for the ActivitySet
+    if (activity != nullptr)
     {
-        // if we need to perform more local epoch
+        this->training_activities->erase(activity);
+    }
+
+    // Then test if the set is empty
+    if (this->training_activities->empty())
+    {
+        // if we need to perform more local epoch, start a new epoch task
         if (this->current_local_epoch < this->number_local_epochs)
         {
-            this->current_local_epoch += 1;
-
-            // XBT_INFO("Starting local training with flops value `%f` and %i epochs", flops, number_local_epochs);
-
-            XBT_INFO("Epoch %i ====> ...", this->current_local_epoch);
-            this->training_activity = simgrid::s4u::this_actor::exec_async(flops);
+            this->launch_one_epoch();
         }
         else
         {
             this->current_local_epoch = 0;
-            this->training_activity = nullptr;
             // Return true when the last activity have been finished
             return true;
         }
