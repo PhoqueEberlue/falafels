@@ -47,12 +47,10 @@ bool Aggregator::aggregate()
     // If the activity isn't nullptr, remove it for the ActivitySet
     if (activity != nullptr)
     {
-        this->aggregating_activities->erase(activity);
-    }
+        // Because the workload is splitted evently between each cores, we know that when one activity finished,
+        // every others have finished too.
+        this->aggregating_activities->clear(); 
 
-    // Then test if the set is empty
-    if (this->aggregating_activities->empty())
-    {
         // if we need to perform more model aggregation, start a new aggregation task
         if (this->current_number_aggregated_models < this->number_local_models)
         {

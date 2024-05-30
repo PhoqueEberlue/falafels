@@ -38,7 +38,8 @@ void Trainer::launch_one_epoch()
     // Launch exactly nb_core parallel tasks
     for (int i = 0; i < nb_core; i++)
     {
-        this->training_activities->push(simgrid::s4u::this_actor::exec_async(nb_flops_per_epoch));
+        auto exec = simgrid::s4u::this_actor::exec_async(nb_flops_per_epoch);
+        this->training_activities->push(exec);
     }
 }
 
@@ -52,16 +53,15 @@ bool Trainer::train()
 
     // Test if any activity finished
     auto activity = this->training_activities->test_any();
+    // XBT_INFO("activity: %p", activity);
 
     // If the activity isn't nullptr, remove it for the ActivitySet
     if (activity != nullptr)
     {
-        this->training_activities->erase(activity);
-    }
+        // Because the workload is splitted evently between each cores, we know that when one activity finished,
+        // every others have finished too.
+        this->training_activities->clear();
 
-    // Then test if the set is empty
-    if (this->training_activities->empty())
-    {
         // if we need to perform more local epoch, start a new epoch task
         if (this->current_local_epoch < this->number_local_epochs)
         {
