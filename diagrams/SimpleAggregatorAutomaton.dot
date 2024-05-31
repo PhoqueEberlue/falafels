@@ -1,0 +1,14 @@
+digraph finite_state_machine {
+	rankdir=LR;
+	node [shape = doublecircle]; 0;
+	node [shape = circle];
+
+    0 [label="INITIALIZING"];
+    1 [label="WAITING\nLOCAL\nMODELS"];
+    2 [label="AGGREGATING"];
+
+    0->1 [label="NMEvent::ClusterConnected"];
+    1->1 [label="Packet::SendLocalModel"];
+    1->2 [label="n_local_models >= n_client_training"];
+    2->1 [label="Aggregation finished"];
+}
