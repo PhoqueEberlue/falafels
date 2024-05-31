@@ -31,6 +31,12 @@ pub struct HostProfile {
     pub props: Vec<Prop>,
 }
 
+#[derive(Deserialize, Debug, Clone)]
+pub struct HostProfileRef {
+    #[serde(rename = "@name")]
+    pub name: String
+}
+
 #[derive(Deserialize, Debug)]
 pub struct LinkProfile {
     #[serde(rename = "@name")]
@@ -43,7 +49,12 @@ pub struct LinkProfile {
     pub sharing_policy: Option<String>,
     #[serde(rename = "prop")]
     pub props: Vec<Prop>,
+}
 
+#[derive(Deserialize, Debug, Clone)]
+pub struct LinkProfileRef {
+    #[serde(rename = "@name")]
+    pub name: String
 }
 
 #[derive(Deserialize, Debug)]
@@ -76,10 +87,10 @@ pub struct Trainers {
     pub number: u16,
     #[serde(rename = "@type")]
     pub trainer_type: TrainerType,
-    #[serde(rename = "@host-profiles")]
-    pub host_profiles: String,
-    #[serde(rename = "@link-profiles")]
-    pub link_profiles: String,
+    #[serde(rename = "host-profile-ref")]
+    pub host_profiles: Vec<HostProfileRef>,
+    #[serde(rename = "link-profile-ref")]
+    pub link_profiles: Vec<LinkProfileRef>,
     #[serde(rename = "network-manager", skip_serializing_if = "Option::is_none")]
     pub network_manager: Option<NetworkManager>,
     #[serde(rename = "arg")]
@@ -92,10 +103,10 @@ pub struct Aggregators {
     pub number: u16,
     #[serde(rename = "@type")]
     pub aggregator_type: AggregatorType,
-    #[serde(rename = "@host-profiles")]
-    pub host_profiles: String,
-    #[serde(rename = "@link-profiles")]
-    pub link_profiles: String,
+    #[serde(rename = "host-profile-ref")]
+    pub host_profiles: Vec<HostProfileRef>,
+    #[serde(rename = "link-profile-ref")]
+    pub link_profiles: Vec<LinkProfileRef>,
     #[serde(rename = "network-manager", skip_serializing_if = "Option::is_none")]
     pub network_manager: Option<NetworkManager>,
     #[serde(rename = "arg")]
