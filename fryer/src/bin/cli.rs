@@ -1,9 +1,4 @@
-use fryer::Fryer;
-use platformer::Platformer;
-
-mod structures;
-mod fryer;
-mod platformer;
+use fryer::{fryer::Fryer, platformer::Platformer};
 
 fn main() {
     let mut fryer = Fryer::new(Some("../name-champions-lol.txt"));

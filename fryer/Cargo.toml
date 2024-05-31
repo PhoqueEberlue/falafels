@@ -5,6 +5,14 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lib]
+name = "fryer"
+path = "src/lib/lib.rs"
+
+[[bin]]
+name = "fryer-cli"
+path = "src/bin/cli.rs"
+
 [dependencies]
 quick-xml = { version="0.31.0", features=["serialize"] }
 rand = "0.8.5"
