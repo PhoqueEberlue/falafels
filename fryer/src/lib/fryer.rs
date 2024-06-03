@@ -88,6 +88,10 @@ impl Fryer {
 
         println!("Falafels ready! 🧆");
 
+        // Resets the counter cause fry() can be called multiple times
+        self.count_node = 0;
+        // TODO: also reset the name list!
+
         ff
     }
 
