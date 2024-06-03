@@ -96,7 +96,19 @@ bool NetworkManager::run()
                 if (auto *kill = get_if<Packet::KillTrainer>(&(*packet)->op))
                 {
                     this->state = KILLING;
+
+                    // Cleanly detach each async put
+                    for (int i = 0; i < this->pending_async_put->size(); i++)
+                        this->pending_async_put->at(i).detach();
+
+                    // Clear all async put before sending and waiting the kill packet
+                    this->pending_async_put->clear();
+
+                    // still route the packet but break earlier
+                    this->route_packet(std::move(*packet));
+                    break;
                 }
+
                 this->route_packet(std::move(*packet));
             }
 
@@ -112,12 +124,14 @@ bool NetworkManager::run()
             }
             break;
         case KILLING:
-            // TBH implementing kill isn't very interesting and will not play a lot in electric consumption.
-            // It might be a loss of time.....
-            this->pending_async_put->clear();
-            //this->pending_async_put->wait_all_for(2);
-            // this->wait_last_comms(1);
-            // this->pending_async_put->wait_all();
+            // Wait to send the kill message with a timeout of 2 in case the two last nodes are trying to send 
+            // the kill packet to each other and would cause a blocking situation.
+            // So if a node isn't reachable, we consider it is already dead.
+            try {
+                this->pending_async_put->wait_all_for(2);
+            } catch (simgrid::TimeoutException) {
+                XBT_INFO("Can't redirect KILL, node unreachable");
+            }
             return false;
     }
     return true;
