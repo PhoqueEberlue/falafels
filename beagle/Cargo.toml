@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 fryer = { path = "../fryer/" }
+regex = "1.10.4"

@@ -1,0 +1,129 @@
+use regex::Regex;
+
+use crate::individual::Individual;
+use crate::environment::Environment;
+
+use std::fs::File;
+use std::io::Write;
+use std::process::Command;
+
+#[derive(Debug)]
+pub struct Outcome {
+    command: String,
+    total_host_consumption: f32, 
+    used_host_consumption: f32, 
+    idle_host_consumption: f32,
+    total_link_consumption: f32,
+    simulation_time: f32
+}
+
+pub fn run_simulation(gen_nb: u32, ind: &Individual, platform_path: String) -> Outcome {
+    let output = Command::new("../simulator/build/main")
+        .args([&platform_path, &ind.ff_path])
+        .output()
+        .expect("failed to execute process");
+
+    // Writing logs of the output
+    let mut file = File::create(format!("../xml/logs/GEN-{gen_nb}-{}.txt", ind.name)).unwrap();
+    file.write_all(&output.stderr).unwrap();
+
+    let logs = String::from_utf8(output.stderr).unwrap();
+
+    let [total_host_consumption, used_host_consumption, idle_host_consumption] = parse_host_energy_results(&logs);
+    
+    let total_link_consumption = parse_link_energy_results(&logs);
+    
+    let simulation_time = parse_simulation_time(&logs);
+
+    Outcome {
+        command: format!("../simulator/build/main {} {}", platform_path, &ind.ff_path),
+        total_host_consumption, used_host_consumption, idle_host_consumption, 
+        total_link_consumption, simulation_time 
+    }
+}
+
+///
+///
+/// Return: total_host_consumption, used_host_consumption, idle_host_consumption
+fn parse_host_energy_results(logs: &String) -> [f32; 3] {
+    // Look for the line containing host energy informations
+    let hosts_consumption = logs
+        .lines()
+        .rev() // Reverse the iterator because we know the result is at the end
+        .find(|l| l.contains("Total energy consumption"))
+        .expect("Couldn't find 'Total energy consumption' in the logs.");
+
+    // Match every floating numbers with varying digit number
+    let re = Regex::new(r"([0-9]+\.[0-9]+)").unwrap();
+
+    // Captures each floating number in the line containing energy consumption information and
+    // creates a vector of owned string
+    let v = re.captures_iter(hosts_consumption)
+        .map(
+            // Parse each value into f32
+            |n| n[0].parse::<f32>()
+                .expect(&format!("Couldn't parse value `{}` into f32", n[0].to_owned()))
+        )
+        .skip(1) // Skip simulation time
+        .take(3)
+        .collect::<Vec<f32>>();
+
+    // Verify we obtained exactly 4 values and return a fixed size array.
+    <[f32; 3]>::try_from(v)
+        .ok()
+        .expect(&format!("Failed to capture 4 FP values on line: {hosts_consumption}"))
+}
+
+///
+///
+/// Return: total_link_consumption
+fn parse_link_energy_results(logs: &String) -> f32 {
+    // Look for the line containing link energy informations
+    let links_consumption = logs
+        .lines()
+        .rev() // Reverse the iterator because we know the result is at the end
+        .find(|l| l.contains("Total energy over all links"))
+        .expect("Couldn't find 'Total energy over all links' in the logs.");
+
+    // Match every floating numbers with varying digit number
+    let re = Regex::new(r"([0-9]+\.[0-9]+)").unwrap();
+
+    let link_energy = re.captures_iter(links_consumption)
+        .map(
+            |n| n[0].parse::<f32>()
+                .expect(&format!("Couldn't parse value `{}` into f32", n[0].to_owned()))
+        )
+        .skip(1) // Skip simulation time
+        .take(1) // Take energy
+        .next();
+
+    // Verify we obtained a value and return it
+    link_energy.expect(&format!("Failed to capture 4 FP values on line: {links_consumption}"))
+}
+
+///
+///
+/// Return: simulation_time
+fn parse_simulation_time(logs: &String) -> f32 {
+    // Look for the line containing host energy informations
+    let simulation_over = logs
+        .lines()
+        .rev() // Reverse the iterator because we know the result is at the end
+        .find(|l| l.contains("Total energy over all links"))
+        .expect("Couldn't find 'Total energy over all links' in the logs.");
+
+    // Match every floating numbers with varying digit number
+    let re = Regex::new(r"([0-9]+\.[0-9]+)").unwrap();
+
+    let simulation_time = re.captures_iter(simulation_over)
+        .map(
+            |n| n[0].parse::<f32>()
+                .expect(&format!("Couldn't parse value `{}` into f32", n[0].to_owned()))
+        )
+        .take(1) // Take simulation time
+        .next();
+
+    // Verify we obtained a value and return it
+    simulation_time.expect(&format!("Failed to capture 4 FP values on line: {simulation_over}"))
+}
+
