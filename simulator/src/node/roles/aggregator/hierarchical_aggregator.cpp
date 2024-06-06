@@ -61,8 +61,14 @@ void HierarchicalAggregator::setup_central_nm()
 
 void HierarchicalAggregator::run()
 {
-    // Run central_nm in parallel
-    this->central_nm->run();
+    // Run central_nm in parallel, but still check if it ever stops because it will be this network manager 
+    // that receives the kill packet 
+    if(!this->central_nm->run())
+    {
+        this->send_kills();
+        this->print_end_report();
+        this->still_has_activities = false;
+    }
 
     if (!this->still_has_activities)
         return;
@@ -102,13 +108,7 @@ void HierarchicalAggregator::run()
                     this->send_global_model();
                     this->state = WAITING_LOCAL_MODELS;
                 }
-                else if (auto *op_kill = get_if<Packet::KillTrainer>(&(*packet)->op)) 
-                {
-                    this->send_kills();
-                    this->print_end_report();
-                    this->still_has_activities = false;
-                    break;
-                }
+                // Note that the hierarchical aggregator receives kill packet from the central_nm
             }
             break;
         case WAITING_LOCAL_MODELS: 
