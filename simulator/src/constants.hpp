@@ -21,7 +21,7 @@ public:
     inline static double LOCAL_MODEL_TRAINING_FLOPS = 1000000.0;
 
     /** Timeout for the registration phase */
-    inline static double REGISTRATION_TIMEOUT = 2.0;
+    inline static double REGISTRATION_TIMEOUT = 4.0;
 
     /* -------------------------- SIMULATION ENDING CONDITIONS -------------------------- */
     /*                        Exactly one condition should be defined                     */
