@@ -2,14 +2,14 @@ use serde::Deserialize;
 use super::common::{AggregatorType, Arg, Constants, NetworkManager, TrainerType, Prop, ClusterTopology};
 
 /// Represents <root>...</root>
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct RawFalafels {
     pub constants: Constants,
     pub profiles: Profiles,
     pub clusters: Clusters,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Profiles {
     #[serde(rename = "host-profile")]
     pub host_profiles: Vec<HostProfile>,
@@ -17,7 +17,7 @@ pub struct Profiles {
     pub link_profiles: Vec<LinkProfile>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct HostProfile {
     #[serde(rename = "@name")]
     pub name: String,
@@ -37,7 +37,7 @@ pub struct HostProfileRef {
     pub name: String
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct LinkProfile {
     #[serde(rename = "@name")]
     pub name: String,
@@ -57,13 +57,13 @@ pub struct LinkProfileRef {
     pub name: String
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Clusters {
     #[serde(rename = "cluster")]
     pub list: Vec<Cluster>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Cluster {
     #[serde(rename = "@name")]
     pub name: String,
@@ -75,7 +75,7 @@ pub struct Cluster {
     pub connections: Option<Vec<ConnectedTo>>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct ConnectedTo {
     #[serde(rename = "@cluster-name")]
     pub cluster_name: String,
@@ -97,7 +97,7 @@ pub struct Trainers {
     pub args: Option<Vec<Arg>>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct Aggregators {
     #[serde(rename = "@number")]
     pub number: u16,

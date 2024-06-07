@@ -63,6 +63,7 @@ impl Fryer {
         }
 
         for (i, raw_cluster) in rf.clusters.list.iter().enumerate() {
+            // If the current cluster contains connections elements
             if let Some(connections) = &raw_cluster.connections {
 
                 let cluster_names = connections.iter().map(|con| con.cluster_name.clone()).collect();

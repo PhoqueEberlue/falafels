@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use super::common::{Constants, Arg, NetworkManager, AggregatorType, TrainerType, ClusterTopology};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename = "fried")]
 pub struct FriedFalafels {
     // Struct fields cannot contain @ so we rename it with this macro
@@ -11,13 +11,13 @@ pub struct FriedFalafels {
     pub clusters: Clusters,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Clusters {
     #[serde(rename = "cluster")]
     pub list: Vec<Cluster>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Cluster {
     #[serde(rename = "@name")]
     pub name: String,
@@ -27,7 +27,7 @@ pub struct Cluster {
     pub nodes: Vec<Node>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Node {
     #[serde(rename = "@name")]
     pub name: String,
@@ -40,7 +40,7 @@ pub struct Node {
     pub network_manager: NetworkManager,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub enum RoleEnum {
     // Renaming members without capital leter as in XML format 
     #[serde(rename = "aggregator")]
@@ -50,7 +50,7 @@ pub enum RoleEnum {
     Trainer(Trainer)
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Aggregator {
     #[serde(rename = "@type")]
     pub aggregator_type: AggregatorType,
@@ -59,7 +59,7 @@ pub struct Aggregator {
     pub args: Option<Vec<Arg>>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Trainer {
     #[serde(rename = "@type")]
     pub trainer_type: TrainerType,
