@@ -1,30 +1,32 @@
 use regex::Regex;
 
 use crate::individual::Individual;
-use crate::environment::Environment;
 
+use serde::{Serialize, Deserialize};
 use std::fs::File;
 use std::io::Write;
 use std::process::Command;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Outcome {
-    command: String,
-    total_host_consumption: f32, 
-    used_host_consumption: f32, 
-    idle_host_consumption: f32,
-    total_link_consumption: f32,
-    simulation_time: f32
+    pub individual_name: String,
+    pub command: String,
+    pub total_host_consumption: f32,
+    pub used_host_consumption: f32,
+    pub idle_host_consumption: f32,
+    pub total_link_consumption: f32,
+    pub total_consumption: f32,
+    pub simulation_time: f32
 }
 
-pub fn run_simulation(gen_nb: u32, ind: &Individual, platform_path: String) -> Outcome {
+pub fn run_simulation(gen_nb: u32, output_dir: String, ind: Individual, platform_path: String) -> Outcome {
     let output = Command::new("../simulator/build/main")
         .args([&platform_path, &ind.ff_path])
         .output()
         .expect("failed to execute process");
 
     // Writing logs of the output
-    let mut file = File::create(format!("../xml/logs/GEN-{gen_nb}-{}.txt", ind.name)).unwrap();
+    let mut file = File::create(format!("{output_dir}/logs/GEN-{gen_nb}-{}.txt", ind.name)).unwrap();
     file.write_all(&output.stderr).unwrap();
 
     let logs = String::from_utf8(output.stderr).unwrap();
@@ -36,9 +38,12 @@ pub fn run_simulation(gen_nb: u32, ind: &Individual, platform_path: String) -> O
     let simulation_time = parse_simulation_time(&logs);
 
     Outcome {
+        individual_name: ind.name.clone(),
         command: format!("../simulator/build/main {} {}", platform_path, &ind.ff_path),
         total_host_consumption, used_host_consumption, idle_host_consumption, 
-        total_link_consumption, simulation_time 
+        total_link_consumption, 
+        total_consumption: total_host_consumption + total_link_consumption,
+        simulation_time 
     }
 }
 
@@ -68,10 +73,10 @@ fn parse_host_energy_results(logs: &String) -> [f32; 3] {
         .take(3)
         .collect::<Vec<f32>>();
 
-    // Verify we obtained exactly 4 values and return a fixed size array.
+    // Verify we obtained exactly 3 values and return a fixed size array.
     <[f32; 3]>::try_from(v)
         .ok()
-        .expect(&format!("Failed to capture 4 FP values on line: {hosts_consumption}"))
+        .expect(&format!("Failed to capture 3 FP values on line: {hosts_consumption}"))
 }
 
 ///
@@ -98,7 +103,7 @@ fn parse_link_energy_results(logs: &String) -> f32 {
         .next();
 
     // Verify we obtained a value and return it
-    link_energy.expect(&format!("Failed to capture 4 FP values on line: {links_consumption}"))
+    link_energy.expect(&format!("Failed to capture 1 FP values on line: {links_consumption}"))
 }
 
 ///
@@ -124,6 +129,6 @@ fn parse_simulation_time(logs: &String) -> f32 {
         .next();
 
     // Verify we obtained a value and return it
-    simulation_time.expect(&format!("Failed to capture 4 FP values on line: {simulation_over}"))
+    simulation_time.expect(&format!("Failed to capture 1 FP values on line: {simulation_over}"))
 }
 
