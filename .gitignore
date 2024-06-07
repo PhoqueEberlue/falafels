@@ -37,3 +37,6 @@ build/
 
 # ------ Rust ------
 target/
+
+# Beagle
+beagle/records
