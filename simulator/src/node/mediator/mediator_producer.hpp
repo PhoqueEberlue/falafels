@@ -3,6 +3,10 @@
 
 
 #include "mediator.hpp"
+#include <boost/smart_ptr/intrusive_ptr.hpp>
+#include <simgrid/forward.h>
+#include <xbt/asserts.h>
+#include <xbt/log.h>
 
 using namespace std;
 
@@ -17,32 +21,28 @@ class MediatorProducer : public Mediator
 {
 public:
     MediatorProducer(std::shared_ptr<std::queue<std::unique_ptr<Packet>>> received, 
-                    std::shared_ptr<std::queue<std::shared_ptr<Packet>>> to_be_sent,
-                    std::shared_ptr<std::queue<std::unique_ptr<Event>>> nm_events)
-    : Mediator(received, to_be_sent, nm_events) {}
+                     std::shared_ptr<std::queue<std::shared_ptr<Packet>>> to_be_sent,
+                     std::shared_ptr<std::queue<std::unique_ptr<Event>>> nm_events,
+                     simgrid::s4u::ActivitySet *node_activities)
+    : Mediator(received, to_be_sent, nm_events, node_activities) {}
 
     /** Optionally get packet to be sent if some */
-    std::optional<std::shared_ptr<Packet>> get_to_be_sent_packet()
-    {
-        if (this->to_be_sent_packets->empty())
-            return nullopt;
-
-        auto p = std::move(this->to_be_sent_packets->front());
-        this->to_be_sent_packets->pop();
-        return p;
-    }
-
+    std::optional<std::shared_ptr<Packet>> get_to_be_sent_packet();
+ 
     /** Put a packet received by the network to the received packets */
-    void put_received_packet(std::unique_ptr<Packet> packet)
-    {
-        this->received_packets->push(std::move(packet));
-    }
+    void put_received_packet(std::unique_ptr<Packet> packet);
 
     /** Put a new event */
-    void put_nm_event(Event e)
-    {
-        this->nm_events->push(make_unique<Event>(e));
-    }
+    void put_nm_event(Event e);
+
+    /** Adds a the comm activity to the node activities */
+    void put_comm_activity(simgrid::s4u::CommPtr comm_activity);
+
+    /** Check if the async get has an activity or not */
+    bool is_empty_get();
+
+    /** Test if the async get has finished and return the CommPtr if so */
+    optional<simgrid::s4u::CommPtr> test_get();
 };
 
 #endif // !FALAFELS_MEDIATOR_PRODUCER_HPP

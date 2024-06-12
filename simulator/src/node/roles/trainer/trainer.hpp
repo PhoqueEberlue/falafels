@@ -5,7 +5,6 @@
 #include "../role.hpp"
 #include <cstdint>
 #include <simgrid/forward.h>
-#include <simgrid/s4u/ActivitySet.hpp>
 #include <unordered_map>
 #include <simgrid/s4u/Activity.hpp>
 
@@ -32,9 +31,6 @@ protected:
 
     /** The total number of local epochs to perform */
     uint8_t number_local_epochs = 0;
-
-    /** Simgrid ActivitySet containing the training tasks */
-    simgrid::s4u::ActivitySet *training_activities;
 
     /**
      * Launch one trainer epoch in parallel, sharing activities among the Host's cores.

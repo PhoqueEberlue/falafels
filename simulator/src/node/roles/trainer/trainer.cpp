@@ -17,7 +17,6 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_trainer, "Messages specific for this example");
 Trainer::Trainer(std::unordered_map<std::string, std::string> *args, node_name name) 
 {
     this->my_node_name = name;
-    this->training_activities = new simgrid::s4u::ActivitySet();
 
     // No arguments yet
     delete args;
@@ -39,28 +38,24 @@ void Trainer::launch_one_epoch()
     for (int i = 0; i < nb_core; i++)
     {
         auto exec = simgrid::s4u::this_actor::exec_async(nb_flops_per_epoch);
-        this->training_activities->push(exec);
+        this->mc->put_exec_activity(exec);
     }
 }
 
 bool Trainer::train() 
 {
     // if no activities running
-    if (this->training_activities->empty())
+    if (this->mc->is_empty_activities())
     {
         this->launch_one_epoch();
     }
 
     // Test if any activity finished
-    auto activity = this->training_activities->test_any();
-    // XBT_INFO("activity: %p", activity);
-
-    // If the activity isn't nullptr, remove it for the ActivitySet
-    if (activity != nullptr)
+    if (this->mc->test_any_activies())
     {
         // Because the workload is splitted evently between each cores, we know that when one activity finished,
         // every others have finished too.
-        this->training_activities->clear();
+        this->mc->clear_activities();
 
         // if we need to perform more local epoch, start a new epoch task
         if (this->current_local_epoch < this->number_local_epochs)

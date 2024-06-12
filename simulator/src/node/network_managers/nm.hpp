@@ -49,15 +49,12 @@ protected:
 
     /** AcitivitySet for all put communications made by our node */
     simgrid::s4u::ActivitySet *pending_async_put;
-
-    /** Single get communication activity that listens incoming communications */
-    simgrid::s4u::CommPtr pending_async_get; 
 public:  
     NetworkManager(NodeInfo node_info);
     virtual ~NetworkManager();
 
     /** Run one step of the NetworkManager */
-    bool run();   
+    bool run(std::optional<std::unique_ptr<Packet>>);
 
     void set_mediator_producer(std::unique_ptr<MediatorProducer> mp) { this->mp = std::move(mp); };
 

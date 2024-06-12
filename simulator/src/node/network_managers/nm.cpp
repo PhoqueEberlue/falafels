@@ -41,10 +41,8 @@ void NetworkManager::set_bootstrap_nodes(vector<NodeInfo> *nodes)
     this->bootstrap_nodes = nodes;
 }
 
-bool NetworkManager::run()
+bool NetworkManager::run(optional<unique_ptr<Packet>> packet)
 { 
-    // simgrid::s4u::this_actor::sleep_for(0.01);
-
     switch (this->state)
     {
         case INITIALIZING:
@@ -60,7 +58,7 @@ bool NetworkManager::run()
             }
             break;
         case WAITING_REGISTRATION_CONFIRMATION:
-            if (auto packet = this->try_get())
+            if (packet)
             {
                 if (auto *confirmation = get_if<Packet::RegistrationConfirmation>(&(*packet)->op))
                 {
@@ -90,7 +88,7 @@ bool NetworkManager::run()
             }
             break;
         case RUNNING:
-            if (auto packet = this->try_get())
+            if (packet)
             {
                 // Case where we receive Kill
                 if (auto *kill = get_if<Packet::KillTrainer>(&(*packet)->op))
@@ -139,14 +137,17 @@ bool NetworkManager::run()
 
 optional<unique_ptr<Packet>> NetworkManager::try_get()
 {
-    if (!this->pending_async_get)
-        this->pending_async_get = this->mailbox->get_async();
-
-    if (this->pending_async_get->test())
+    if (this->mp->is_empty_get())
     {
-        auto p = static_cast<Packet*>(this->pending_async_get->get_payload());
+        this->mp->put_comm_activity(this->mailbox->get_async());
+    }
+
+    if (auto comm = this->mp->test_get())
+    {
+        auto p = static_cast<Packet*>((*comm)->get_payload());
+
         XBT_INFO("%s <--%s(%lu)--- %s", p->dst.c_str(), p->get_op_name(), p->id, p->src.c_str());
-        this->pending_async_get = this->mailbox->get_async();
+        this->mp->put_comm_activity(this->mailbox->get_async());
 
         auto unique_packet = make_unique<Packet>(*p);
         delete p;

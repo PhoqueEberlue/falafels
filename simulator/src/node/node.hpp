@@ -4,6 +4,7 @@
 #include <memory>
 #include <simgrid/s4u/Actor.hpp>
 #include <simgrid/s4u/Engine.hpp>
+#include <simgrid/s4u/ActivitySet.hpp>
 #include <vector>
 #include <xbt/log.h>
 #include "roles/role.hpp"
@@ -25,6 +26,8 @@ class Node
 private:
     std::unique_ptr<Role> role;
     std::unique_ptr<NetworkManager> network_manager; 
+    simgrid::s4u::ActivitySet *node_activities;
+
 public:
     /**
      * Node constructor
@@ -36,7 +39,7 @@ public:
     /**
      * Node's NetworkManager and Role are deleted implicitly with the unique pointers.
      */
-    ~Node() {};
+    ~Node() { delete this->node_activities; };
 
     /**
      * Main function to execute the Node's behaviour.

@@ -11,7 +11,6 @@ Aggregator::Aggregator(node_name name)
 {
     this->initialization_time = simgrid::s4u::Engine::get_instance()->get_clock();
     this->my_node_name = name;
-    this->aggregating_activities = new simgrid::s4u::ActivitySet();
 }
 
 void Aggregator::launch_one_aggregation()
@@ -29,27 +28,24 @@ void Aggregator::launch_one_aggregation()
     // Launch exactly nb_core parallel tasks
     for (int i = 0; i < nb_core; i++)
     {
-        this->aggregating_activities->push(simgrid::s4u::this_actor::exec_async(nb_flops_per_aggregation));
+        this->mc->put_exec_activity(simgrid::s4u::this_actor::exec_async(nb_flops_per_aggregation));
     }
 }
 
 bool Aggregator::aggregate() 
 {
     // if aggregating activity doesn't exists
-    if (this->aggregating_activities->empty())
+    if (this->mc->is_empty_activities())
     {
         this->launch_one_aggregation();
     }
 
     // Test if any activity finished
-    auto activity = this->aggregating_activities->test_any();
-
-    // If the activity isn't nullptr, remove it for the ActivitySet
-    if (activity != nullptr)
+    if (this->mc->test_any_activies())
     {
         // Because the workload is splitted evently between each cores, we know that when one activity finished,
         // every others have finished too.
-        this->aggregating_activities->clear(); 
+        this->mc->clear_activities();
 
         // if we need to perform more model aggregation, start a new aggregation task
         if (this->current_number_aggregated_models < this->number_local_models)

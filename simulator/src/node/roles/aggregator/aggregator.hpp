@@ -6,7 +6,6 @@
 #include <cstdint>
 #include <simgrid/forward.h>
 #include <simgrid/s4u/Exec.hpp>
-#include <simgrid/s4u/ActivitySet.hpp>
 
 class Aggregator : public Role 
 {
@@ -25,9 +24,6 @@ protected:
 
     /** Number of the local models collected at a moment in time */
     uint64_t number_local_models = 0;    
-
-    /** Simgrid activity representing the training */
-    simgrid::s4u::ActivitySet *aggregating_activities;
 
     /** Number of aggregated models on one aggregation task */
     uint64_t current_number_aggregated_models = 0;
