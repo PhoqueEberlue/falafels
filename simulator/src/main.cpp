@@ -13,16 +13,6 @@
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_main, "Messages specific for this example");
 
-void node_runner(Node *node)
-{
-    XBT_INFO("Init node: %s", node->get_node_info().name.c_str());
-    node->run();
-    delete node;
-
-    XBT_INFO("Exiting");
-    simgrid::s4u::this_actor::exit();
-}
-
 int main(int argc, char* argv[])
 {
     simgrid::s4u::Engine e(&argc, argv);
@@ -43,8 +33,9 @@ int main(int argc, char* argv[])
 
     for (auto [name, node] : *nodes_map)
     {
-        XBT_INFO("Creating actor '%s'", name.c_str());
-        auto actor = simgrid::s4u::Actor::create(name, e.host_by_name(name), &node_runner, node); 
+        XBT_INFO("Initializing node '%s'", name.c_str());
+        node->run();
+        // delete node;
     }
 
     /* Run the simulation */
