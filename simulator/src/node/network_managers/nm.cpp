@@ -1,4 +1,5 @@
 #include "nm.hpp"
+#include <boost/smart_ptr/intrusive_ptr.hpp>
 #include <format>
 #include <memory>
 #include <optional>
@@ -22,6 +23,7 @@ XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_network_manager, "Messages specific for this ex
 NetworkManager::NetworkManager(NodeInfo node_info) : my_node_info(node_info)
 {
     this->pending_async_put = new simgrid::s4u::ActivitySet();
+    this->pending_comm_and_mess_get = new simgrid::s4u::ActivitySet(); 
 
     // Initializing our mailbox
     this->mailbox = simgrid::s4u::Mailbox::by_name(this->my_node_info.name);
@@ -33,6 +35,7 @@ NetworkManager::~NetworkManager()
 {
     delete this->bootstrap_nodes;
     delete this->pending_async_put;
+    delete this->pending_comm_and_mess_get;
     delete this->registration_requests;
 }
 
@@ -41,10 +44,8 @@ void NetworkManager::set_bootstrap_nodes(vector<NodeInfo> *nodes)
     this->bootstrap_nodes = nodes;
 }
 
-bool NetworkManager::run()
+void NetworkManager::run()
 { 
-    // simgrid::s4u::this_actor::sleep_for(0.01);
-
     switch (this->state)
     {
         case INITIALIZING:
@@ -60,105 +61,189 @@ bool NetworkManager::run()
             }
             break;
         case WAITING_REGISTRATION_CONFIRMATION:
-            if (auto packet = this->try_get())
             {
-                if (auto *confirmation = get_if<Packet::RegistrationConfirmation>(&(*packet)->op))
+                auto packet = this->get();
+
+                if (auto *confirmation = get_if<Packet::RegistrationConfirmation>(&packet->op))
                 {
                     this->handle_registration_confirmation(*confirmation);
                     this->state = RUNNING;
+
+                    // Initialize the first waiting activities: this should be done one time before going into RUNNING state
+                    // Add Comm aysnc get
+                    this->pending_comm_and_mess_get->push(this->get_async());
+
+                    // Add Mess async get
+                    this->pending_comm_and_mess_get->push(this->mp->get_async_to_be_sent_packet());
                 }
+                break;
             }
-            break;
         case WAITING_REGISTRATION_REQUEST:
-            if (!this->start_time.has_value())
-                this->start_time = simgrid::s4u::Engine::get_instance()->get_clock();
-
-            if (auto packet = this->try_get())
             {
-                if (auto *request = get_if<Packet::RegistrationRequest>(&(*packet)->op))
+                if (!this->start_time.has_value())
+                    this->start_time = simgrid::s4u::Engine::get_instance()->get_clock();
+
+                const auto time_elapsed = simgrid::s4u::Engine::get_instance()->get_clock() - *this->start_time;
+                const auto remaining_time = Constants::REGISTRATION_TIMEOUT - time_elapsed;
+                bool ending_state = false;
+
+                // To be honest I'm not even sure this is reachable
+                if (remaining_time < 0)
                 {
-                    this->registration_requests->push_back(*request);
+                    XBT_INFO("REACHED THE POINT WHERE REMAINING TIME WENT NEGATIVE");
+                    ending_state = true;
                 }
 
-            }
+                unique_ptr<Packet> packet;
 
-            // At some point, stop listening for registration requests and end this state
-            if (simgrid::s4u::Engine::get_instance()->get_clock() - *this->start_time > Constants::REGISTRATION_TIMEOUT) 
-            {
-                this->handle_registration_requests();
-                this->state = RUNNING;
+                try { packet = this->get(remaining_time); }
+                catch (simgrid::TimeoutException) 
+                {
+                    ending_state = true;    
+                }
+
+                if (ending_state)
+                {
+                    this->handle_registration_requests();
+                    this->state = RUNNING;
+
+                    // Initialize the first waiting activities: this should be done one time before going into RUNNING state
+                    // Add Comm aysnc get
+                    this->pending_comm_and_mess_get->push(this->get_async());
+
+                    // Add Mess async get
+                    this->pending_comm_and_mess_get->push(this->mp->get_async_to_be_sent_packet());
+                }
+                else
+                {
+                    if (auto *request = get_if<Packet::RegistrationRequest>(&packet->op))
+                    {
+                        this->registration_requests->push_back(*request);
+                    }
+                }
+
+                break;
             }
-            break;
         case RUNNING:
-            if (auto packet = this->try_get())
             {
-                // Case where we receive Kill
-                if (auto *kill = get_if<Packet::KillTrainer>(&(*packet)->op))
+                auto activity = this->pending_comm_and_mess_get->wait_any();
+                // TMP
+                auto comm = boost::dynamic_pointer_cast<simgrid::s4u::Comm>(activity);
+
+                // If the activity has type Comm, it means we received a packet from the network
+                // if (boost::dynamic_pointer_cast<simgrid::s4u::Comm>(activity))
+                // Temporary workaround: "if on the source name of the comm != this.name" because we cannot use Message and MessageQueue
+                if (comm->get_source()->get_name().compare(this->my_node_info.name) != 0)
                 {
-                    this->state = KILLING;
+                    // Add Comm aysnc get for next run, because the previous one is deleted by wait_any()
+                    this->pending_comm_and_mess_get->push(this->get_async());
 
-                    // Cleanly detach each async put
-                    for (int i = 0; i < this->pending_async_put->size(); i++)
-                        this->pending_async_put->at(i).detach();
+                    auto p = (Packet *) comm->get_payload();
 
-                    // Clear all async put before sending and waiting the kill packet
-                    this->pending_async_put->clear();
+                    // Can we handle this log better? is it possible to print it with a callback maybe?
+                    XBT_INFO("%s <--%s(%lu)--- %s", p->dst.c_str(), p->get_op_name(), p->id, p->src.c_str());
 
-                    // still route the packet but break earlier
-                    this->route_packet(std::move(*packet));
-                    break;
+                    // Case where we receive Kill
+                    if (auto *kill = get_if<Packet::KillTrainer>(&p->op))
+                    {
+                        this->state = KILLING;
+
+                        // Cleanly detach each async put
+                        for (int i = 0; i < this->pending_async_put->size(); i++)
+                            this->pending_async_put->at(i).detach();
+
+                        // Clear all async put before sending and waiting the kill packet
+                        this->pending_async_put->clear();
+
+                        // still route the packet but break earlier
+                        // this->route_packet(p);
+                        // break;
+                    }
+
+                    // Route the packet in any ways. If its a kill packet in some p2p scenario it will be redirected.
+                    this->route_packet(p);
                 }
-
-                this->route_packet(std::move(*packet));
-            }
-
-            if (auto p = this->mp->get_to_be_sent_packet())
-            {
-                // Case where we send kill to someone else
-                if (auto *kill = get_if<Packet::KillTrainer>(&(*p)->op))
+                // If the activity has type Mess, it means we received a to be sent packet from the Role via MessageQueue
+                //else if (boost::dynamic_pointer_cast<simgrid::s4u::Mess>(activity))
+                else
                 {
-                    this->state = KILLING;
-                }
+                    // Add Mess aysnc get for next run, because the previous one is deleted by wait_any()
+                    this->pending_comm_and_mess_get->push(this->mp->get_async_to_be_sent_packet());
 
-                this->send_packet(*p);
+                    auto p = (Packet *) comm->get_payload();
+
+                    // Case where we send kill to someone else
+                    if (auto *kill = get_if<Packet::KillTrainer>(&p->op))
+                    {
+                        this->state = KILLING;
+
+                        // TODO: Duplicate with the if above, might refactor
+                        // Cleanly detach each async put
+                        for (int i = 0; i < this->pending_async_put->size(); i++)
+                            this->pending_async_put->at(i).detach();
+
+                        // Clear all async put before sending and waiting the kill packet
+                        this->pending_async_put->clear();
+
+                    }
+
+                    this->send_packet(p);
+                }
+                break;
             }
-            break;
         case KILLING:
-            // Wait to send the kill message with a timeout of 2 in case the two last nodes are trying to send 
-            // the kill packet to each other and would cause a blocking situation.
-            // So if a node isn't reachable, we consider it is already dead.
-            try {
-                this->pending_async_put->wait_all_for(2);
-            } catch (simgrid::TimeoutException) {
-                XBT_INFO("Can't redirect KILL, node unreachable");
+            {
+                auto my_node_name = this->my_node_info.name;
+
+                // Get the actors running on the current host
+                auto actors = simgrid::s4u::Engine::get_instance()->host_by_name(my_node_name)->get_all_actors();
+
+                for (auto actor : actors)
+                {
+                    // Delete the actor representing the Role process
+                    if (actor->get_name().compare(std::format("{}_role", my_node_name)) == 0)
+                    {
+                        XBT_INFO("Killing actor: %s", actor->get_name().c_str());
+                        actor->kill();
+                    }
+                }
+
+                // Wait to send the kill message with a timeout of 2 in case the two last nodes are trying to send 
+                // the kill packet to each other and would cause a blocking situation.
+                // So if a node isn't reachable, we consider it is already dead.
+                try {
+                    this->pending_async_put->wait_all_for(2);
+                } catch (simgrid::TimeoutException) {
+                    XBT_INFO("Can't redirect KILL, node unreachable");
+                }
+
+                // Exit self actor, representing the NetworkManager process
+                simgrid::s4u::this_actor::exit();
             }
-            return false;
     }
-    return true;
 }
 
-optional<unique_ptr<Packet>> NetworkManager::try_get()
+
+
+unique_ptr<Packet> NetworkManager::get(const optional<double> timeout)
 {
-    if (!this->pending_async_get)
-        this->pending_async_get = this->mailbox->get_async();
+    unique_ptr<Packet> p;
 
-    if (this->pending_async_get->test())
-    {
-        auto p = static_cast<Packet*>(this->pending_async_get->get_payload());
-        XBT_INFO("%s <--%s(%lu)--- %s", p->dst.c_str(), p->get_op_name(), p->id, p->src.c_str());
-        this->pending_async_get = this->mailbox->get_async();
-
-        auto unique_packet = make_unique<Packet>(*p);
-        delete p;
-        return unique_packet;
-    }
+    if (timeout.has_value())
+        p = this->mailbox->get_unique<Packet>(*timeout);
     else
-    {
-        return nullopt;
-    }
+        p = this->mailbox->get_unique<Packet>();
+
+    XBT_INFO("%s <--%s(%lu)--- %s", p->dst.c_str(), p->get_op_name(), p->id, p->src.c_str());
+    return p;
 }
 
-void NetworkManager::send_packet(shared_ptr<Packet> p)
+simgrid::s4u::CommPtr NetworkManager::get_async()
+{
+    return this->mailbox->get_async();
+}
+
+void NetworkManager::send_packet(Packet *p)
 {
     if (p->broadcast)
     {
@@ -168,13 +253,16 @@ void NetworkManager::send_packet(shared_ptr<Packet> p)
     {
         this->send_async(p);
     }
+
+    // Send and broadcast should clone the pointer internally, so we can delete the packet here.
+    delete p;
 }
 
-void NetworkManager::send_async(shared_ptr<Packet> packet, bool is_redirected)
+void NetworkManager::send_async(Packet *p, bool is_redirected)
 {
-    auto p_clone = packet->clone();
+    auto p_clone = p->clone();
     p_clone->src = this->get_my_node_name();
-    p_clone->dst = packet->dst;
+    p_clone->dst = p->dst;
 
     // Only write original source when sending packets created by the current node.
     if (!is_redirected)
@@ -184,7 +272,7 @@ void NetworkManager::send_async(shared_ptr<Packet> packet, bool is_redirected)
     }
     else
     {
-        p_clone->original_src = packet->original_src;
+        p_clone->original_src = p->original_src;
         XBT_INFO("%s ---%s(%lu)--> %s [REDIRECT]", p_clone->src.c_str(), p_clone->get_op_name(), p_clone->id, p_clone->dst.c_str());
     }
 
