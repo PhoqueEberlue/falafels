@@ -10,18 +10,6 @@
 
 class Aggregator : public Role 
 {
-private:
-    /**
-     * Run and wait one aggregation step in parallel, sharing activities among the Host's cores.
-     */
-    void run_one_aggregation();
-
-    /**
-     * Run and wait all aggregations steps in parallel, sharing activities among the Host's cores.
-     * This method groups all tasks into a big one, which is way more efficient (in terms of simulation runtime) 
-     * than executing tasks one by one.
-     */
-    void run_multiple_aggregation(uint64_t number_local_models);
 protected:
     /** Value indicating the number of local epochs that the aggregator will ask the trainers to do. */
     uint8_t number_local_epochs = 3;
@@ -44,8 +32,10 @@ protected:
     /** Time when the aggregator has been initialized */
     double initialization_time;
 
-    /** 
-     * Run and wait the aggregating activities.
+    /**
+     * Run and wait all aggregations steps in parallel, sharing activities among the Host's cores.
+     * Groups all tasks into a big one, which is way more efficient (in terms of simulation runtime) 
+     * than executing tasks one by one.
      */
     void aggregate();
 

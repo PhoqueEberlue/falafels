@@ -23,34 +23,25 @@ Trainer::Trainer(std::unordered_map<std::string, std::string> *args, node_name n
     delete args;
 }
 
-void Trainer::run_one_epoch(uint8_t epoch_index)
+void Trainer::train() 
 {
     double flops = Constants::LOCAL_MODEL_TRAINING_FLOPS;
-
-    XBT_INFO("Epoch %i ====> ...", epoch_index);
     
     int nb_core = simgrid::s4u::this_actor::get_host()->get_core_count();
-    double nb_flops_per_epoch = flops / nb_core;
+    double total_nb_flops_per_epoch = (flops / nb_core) * this->number_local_epochs;
 
-    XBT_DEBUG("flops / nb_core = nb_flops_per_epoch: %f / %i = %f", flops, nb_core, nb_flops_per_epoch);
+    XBT_DEBUG("(flops / nb_core) * nb_local_epochs = total_nb_flops_per_epoch <-> (%f / %i) * %u = %f",
+              flops, nb_core, this->number_local_epochs, total_nb_flops_per_epoch);
     
     // TODO: maybe actually use simgrid functions to launch in parallel???
     // Launch exactly nb_core parallel tasks
     for (int i = 0; i < nb_core; i++)
     {
-        auto exec = simgrid::s4u::this_actor::exec_async(nb_flops_per_epoch);
+        auto exec = simgrid::s4u::this_actor::exec_async(total_nb_flops_per_epoch);
         this->training_activities->push(exec);
     }
 
     this->training_activities->wait_all();
-}
-
-void Trainer::train() 
-{
-    for (uint8_t i = 0; i<this->number_local_epochs; i++)
-    {
-        this->run_one_epoch(i);
-    }
 }
 
 void Trainer::send_local_model(node_name dst, node_name final_dst)

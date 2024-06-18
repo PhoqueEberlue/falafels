@@ -33,13 +33,8 @@ protected:
     /** Simgrid ActivitySet containing the training tasks */
     simgrid::s4u::ActivitySet *training_activities;
 
-    /**
-     * Run and wait one trainer epoch in parallel, sharing activities among the Host's cores.
-     */
-    void run_one_epoch(uint8_t epoch_index);
-
     /** 
-     * Run and wait the training activity.
+     * Run and wait the training activities in parallel.
      */
     void train();
 

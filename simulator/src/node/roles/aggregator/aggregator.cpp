@@ -15,39 +15,17 @@ Aggregator::Aggregator(node_name name)
     this->aggregating_activities = new simgrid::s4u::ActivitySet();
 }
 
-void Aggregator::run_one_aggregation()
+void Aggregator::aggregate() 
 {
     double flops = Constants::GLOBAL_MODEL_AGGREGATING_FLOPS;
 
     int nb_core = simgrid::s4u::this_actor::get_host()->get_core_count();
 
     // Number for one aggregation splitted in one core
-    double nb_flops_per_core = flops / nb_core;
+    double total_nb_flops_per_core = (flops / nb_core) * this->number_local_models;
 
-    XBT_DEBUG("flops / nb_core = nb_flops_per_core: %f / %i = %f", flops, nb_core, nb_flops_per_core);
-    
-    // Launch exactly nb_core parallel tasks
-    for (int i = 0; i < nb_core; i++)
-    {
-        this->aggregating_activities->push(simgrid::s4u::this_actor::exec_async(nb_flops_per_core));
-    }
-
-    this->aggregating_activities->wait_all();
-}
-
-void Aggregator::run_multiple_aggregation(uint64_t number_local_models)
-{
-    double flops = Constants::GLOBAL_MODEL_AGGREGATING_FLOPS;
-
-    int nb_core = simgrid::s4u::this_actor::get_host()->get_core_count();
-
-    // Number for one aggregation splitted in one core
-    double nb_flops_per_core = flops / nb_core;
-
-    // Total number of flops for every aggregations in one core 
-    double total_nb_flops_per_core = nb_flops_per_core * number_local_models;
-
-    XBT_DEBUG("(flops / nb_core) * number_local_models = total_nb_flops_per_core: (%f / %i) * %lu = %f", flops, nb_core, number_local_models, nb_flops_per_core);
+    XBT_DEBUG("(flops / nb_core) * nb_local_models = total_nb_flops_per_core <-> (%f / %i) * %u = %f", 
+              flops, nb_core, this->number_local_epochs, total_nb_flops_per_core);
     
     // Launch exactly nb_core parallel tasks
     for (int i = 0; i < nb_core; i++)
@@ -55,20 +33,8 @@ void Aggregator::run_multiple_aggregation(uint64_t number_local_models)
         this->aggregating_activities->push(simgrid::s4u::this_actor::exec_async(total_nb_flops_per_core));
     }
 
+    // Wait for the tasks to complete
     this->aggregating_activities->wait_all();
-}
-
-void Aggregator::aggregate() 
-{
-    if (this->number_local_models == 1)
-    {
-        this->run_one_aggregation();
-    }
-    else 
-    {
-        this->run_multiple_aggregation(this->number_local_models);
-    }
-
     // Increment the number of aggregated models
     this->total_aggregated_models += this->number_local_models;
     // Compute the number of global epochs
