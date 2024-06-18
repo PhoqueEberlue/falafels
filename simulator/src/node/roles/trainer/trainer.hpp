@@ -27,9 +27,6 @@ protected:
     node_name dst;
     node_name final_dst;
 
-    /** Tracks the current number of local epoch done by the current trainer */
-    uint8_t current_local_epoch = 0;
-
     /** The total number of local epochs to perform */
     uint8_t number_local_epochs = 0;
 
@@ -37,15 +34,14 @@ protected:
     simgrid::s4u::ActivitySet *training_activities;
 
     /**
-     * Launch one trainer epoch in parallel, sharing activities among the Host's cores.
+     * Run and wait one trainer epoch in parallel, sharing activities among the Host's cores.
      */
-    void launch_one_epoch();
+    void run_one_epoch(uint8_t epoch_index);
 
     /** 
-     * Launch the training activity or test if the current one has finished.
-     * @return true if number_local_epochs have been performed, false otherwise.
+     * Run and wait the training activity.
      */
-    bool train();
+    void train();
 
     /** Send the local model to (dst, final_dst) */
     void send_local_model(node_name dst, node_name final_dst);
