@@ -3,6 +3,8 @@
 
 
 #include "mediator.hpp"
+#include <simgrid/forward.h>
+// #include <simgrid/s4u/Mess.hpp>
 
 using namespace std;
 
@@ -16,33 +18,19 @@ using namespace std;
 class MediatorProducer : public Mediator
 {
 public:
-    MediatorProducer(std::shared_ptr<std::queue<std::unique_ptr<Packet>>> received, 
-                    std::shared_ptr<std::queue<std::shared_ptr<Packet>>> to_be_sent,
-                    std::shared_ptr<std::queue<std::unique_ptr<Event>>> nm_events)
-    : Mediator(received, to_be_sent, nm_events) {}
+    MediatorProducer(node_name name) : Mediator(name) {}
 
-    /** Optionally get packet to be sent if some */
-    std::optional<std::shared_ptr<Packet>> get_to_be_sent_packet()
-    {
-        if (this->to_be_sent_packets->empty())
-            return nullopt;
+    /** Blocking get for retrieving a packet to be sent */
+    std::shared_ptr<Packet> get_to_be_sent_packet();
 
-        auto p = std::move(this->to_be_sent_packets->front());
-        this->to_be_sent_packets->pop();
-        return p;
-    }
+    /** Async get for retrieving a packet to be sent */
+    simgrid::s4u::CommPtr get_async_to_be_sent_packet();
 
-    /** Put a packet received by the network to the received packets */
-    void put_received_packet(std::unique_ptr<Packet> packet)
-    {
-        this->received_packets->push(std::move(packet));
-    }
+    /** Async put a packet received by the network */
+    void put_received_packet(Packet *packet);
 
-    /** Put a new event */
-    void put_nm_event(Event e)
-    {
-        this->nm_events->push(make_unique<Event>(e));
-    }
+    /** Async put a new NetworkManager Event */
+    void put_nm_event(Event *e);
 };
 
 #endif // !FALAFELS_MEDIATOR_PRODUCER_HPP

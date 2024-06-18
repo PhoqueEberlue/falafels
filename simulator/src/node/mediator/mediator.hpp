@@ -1,8 +1,11 @@
 #ifndef FALAFELS_MEDIATOR_HPP
 #define FALAFELS_MEDIATOR_HPP
 
-#include <memory>
-#include <queue>
+#include <format>
+// #include <simgrid/s4u/MessageQueue.hpp>
+// Temporary work around: using mailbox instead of messageQueues because get_async() is bug on this last
+#include <simgrid/s4u/Mailbox.hpp>
+#include <simgrid/s4u/ActivitySet.hpp>
 #include <variant>
 #include "../../protocol.hpp"
 
@@ -23,28 +26,35 @@ public:
     };
 
     using Event = std::variant<NodeConnected, ClusterConnected>; 
+
+    void wait_all_async_comms()
+    {
+        this->async_messages->wait_all();
+    }
 protected:
     /** 
-     * Set queues to enable communication between Role and NetworkManager. Note that obviously they should be the same
-     * shared_ptr between the Consumer and Producer.
+     * Initialize queues to enable communication between Role and NetworkManager.
+     * The format for MessageQueue name is the following: `<node name>_mq_<message queue name>`.
      */
-    Mediator(std::shared_ptr<std::queue<std::unique_ptr<Packet>>> received, 
-                    std::shared_ptr<std::queue<std::shared_ptr<Packet>>> to_be_sent,
-                    std::shared_ptr<std::queue<std::unique_ptr<Event>>> nm_events)
+    Mediator(node_name name)
     {
-        this->received_packets = received;
-        this->to_be_sent_packets = to_be_sent;
-        this->nm_events = nm_events;
-    }
+        this->mq_received_packets = simgrid::s4u::Mailbox::by_name(std::format("{}_mq_rp", name));
+        this->mq_to_be_sent_packets = simgrid::s4u::Mailbox::by_name(std::format("{}_mq_tbsp", name));
+        this->mq_nm_events = simgrid::s4u::Mailbox::by_name(std::format("{}_mq_nme", name));
 
-    /** Queue of packets received through the network */
-    std::shared_ptr<std::queue<std::unique_ptr<Packet>>> received_packets;
+        this->async_messages = new simgrid::s4u::ActivitySet();
+    } 
+    
+    /** MessageQueue of packets received through the network */
+    simgrid::s4u::Mailbox *mq_received_packets;
 
-    /** Queue of packets to send via the network */
-    std::shared_ptr<std::queue<std::shared_ptr<Packet>>> to_be_sent_packets;
+    /** MessageQueue of packets to send via the network */
+    simgrid::s4u::Mailbox *mq_to_be_sent_packets;
 
-    /** Queue of events produced by a NetworkManager */
-    std::shared_ptr<std::queue<std::unique_ptr<Event>>> nm_events;
+    /** MessageQueue of events produced by a NetworkManager */
+    simgrid::s4u::Mailbox *mq_nm_events;
+
+    simgrid::s4u::ActivitySet *async_messages;
 };
 
 #endif // !FALAFELS_MEDIATOR_HPP
