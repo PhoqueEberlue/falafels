@@ -24,7 +24,7 @@ private:
     bool is_duplicated(const packet_id);
     
     /** Redirect a packet to a neighbour of the ring */
-    void redirect(std::unique_ptr<Packet>&);
+    void redirect(Packet *p);
 public:
     RingNetworkManager(NodeInfo);
     ~RingNetworkManager();
@@ -33,8 +33,8 @@ public:
     void handle_registration_requests();
     void send_registration_request();
     void handle_registration_confirmation(const Packet::RegistrationConfirmation &confirmation);
-    void route_packet(std::unique_ptr<Packet> packet);
-    void broadcast(std::shared_ptr<Packet>);
+    void route_packet(Packet *p);
+    void broadcast(Packet *p);
 };
 
 #endif // !FALAFELS_DECENTRALIZED_NM_HPP
