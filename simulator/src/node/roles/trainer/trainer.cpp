@@ -77,8 +77,6 @@ void Trainer::run()
                 if (auto *op_glob = get_if<Packet::SendGlobalModel>(&packet->op))
                 {
                     // Get the source to be able to send the local model later
-                    XBT_INFO("src: %s", packet->src.c_str());
-                    XBT_INFO("original_src: %s", packet->original_src.c_str());
                     this->dst = packet->src;
                     this->final_dst = packet->original_src;
 

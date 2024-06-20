@@ -9,7 +9,7 @@
 
 #include "node/network_managers/nm.hpp"
 #include "node/roles/aggregator/asynchronous_aggregator.hpp"
-// #include "node/roles/aggregator/hierarchical_aggregator.hpp"
+#include "node/roles/aggregator/hierarchical_aggregator.hpp"
 #include "node/roles/aggregator/simple_aggregator.hpp"
 #include "node/roles/trainer/trainer.hpp"
 // #include "node/roles/proxy/proxy.hpp"
@@ -99,7 +99,7 @@ Aggregator *create_aggregator(xml_node *role_elem, unordered_map<string, string>
     else if (strcmp(aggregator_type, "hierarchical") == 0)
     {
         XBT_INFO("With role: Hierarchical");
-        // aggregator = make_unique<HierarchicalAggregator>(args, name);
+        aggregator = new HierarchicalAggregator(args, name);
     }
 
     return aggregator; 
