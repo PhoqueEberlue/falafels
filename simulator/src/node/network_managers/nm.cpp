@@ -14,6 +14,7 @@
 #include <xbt/ex.h>
 #include <simgrid/s4u/ActivitySet.hpp>
 
+#include "../../utils/utils.hpp"
 #include "../../dot.hpp"
 
 using namespace std;
@@ -127,13 +128,9 @@ void NetworkManager::run()
         case RUNNING:
             {
                 auto activity = this->pending_comm_and_mess_get->wait_any();
-                // TMP
-                auto comm = boost::dynamic_pointer_cast<simgrid::s4u::Comm>(activity);
 
                 // If the activity has type Comm, it means we received a packet from the network
-                // if (boost::dynamic_pointer_cast<simgrid::s4u::Comm>(activity))
-                // Temporary workaround: "if on the source name of the comm != this.name" because we cannot use Message and MessageQueue
-                if (comm->get_source()->get_name().compare(this->my_node_info.name) != 0)
+                if (auto comm = boost::dynamic_pointer_cast<simgrid::s4u::Comm>(activity))
                 {
                     // Add Comm aysnc get for next run, because the previous one is deleted by wait_any()
                     this->pending_comm_and_mess_get->push(this->get_async());
@@ -155,22 +152,30 @@ void NetworkManager::run()
                         // Clear all async put before sending and waiting the kill packet
                         this->pending_async_put->clear();
 
-                        // still route the packet but break earlier
-                        // this->route_packet(p);
-                        // break;
+                        // TODO: make this better if possible......
+                        // In case we are the hierarchical_nm
+                        if (this->my_node_info.name.contains("hierarchical"))
+                        {
+                            // Send the packet to the cluster_nm
+                            std::string cluster_nm_name = this->my_node_info.name;
+                            replace_first(cluster_nm_name, "hierarchical_", "");
+                            p->dst = cluster_nm_name;
+                            p->final_dst = cluster_nm_name;
+                            this->send_async(p, true);
+                        }
                     }
+
 
                     // Route the packet in any ways. If its a kill packet in some p2p scenario it will be redirected.
                     this->route_packet(p);
                 }
                 // If the activity has type Mess, it means we received a to be sent packet from the Role via MessageQueue
-                //else if (boost::dynamic_pointer_cast<simgrid::s4u::Mess>(activity))
-                else
+                else if (auto mess = boost::dynamic_pointer_cast<simgrid::s4u::Mess>(activity))
                 {
                     // Add Mess aysnc get for next run, because the previous one is deleted by wait_any()
                     this->pending_comm_and_mess_get->push(this->mp->get_async_to_be_sent_packet());
 
-                    auto p = (Packet *) comm->get_payload();
+                    auto p = (Packet *) mess->get_payload();
 
                     // Case where we send kill to someone else
                     if (auto *kill = get_if<Packet::KillTrainer>(&p->op))
@@ -193,7 +198,13 @@ void NetworkManager::run()
             }
         case KILLING:
             {
-                auto my_node_name = this->my_node_info.name;
+                std::string my_node_name = this->my_node_info.name;
+
+                // TODO: make this better if possible......
+                if (this->my_node_info.name.contains("hierarchical"))
+                {
+                    replace_first(my_node_name, "hierarchical_", "");
+                }
 
                 // Get the actors running on the current host
                 auto actors = simgrid::s4u::Engine::get_instance()->host_by_name(my_node_name)->get_all_actors();
@@ -215,6 +226,8 @@ void NetworkManager::run()
                     this->pending_async_put->wait_all_for(2);
                 } catch (simgrid::TimeoutException) {
                     XBT_INFO("Can't redirect KILL, node unreachable");
+                } catch (simgrid::NetworkFailureException) {
+                    XBT_INFO("Can't redirect KILL, NetworkFailure");
                 }
 
                 // Exit self actor, representing the NetworkManager process
