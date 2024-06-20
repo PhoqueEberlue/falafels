@@ -14,7 +14,7 @@ shared_ptr<Packet> MediatorProducer::get_to_be_sent_packet()
 }
 
 /** Async get for retrieving a packet to be sent */
-simgrid::s4u::CommPtr MediatorProducer::get_async_to_be_sent_packet()
+simgrid::s4u::MessPtr MediatorProducer::get_async_to_be_sent_packet()
 {
     return this->mq_to_be_sent_packets->get_async();
 }
@@ -23,13 +23,13 @@ simgrid::s4u::CommPtr MediatorProducer::get_async_to_be_sent_packet()
 /** Async put a packet received by the network */
 void MediatorProducer::put_received_packet(Packet *packet)
 {
-    auto mess = this->mq_received_packets->put_async(packet, 0);
+    auto mess = this->mq_received_packets->put_async(packet);
     this->async_messages->push(mess);
 }
 
 /** Async put a new NetworkManager Event */
 void MediatorProducer::put_nm_event(Event *e)
 {
-    auto mess = this->mq_nm_events->put_async(e, 0);
+    auto mess = this->mq_nm_events->put_async(e);
     this->async_messages->push(mess);
 }

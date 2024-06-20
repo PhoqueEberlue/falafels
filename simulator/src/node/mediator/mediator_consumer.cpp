@@ -13,7 +13,7 @@ unique_ptr<Packet> MediatorConsumer::get_received_packet()
 /** Async put a packet to be sent by the NetWorkManager */
 void MediatorConsumer::put_to_be_sent_packet(Packet *packet)
 {
-    auto mess = this->mq_to_be_sent_packets->put_async(packet, 0);
+    auto mess = this->mq_to_be_sent_packets->put_async(packet);
     this->async_messages->push(mess);
 }
 

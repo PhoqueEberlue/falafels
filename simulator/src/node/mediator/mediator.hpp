@@ -4,7 +4,8 @@
 #include <format>
 // #include <simgrid/s4u/MessageQueue.hpp>
 // Temporary work around: using mailbox instead of messageQueues because get_async() is bug on this last
-#include <simgrid/s4u/Mailbox.hpp>
+#include <simgrid/forward.h>
+#include <simgrid/s4u/MessageQueue.hpp>
 #include <simgrid/s4u/ActivitySet.hpp>
 #include <variant>
 #include "../../protocol.hpp"
@@ -38,21 +39,21 @@ protected:
      */
     Mediator(node_name name)
     {
-        this->mq_received_packets = simgrid::s4u::Mailbox::by_name(std::format("{}_mq_rp", name));
-        this->mq_to_be_sent_packets = simgrid::s4u::Mailbox::by_name(std::format("{}_mq_tbsp", name));
-        this->mq_nm_events = simgrid::s4u::Mailbox::by_name(std::format("{}_mq_nme", name));
+        this->mq_received_packets = simgrid::s4u::MessageQueue::by_name(std::format("{}_mq_rp", name));
+        this->mq_to_be_sent_packets = simgrid::s4u::MessageQueue::by_name(std::format("{}_mq_tbsp", name));
+        this->mq_nm_events = simgrid::s4u::MessageQueue::by_name(std::format("{}_mq_nme", name));
 
         this->async_messages = new simgrid::s4u::ActivitySet();
     } 
     
     /** MessageQueue of packets received through the network */
-    simgrid::s4u::Mailbox *mq_received_packets;
+    simgrid::s4u::MessageQueue *mq_received_packets;
 
     /** MessageQueue of packets to send via the network */
-    simgrid::s4u::Mailbox *mq_to_be_sent_packets;
+    simgrid::s4u::MessageQueue *mq_to_be_sent_packets;
 
     /** MessageQueue of events produced by a NetworkManager */
-    simgrid::s4u::Mailbox *mq_nm_events;
+    simgrid::s4u::MessageQueue *mq_nm_events;
 
     simgrid::s4u::ActivitySet *async_messages;
 };
