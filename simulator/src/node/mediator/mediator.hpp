@@ -2,8 +2,6 @@
 #define FALAFELS_MEDIATOR_HPP
 
 #include <format>
-// #include <simgrid/s4u/MessageQueue.hpp>
-// Temporary work around: using mailbox instead of messageQueues because get_async() is bug on this last
 #include <simgrid/forward.h>
 #include <simgrid/s4u/MessageQueue.hpp>
 #include <simgrid/s4u/ActivitySet.hpp>
