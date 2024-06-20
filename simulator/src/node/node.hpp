@@ -23,15 +23,15 @@
 class Node
 {
 private:
-    std::unique_ptr<Role> role;
-    std::unique_ptr<NetworkManager> network_manager; 
+    Role *role;
+    NetworkManager *network_manager; 
 public:
     /**
      * Node constructor
      * @param r Node's Role
      * @param nm Node's NetworkManager
      */
-    Node(std::unique_ptr<Role> r, std::unique_ptr<NetworkManager> nm);
+    Node(Role *r, NetworkManager *nm);
 
     /**
      * Node's NetworkManager and Role are deleted implicitly with the unique pointers.
@@ -59,13 +59,23 @@ public:
      * Get the Node's Role.
      * @return Node's Role.
      */
-    Role *get_role() { return role.get(); }
+    Role *get_role() { return role; }
 
     /**
      * Return a NodeInfo struct representing Node's information.
      * @return NodeInfo*.
      */
     NodeInfo get_node_info();
+
+    static void run_role(Role *r)
+    {
+        while (true) { r->run(); }; delete r;
+    }
+
+    static void run_network_manager(NetworkManager *nm)
+    {
+        while (true) { nm->run(); }; delete nm;
+    }
 };
 
 #endif // !FALAFELS_NODE_HPP

@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <simgrid/s4u/Engine.hpp>
 #include <xbt/asserts.h>
 #include <xbt/log.h>
@@ -14,68 +15,36 @@ Aggregator::Aggregator(node_name name)
     this->aggregating_activities = new simgrid::s4u::ActivitySet();
 }
 
-void Aggregator::launch_one_aggregation()
+void Aggregator::aggregate() 
 {
-    XBT_INFO("Starting aggregation of model %lu", this->current_number_aggregated_models);
-    this->current_number_aggregated_models += 1;
-
     double flops = Constants::GLOBAL_MODEL_AGGREGATING_FLOPS;
 
     int nb_core = simgrid::s4u::this_actor::get_host()->get_core_count();
-    double nb_flops_per_aggregation = flops / nb_core;
 
-    XBT_DEBUG("flops / nb_core = nb_flops_per_aggregation: %f / %i = %f", flops, nb_core, nb_flops_per_aggregation);
+    // Number for one aggregation splitted in one core
+    double total_nb_flops_per_core = (flops / nb_core) * this->number_local_models;
+
+    XBT_DEBUG("(flops / nb_core) * nb_local_models = total_nb_flops_per_core <-> (%f / %i) * %u = %f", 
+              flops, nb_core, this->number_local_epochs, total_nb_flops_per_core);
     
     // Launch exactly nb_core parallel tasks
     for (int i = 0; i < nb_core; i++)
     {
-        this->aggregating_activities->push(simgrid::s4u::this_actor::exec_async(nb_flops_per_aggregation));
-    }
-}
-
-bool Aggregator::aggregate() 
-{
-    // if aggregating activity doesn't exists
-    if (this->aggregating_activities->empty())
-    {
-        this->launch_one_aggregation();
+        this->aggregating_activities->push(simgrid::s4u::this_actor::exec_async(total_nb_flops_per_core));
     }
 
-    // Test if any activity finished
-    auto activity = this->aggregating_activities->test_any();
-
-    // If the activity isn't nullptr, remove it for the ActivitySet
-    if (activity != nullptr)
-    {
-        // Because the workload is splitted evently between each cores, we know that when one activity finished,
-        // every others have finished too.
-        this->aggregating_activities->clear(); 
-
-        // if we need to perform more model aggregation, start a new aggregation task
-        if (this->current_number_aggregated_models < this->number_local_models)
-        {
-            this->launch_one_aggregation();
-        }
-        else
-        {
-            // Increment the number of aggregated models
-            this->total_aggregated_models += this->number_local_models;
-            // Reset the current number of aggregated models
-            this->current_number_aggregated_models = 0;
-            // Compute the number of global epochs
-            this->number_global_epochs = this->total_aggregated_models / this->number_client_training;
-            // Return true when the last activity have been finished
-            return true;
-        }
-    }
-
-    return false; 
+    // Wait for the tasks to complete
+    this->aggregating_activities->wait_all();
+    // Increment the number of aggregated models
+    this->total_aggregated_models += this->number_local_models;
+    // Compute the number of global epochs
+    this->number_global_epochs = this->total_aggregated_models / this->number_client_training;
 }
 
 void Aggregator::send_global_model()
 {
     this->mc->put_to_be_sent_packet(
-        Packet(
+        new Packet(
             // Send global model with broadcast because we specify a filter instead of a dst
             Filters::trainers_and_aggregators,
             Packet::SendGlobalModel(
@@ -88,19 +57,22 @@ void Aggregator::send_global_model()
 void Aggregator::send_kills()
 {
     this->mc->put_to_be_sent_packet(
-        Packet(
+        new Packet(
             // Send kills with broadcast
             Filters::trainers_and_aggregators,
             Packet::KillTrainer()
         )
     );
+
+    this->mc->wait_all_async_comms();
 }
 
 bool Aggregator::check_end_condition()
 { 
     if (Constants::END_CONDITION_DURATION_TRAINING_PHASE != -1.0)
     {
-        return simgrid::s4u::Engine::get_instance()->get_clock() > this->initialization_time + Constants::END_CONDITION_DURATION_TRAINING_PHASE;
+        xbt_assert(false, "NOT IMPLEMENTED");
+        // return simgrid::s4u::Engine::get_instance()->get_clock() > this->initialization_time + Constants::END_CONDITION_DURATION_TRAINING_PHASE;
     }
     else if (Constants::END_CONDITION_NUMBER_GLOBAL_EPOCHS != 0)
     {

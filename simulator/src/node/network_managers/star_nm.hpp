@@ -19,8 +19,8 @@ public:
     void handle_registration_requests();
     void send_registration_request();
     void handle_registration_confirmation(const Packet::RegistrationConfirmation &confirmation);
-    void route_packet(std::unique_ptr<Packet> packet);
-    void broadcast(std::shared_ptr<Packet>);
+    void route_packet(Packet *packet);
+    void broadcast(Packet *packet);
 };
 
 #endif // !FALAFELS_CENTRALIZED_NM_HPP

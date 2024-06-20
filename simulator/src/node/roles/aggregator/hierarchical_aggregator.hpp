@@ -26,8 +26,6 @@ private:
 
     node_name central_aggregator_name;
 
-    std::unique_ptr<StarNetworkManager> central_nm;
-
     void send_model_to_central_aggregator();
 
     void setup_central_nm();  

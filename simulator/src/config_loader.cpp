@@ -50,24 +50,24 @@ unordered_map<string, string> *parse_arguments(xml_object_range<xml_node_iterato
  * @param topology Topology used in the Node's network.
  * @return A pointer to the created NetworkManager.
  */
-unique_ptr<NetworkManager> create_network_manager(xml_node *network_manager_elem, NodeInfo node_info, string topology)
+NetworkManager *create_network_manager(xml_node *network_manager_elem, NodeInfo node_info, string topology)
 {
-    unique_ptr<NetworkManager> network_manager;
+    NetworkManager *network_manager;
 
     // Topology of the cluster implies the NM type
     auto nm_type = topology.c_str();
 
     if (strcmp(nm_type, "star") == 0)
     {
-        network_manager = make_unique<StarNetworkManager>(node_info);
+        network_manager = new StarNetworkManager(node_info);
     }
     else if (strcmp(nm_type, "ring") == 0)
     {
-        network_manager = make_unique<RingNetworkManager>(node_info);
+        network_manager = new RingNetworkManager(node_info);
     }
     else if (strcmp(nm_type, "full") == 0)
     {
-        network_manager = make_unique<FullyConnectedNetworkManager>(node_info);
+        network_manager = new FullyConnectedNetworkManager(node_info);
     }
 
     XBT_INFO("With %s network manager", nm_type);
@@ -81,25 +81,25 @@ unique_ptr<NetworkManager> create_network_manager(xml_node *network_manager_elem
  * @param args aggregator's arguments already parsed.
  * @return A pointer to the created aggregator.
  */
-unique_ptr<Aggregator> create_aggregator(xml_node *role_elem, unordered_map<string, string> *args, node_name name)
+Aggregator *create_aggregator(xml_node *role_elem, unordered_map<string, string> *args, node_name name)
 {
-    unique_ptr<Aggregator> aggregator;
+    Aggregator *aggregator;
     auto aggregator_type = role_elem->attribute("type").as_string();
 
     if (strcmp(aggregator_type, "simple") == 0)
     {
         XBT_INFO("With role: SimpleAggregator");
-        aggregator = make_unique<SimpleAggregator>(args, name);
+        aggregator = new SimpleAggregator(args, name);
     }
     else if (strcmp(aggregator_type, "asynchronous") == 0)
     {
         XBT_INFO("With role: AsynchronousAggregator");
-        aggregator = make_unique<AsynchronousAggregator>(args, name);
+        aggregator = new AsynchronousAggregator(args, name);
     }
     else if (strcmp(aggregator_type, "hierarchical") == 0)
     {
         XBT_INFO("With role: Hierarchical");
-        aggregator = make_unique<HierarchicalAggregator>(args, name);
+        aggregator = new HierarchicalAggregator(args, name);
     }
 
     return aggregator; 
@@ -110,9 +110,9 @@ unique_ptr<Aggregator> create_aggregator(xml_node *role_elem, unordered_map<stri
  * @param role_elem XML element that contains role informations.
  * @return A pointer to the created Role.
  */
-unique_ptr<Role> create_role(xml_node *role_elem, node_name name)
+Role *create_role(xml_node *role_elem, node_name name)
 {
-    unique_ptr<Role> role;
+    Role *role;
 
     auto args_iter = role_elem->children();
     auto args = parse_arguments(&args_iter);
@@ -123,7 +123,7 @@ unique_ptr<Role> create_role(xml_node *role_elem, node_name name)
     }
     else if (strcmp(role_elem->name(), "trainer") == 0)
     {
-        role = make_unique<Trainer>(args, name);
+        role = new Trainer(args, name);
         XBT_INFO("With role: Trainer");
     }
     else if (strcmp(role_elem->name(), "proxy") == 0)
@@ -149,7 +149,7 @@ Node *create_node(xml_node *node_elem, node_name name, string topology)
     XBT_INFO("Creating node: %s", name.c_str());
 
     xml_node role_elem = node_elem->first_child();
-    unique_ptr<Role> role = create_role(&role_elem, name);
+    Role *role = create_role(&role_elem, name);
 
     NodeInfo node_info = NodeInfo { .name = name, .role=role->get_role_type() };
 
@@ -157,7 +157,7 @@ Node *create_node(xml_node *node_elem, node_name name, string topology)
     auto network_manager = create_network_manager(&network_manager_elem, node_info, topology);
 
     // Returning new falafels node
-    return new Node(std::move(role), std::move(network_manager));
+    return new Node(role, network_manager);
 }
 
 /**

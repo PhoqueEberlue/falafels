@@ -1,7 +1,9 @@
 #include "node.hpp"
 #include "mediator/mediator_producer.hpp"
 #include "network_managers/nm.hpp"
+#include <format>
 #include <memory>
+#include <simgrid/s4u/Engine.hpp>
 #include <utility>
 #include <vector>
 #include <xbt/log.h>
@@ -10,18 +12,15 @@ using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_node, "Messages specific for this example");
 
-Node::Node(unique_ptr<Role> r, unique_ptr<NetworkManager> nm)
+Node::Node(Role *r, NetworkManager *nm)
 {
-    this->role = std::move(r);
-    this->network_manager = std::move(nm);
+    this->role = r;
+    this->network_manager = nm;
 
-    // Creates queues to enable communication between Role and NM.
-    auto received_packets = make_shared<queue<unique_ptr<Packet>>>();
-    auto to_be_sent_packets = make_shared<queue<shared_ptr<Packet>>>();
-    auto nm_events = make_shared<queue<unique_ptr<Mediator::Event>>>();
-
-    auto mc = make_unique<MediatorConsumer>(received_packets, to_be_sent_packets, nm_events);
-    auto mp = make_unique<MediatorProducer>(received_packets, to_be_sent_packets, nm_events);
+    // TODO: can simplify that and directly put it into the Role and NetworkManager constructors.
+    // Though we might also unify the data and the way ther are passed to them, i.e. the NodeInfo.
+    auto mc = make_unique<MediatorConsumer>(this->get_node_info().name);
+    auto mp = make_unique<MediatorProducer>(this->get_node_info().name);
 
     this->role->set_mediator_consumer(std::move(mc));
     this->network_manager->set_mediator_producer(std::move(mp));
@@ -29,16 +28,16 @@ Node::Node(unique_ptr<Role> r, unique_ptr<NetworkManager> nm)
 
 void Node::run()
 {
-    while(true)
-    {
-        simgrid::s4u::this_actor::sleep_for(0.01);
+    node_name name = this->get_node_info().name;
+    auto e = simgrid::s4u::Engine::get_instance();
 
-        this->role->run();
+    simgrid::s4u::Actor::create(
+        std::format("{}_role", name), e->host_by_name(name), &Node::run_role, this->role
+    );
 
-        // Breaks when NetworkManager run() returns false
-        if (!this->network_manager->run())
-            break;
-    }
+    simgrid::s4u::Actor::create(
+        std::format("{}_nm", name), e->host_by_name(name), &Node::run_network_manager, this->network_manager
+    );
 }
 
 NodeInfo Node::get_node_info()

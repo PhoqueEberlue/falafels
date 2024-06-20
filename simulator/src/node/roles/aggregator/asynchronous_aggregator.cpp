@@ -33,62 +33,59 @@ AsynchronousAggregator::AsynchronousAggregator(std::unordered_map<std::string, s
 
 void AsynchronousAggregator::run()
 {
-    if (!this->still_has_activities)
-        return;
-
-    if (this->check_end_condition())
-    {
-        // Stop aggregating and send kills to the trainers
-        this->send_kills();
-        this->print_end_report();
-        this->still_has_activities = false;
-        return;
-    }
-
     switch (this->state)
     {
         case INITIALIZING:
-            // If a NetworkManager event is available
-            if (auto e = this->mc->get_nm_event())
             {
+                auto e = this->mc->get_nm_event();
+
                 // If type of event is ClusterConnected it means that every node have been connected to us
-                if (auto *conneted_event = get_if<Mediator::ClusterConnected>(e->get()))
+                if (auto *conneted_event = get_if<Mediator::ClusterConnected>(e.get()))
                 {
                     this->number_client_training = conneted_event->number_client_connected;
                     this->send_global_model();
                     this->state = WAITING_LOCAL_MODELS;
                 }
+                break;
             }
-            break;
         case WAITING_LOCAL_MODELS:
-            // If a packet have been received
-            if (auto packet = this->mc->get_received_packet())
             {
+                auto packet = this->mc->get_received_packet();
+
                 // If the operation is a SendLocalModel
-                if (auto *send_local = get_if<Packet::SendLocalModel>(&(*packet)->op))
+                if (auto *send_local = get_if<Packet::SendLocalModel>(&packet->op))
                 {
                     this->number_local_models = 1;
-                    this->src_save = (*packet)->src;
-                    this->original_src_save = (*packet)->original_src;
+                    this->src_save = packet->src;
+                    this->original_src_save = packet->original_src;
                     this->state = AGGREGATING;
                 }
+                break;
             }
-            break;
         case AGGREGATING:
-            // If the aggregating activity has finished (start it if not launched)
-            if (this->aggregate())
             {
-                this->send_global_model_to(this->src_save, this->original_src_save);
-                this->number_local_models = 0;
-                this->state = WAITING_LOCAL_MODELS;
+                this->aggregate();
+
+                if (this->check_end_condition())
+                {
+                    // Stop aggregating and send kills to the trainers
+                    this->send_kills();
+                    this->print_end_report();
+                }
+                else 
+                {
+                    this->send_global_model_to(this->src_save, this->original_src_save);
+                    this->number_local_models = 0;
+                    this->state = WAITING_LOCAL_MODELS;
+                }
+                break;
             }
-            break;
     }
 }
 
 void AsynchronousAggregator::send_global_model_to(node_name dst, node_name final_dst)
 {
-    auto p = Packet(
+    auto p = new Packet(
         dst, final_dst,
         Packet::SendGlobalModel(
             this->number_local_epochs

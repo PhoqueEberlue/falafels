@@ -50,14 +50,14 @@ protected:
     /** AcitivitySet for all put communications made by our node */
     simgrid::s4u::ActivitySet *pending_async_put;
 
-    /** Single get communication activity that listens incoming communications */
-    simgrid::s4u::CommPtr pending_async_get; 
+    /** AcitivitySet regrouping communications and messages */
+    simgrid::s4u::ActivitySet *pending_comm_and_mess_get;
 public:  
     NetworkManager(NodeInfo node_info);
     virtual ~NetworkManager();
 
     /** Run one step of the NetworkManager */
-    bool run();   
+    void run();   
 
     void set_mediator_producer(std::unique_ptr<MediatorProducer> mp) { this->mp = std::move(mp); };
 
@@ -71,10 +71,10 @@ public:
     void set_bootstrap_nodes(std::vector<NodeInfo> *nodes);
  
     /** Wrapper function that either sends as broadcast or normally */
-    void send_packet(std::shared_ptr<Packet> p);
+    void send_packet(Packet *p);
 
     /** Classic send from the current node to another one. If is_redirected is set to true, the original source wont be overwritten */
-    void send_async(std::shared_ptr<Packet> p, bool is_redirected=false);
+    void send_async(Packet *p, bool is_redirected=false);
 
     /* --------- Methods to be redefined by children classes --------- */
 
@@ -88,18 +88,23 @@ public:
     virtual void handle_registration_confirmation(const Packet::RegistrationConfirmation &confirmation) = 0;
 
     /** Broadcast a packet to the node of our cluster matching the filter contained in the packet */
-    virtual void broadcast(std::shared_ptr<Packet>) = 0;
+    virtual void broadcast(Packet *p) = 0;
 
     /** This function decides wether it should give the packet to the (local) Role (by sending it through received_packets queue)
         and/or if it should redirect it to another Node. */
-    virtual void route_packet(std::unique_ptr<Packet> packet) = 0;
+    virtual void route_packet(Packet *p) = 0;
     /* --------------------------------------------------------------- */
 private:
     /** Simgrid mailbox associated to the NetworkManager */
     simgrid::s4u::Mailbox *mailbox;
 
-    /** Try to get a Packet from the Network, optionally returning a packet */
-    std::optional<std::unique_ptr<Packet>> try_get();
+    /** Blocking get a Packet from the Network */
+    std::unique_ptr<Packet> get(const std::optional<double> timeout=std::nullopt);
+
+    /** Async get a Packet from the Network */
+    simgrid::s4u::CommPtr get_async();
+
+    Packet *to_be_sent_res;
 };
 
 #endif // !FALAFELS_NETWORK_MANAGER_HPP

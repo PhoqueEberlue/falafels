@@ -16,7 +16,9 @@ include_directories(${SimGrid_INCLUDE_DIR})
 
 set(falafels_files
     src/node/mediator/mediator.hpp
+    src/node/mediator/mediator_consumer.cpp
     src/node/mediator/mediator_consumer.hpp
+    src/node/mediator/mediator_producer.cpp
     src/node/mediator/mediator_producer.hpp
 
     src/node/network_managers/full_nm.cpp

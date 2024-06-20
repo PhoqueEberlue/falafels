@@ -58,18 +58,20 @@ void StarNetworkManager::handle_registration_requests()
         auto node_list = vector<NodeInfo>();
         node_list.push_back(this->my_node_info);
 
-        auto res_p = make_shared<Packet>(Packet(
+        auto res_p = new Packet(
             request.node_to_register.name, request.node_to_register.name,
             Packet::RegistrationConfirmation(
                 make_shared<vector<NodeInfo>>(node_list)
             )
-        ));
+        );
 
         this->send_async(res_p);
     }
 
     this->mp->put_nm_event(
-        Mediator::ClusterConnected { .number_client_connected=(uint16_t)this->connected_nodes->size() }
+        new Mediator::Event {
+            Mediator::ClusterConnected { .number_client_connected=(uint16_t)this->connected_nodes->size() }
+        }
     );
 }
 
@@ -81,12 +83,12 @@ void StarNetworkManager::send_registration_request()
     // Take the first bootstrap node, in a centralized topology we should have only one anyways.
     auto bootstrap_node = this->bootstrap_nodes->at(0);
 
-    auto p = make_shared<Packet>(Packet(
+    auto p = new Packet(
         bootstrap_node.name, bootstrap_node.name,
         Packet::RegistrationRequest(
             this->my_node_info
         )
-    ));
+    );
 
     this->send_async(p);
 }
@@ -99,24 +101,26 @@ void StarNetworkManager::handle_registration_confirmation(const Packet::Registra
         this->connected_nodes->push_back(node);
     }
 
-    this->mp->put_nm_event(Mediator::NodeConnected {});
+    this->mp->put_nm_event(
+        new Mediator::Event { Mediator::NodeConnected {} }
+    );
 }
 
-void StarNetworkManager::broadcast(shared_ptr<Packet> packet)
+void StarNetworkManager::broadcast(Packet *p)
 {
     for(auto node_info : *this->connected_nodes)
     {
         // Apply the filter function and send if it returned true
-        if ((*packet->filter)(&node_info))
+        if ((*p->filter)(&node_info))
         {
-            packet->dst = node_info.name;
-            this->send_async(packet);
+            p->dst = node_info.name;
+            this->send_async(p);
         }
     }
 }
 
-void StarNetworkManager::route_packet(unique_ptr<Packet> packet)
+void StarNetworkManager::route_packet(Packet *p)
 {
     // In star_nm we route everything to the Role.
-    this->mp->put_received_packet(std::move(packet));
+    this->mp->put_received_packet(p);
 }
