@@ -17,6 +17,8 @@ Node::Node(Role *r, NetworkManager *nm)
     this->role = r;
     this->network_manager = nm;
 
+    // TODO: can simplify that and directly put it into the Role and NetworkManager constructors.
+    // Though we might also unify the data and the way ther are passed to them, i.e. the NodeInfo.
     auto mc = make_unique<MediatorConsumer>(this->get_node_info().name);
     auto mp = make_unique<MediatorProducer>(this->get_node_info().name);
 
@@ -31,11 +33,11 @@ void Node::run()
 
     simgrid::s4u::Actor::create(
         std::format("{}_role", name), e->host_by_name(name), &Node::run_role, this->role
-    ); 
+    );
 
     simgrid::s4u::Actor::create(
         std::format("{}_nm", name), e->host_by_name(name), &Node::run_network_manager, this->network_manager
-    ); 
+    );
 }
 
 NodeInfo Node::get_node_info()

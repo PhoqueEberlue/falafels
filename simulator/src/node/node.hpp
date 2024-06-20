@@ -25,16 +25,6 @@ class Node
 private:
     Role *role;
     NetworkManager *network_manager; 
-
-    static void run_role(Role *r)
-    {
-        while (true) { r->run(); }; delete r;
-    }
-
-    static void run_network_manager(NetworkManager *nm)
-    {
-        while (true) { nm->run(); }; delete nm;
-    }
 public:
     /**
      * Node constructor
@@ -76,6 +66,16 @@ public:
      * @return NodeInfo*.
      */
     NodeInfo get_node_info();
+
+    static void run_role(Role *r)
+    {
+        while (true) { r->run(); }; delete r;
+    }
+
+    static void run_network_manager(NetworkManager *nm)
+    {
+        while (true) { nm->run(); }; delete nm;
+    }
 };
 
 #endif // !FALAFELS_NODE_HPP
