@@ -152,6 +152,7 @@ void NetworkManager::run()
                         // Clear all async put before sending and waiting the kill packet
                         this->pending_async_put->clear();
 
+                        //---------------------------------------------
                         // TODO: make this better if possible......
                         // In case we are the hierarchical_nm
                         if (this->my_node_info.name.contains("hierarchical"))
@@ -163,6 +164,13 @@ void NetworkManager::run()
                             p->final_dst = cluster_nm_name;
                             this->send_async(p, true);
                         }
+
+                        // Case where we receive kill packet from hierarchical_nm
+                        if (this->my_node_info.role == NodeRole::Aggregator)
+                        {
+                            this->send_packet(p);
+                        }
+                        //---------------------------------------------
                     }
 
 
@@ -268,7 +276,7 @@ void NetworkManager::send_packet(Packet *p)
     }
 
     // Send and broadcast should clone the pointer internally, so we can delete the packet here.
-    delete p;
+    // delete p;
 }
 
 void NetworkManager::send_async(Packet *p, bool is_redirected)
