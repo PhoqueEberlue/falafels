@@ -21,12 +21,16 @@ set(falafels_files
     src/node/mediator/mediator_producer.cpp
     src/node/mediator/mediator_producer.hpp
 
-    src/node/network_managers/full_nm.cpp
-    src/node/network_managers/full_nm.hpp
+    # src/node/network_managers/full_nm.cpp
+    # src/node/network_managers/full_nm.hpp
+    src/node/network_managers/hierarchical_nm.cpp
+    src/node/network_managers/hierarchical_nm.hpp
     src/node/network_managers/nm.cpp
     src/node/network_managers/nm.hpp
-    src/node/network_managers/ring_nm.cpp
-    src/node/network_managers/ring_nm.hpp
+    src/node/network_managers/ring_bi_nm.cpp
+    src/node/network_managers/ring_bi_nm.hpp
+    src/node/network_managers/ring_uni_nm.cpp
+    src/node/network_managers/ring_uni_nm.hpp
     src/node/network_managers/star_nm.cpp
     src/node/network_managers/star_nm.hpp
 
