@@ -125,7 +125,6 @@ Packet *Packet::clone()
     res->packet_size = this->packet_size;
     res->nb_hops = this->nb_hops;
     res->seal_hops = this->seal_hops;
-    res->broadcast_filter = this->broadcast_filter;
 
     // Decrement the total packet number because a clone isn't considered as a new packet
     Packet::total_packet_number -= 1;

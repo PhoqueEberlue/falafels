@@ -105,8 +105,6 @@ namespace operations {
     >;
 };
 
-using BroadcastOpTable = std::function<filters::NodeFilter(const operations::Operation &)>;
-
 class Packet 
 {
 public:    
@@ -123,9 +121,6 @@ public:
 
     /** Flag indicating if the packet should be broadcasted */
     const bool broadcast;
-
-    /** NodeFilter used to select which node to send the packet to */
-    std::optional<filters::NodeFilter> broadcast_filter;
 
     /** 
      * NodeFilter used to check if a Node should route this packet to their Role.
