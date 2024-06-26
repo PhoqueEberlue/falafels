@@ -14,17 +14,21 @@
 #include "node/roles/trainer/trainer.hpp"
 // #include "node/roles/proxy/proxy.hpp"
 #include "node/network_managers/star_nm.hpp"
-#include "node/network_managers/ring_nm.hpp"
-#include "node/network_managers/full_nm.hpp"
+#include "node/network_managers/ring_bi_nm.hpp"
+#include "node/network_managers/ring_uni_nm.hpp"
+#include "node/network_managers/hierarchical_nm.hpp"
+// #include "node/network_managers/full_nm.hpp"
 #include "config_loader.hpp"
 #include "constants.hpp"
 #include "protocol.hpp"
 #include "utils/utils.hpp"
  
-using namespace pugi;
-using namespace std;
  
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_falafels_config, "Messages specific for this example");
+
+using namespace std;
+using namespace pugi;
+using namespace protocol;
 
 /**
  * Parse arguments in the form of a list of args elements such as: <arg name="" value=""/>
@@ -61,14 +65,22 @@ NetworkManager *create_network_manager(xml_node *network_manager_elem, NodeInfo 
     {
         network_manager = new StarNetworkManager(node_info);
     }
-    else if (strcmp(nm_type, "ring") == 0)
+    else if (strcmp(nm_type, "ring-bi") == 0)
     {
-        network_manager = new RingNetworkManager(node_info);
+        network_manager = new RingBiNetworkManager(node_info);
+    }
+    else if (strcmp(nm_type, "ring-uni") == 0)
+    {
+        network_manager = new RingUniNetworkManager(node_info);
+    }
+    else if (strcmp(nm_type, "hierarchical") == 0)
+    {
+        network_manager = new HierarchicalNetworkManager(node_info);
     }
     else if (strcmp(nm_type, "full") == 0)
     {
-        network_manager = new FullyConnectedNetworkManager(node_info);
-    }
+        // network_manager = new FullyConnectedNetworkManager(node_info);
+    } 
 
     XBT_INFO("With %s network manager", nm_type);
 

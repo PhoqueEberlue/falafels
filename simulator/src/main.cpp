@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
     {
         XBT_INFO("Initializing node '%s'", name.c_str());
         node->run();
-        // delete node;
+        delete node;
     }
 
     /* Run the simulation */
