@@ -17,16 +17,16 @@ using namespace std;
 class MediatorProducer : public Mediator
 {
 public:
-    MediatorProducer(node_name name) : Mediator(name) {}
+    MediatorProducer(protocol::node_name name) : Mediator(name) {}
 
     /** Blocking get for retrieving a packet to be sent */
-    std::shared_ptr<Packet> get_to_be_sent_packet();
+    std::shared_ptr<protocol::Packet> get_to_be_sent_packet();
 
     /** Async get for retrieving a packet to be sent */
     simgrid::s4u::MessPtr get_async_to_be_sent_packet();
 
-    /** Async put a packet received by the network */
-    void put_received_packet(Packet *packet);
+    /** Async put an operation received by the network */
+    void put_received_operation(const protocol::operations::Operation op);
 
     /** Async put a new NetworkManager Event */
     void put_nm_event(Event *e);

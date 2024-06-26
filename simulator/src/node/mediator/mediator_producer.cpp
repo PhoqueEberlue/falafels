@@ -1,8 +1,10 @@
 #include "mediator_producer.hpp"
 
-using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_mediator_producer, "Messages specific for this example");
+
+using namespace std;
+using namespace protocol;
 
 shared_ptr<Packet> MediatorProducer::get_to_be_sent_packet()
 {
@@ -13,21 +15,21 @@ shared_ptr<Packet> MediatorProducer::get_to_be_sent_packet()
     return res;
 }
 
-/** Async get for retrieving a packet to be sent */
 simgrid::s4u::MessPtr MediatorProducer::get_async_to_be_sent_packet()
 {
     return this->mq_to_be_sent_packets->get_async();
 }
 
 
-/** Async put a packet received by the network */
-void MediatorProducer::put_received_packet(Packet *packet)
+void MediatorProducer::put_received_operation(const operations::Operation op)
 {
-    auto mess = this->mq_received_packets->put_async(packet);
+    auto mess = this->mq_received_operations->put_async(
+        new operations::Operation(op) // Create heap allocated object
+    );
+
     this->async_messages->push(mess);
 }
 
-/** Async put a new NetworkManager Event */
 void MediatorProducer::put_nm_event(Event *e)
 {
     auto mess = this->mq_nm_events->put_async(e);
