@@ -10,9 +10,11 @@
 #include "simgrid/s4u/Exec.hpp"
 #include "simgrid/s4u/Host.hpp"
 
-using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_trainer, "Messages specific for this example");
+
+using namespace std;
+using namespace protocol;
 
 Trainer::Trainer(std::unordered_map<std::string, std::string> *args, node_name name) 
 {
@@ -44,13 +46,11 @@ void Trainer::train()
     this->training_activities->wait_all();
 }
 
-void Trainer::send_local_model(node_name dst, node_name final_dst)
+void Trainer::send_local_model()
 {
-    this->mc->put_to_be_sent_packet(
-        new Packet(
-            dst, final_dst,
-            Packet::SendLocalModel()
-        )
+    this->mc->put_async_to_be_sent_packet(
+        filters::aggregators,
+        operations::SendLocalModel()
     );
 }
 
@@ -58,28 +58,13 @@ void Trainer::run()
 {
     switch (this->state)
     {
-        case INITIALIZING:
-            {
-                auto e = this->mc->get_nm_event();
-
-                // If type of event is NodeConnected it means that our node is connected :)
-                if (auto *conneted_event = get_if<Mediator::NodeConnected>(e.get()))
-                {
-                    this->state = WAITING_GLOBAL_MODEL;
-                }
-                break;
-            }
         case WAITING_GLOBAL_MODEL:
             {
-                auto packet = this->mc->get_received_packet();
+                auto op = this->mc->get_received_operation();
 
                 // If the operation is a SendGlobalModel
-                if (auto *op_glob = get_if<Packet::SendGlobalModel>(&packet->op))
+                if (auto *op_glob = get_if<operations::SendGlobalModel>(op.get()))
                 {
-                    // Get the source to be able to send the local model later
-                    this->dst = packet->src;
-                    this->final_dst = packet->original_src;
-
                     // Set the number of local epochs
                     this->number_local_epochs = op_glob->number_local_epochs;
                     this->state = TRAINING;
@@ -89,7 +74,7 @@ void Trainer::run()
         case TRAINING:
             {
                 this->train();
-                this->send_local_model(this->dst, this->final_dst);
+                this->send_local_model();
                 this->state = WAITING_GLOBAL_MODEL;
                 break;
             }

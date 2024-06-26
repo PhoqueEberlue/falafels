@@ -1,4 +1,3 @@
-#include <cstdint>
 #include <simgrid/s4u/Engine.hpp>
 #include <xbt/asserts.h>
 #include <xbt/log.h>
@@ -7,6 +6,8 @@
 #include "../../../constants.hpp"
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_aggregator, "Messages specific for this example");
+
+using namespace protocol;
 
 Aggregator::Aggregator(node_name name)
 {
@@ -43,25 +44,21 @@ void Aggregator::aggregate()
 
 void Aggregator::send_global_model()
 {
-    this->mc->put_to_be_sent_packet(
-        new Packet(
-            // Send global model with broadcast because we specify a filter instead of a dst
-            Filters::trainers_and_aggregators,
-            Packet::SendGlobalModel(
-                this->number_local_epochs
-            )
+    this->mc->put_async_to_be_sent_packet(
+        // Send global model with broadcast because we specify a filter instead of a dst
+        filters::trainers,
+        operations::SendGlobalModel(
+            this->number_local_epochs
         )
     );
 }
 
 void Aggregator::send_kills()
 {
-    this->mc->put_to_be_sent_packet(
-        new Packet(
-            // Send kills with broadcast
-            Filters::trainers_and_aggregators,
-            Packet::KillTrainer()
-        )
+    this->mc->put_async_to_be_sent_packet(
+        // Send kills with broadcast
+        filters::everyone,
+        operations::Kill()
     );
 
     this->mc->wait_all_async_comms();
@@ -87,8 +84,10 @@ bool Aggregator::check_end_condition()
 
 void Aggregator::print_end_report() 
 {
+    XBT_INFO("---------------------------- End Report----------------------------------");
     XBT_INFO("Number of model aggregated: %lu", this->total_aggregated_models);
     XBT_INFO("Number of client that were training: %u", this->number_client_training);
     XBT_INFO("Number of global epochs done: %u", this->number_global_epochs);
+    XBT_INFO("-------------------------------------------------------------------------");
 }
 
