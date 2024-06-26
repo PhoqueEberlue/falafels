@@ -17,7 +17,7 @@ class Role
 protected:
     unique_ptr<MediatorConsumer> mc;
 
-    node_name my_node_name;
+    protocol::node_name my_node_name;
 public:
     Role(){}
     virtual ~Role(){} 
@@ -26,7 +26,7 @@ public:
 
     /* --- Functions to be implemented by the children classes --- */
     virtual void run() = 0;
-    virtual NodeRole get_role_type() = 0;
+    virtual protocol::NodeRole get_role_type() = 0;
     /* ----------------------------------------------------------- */
 };
 

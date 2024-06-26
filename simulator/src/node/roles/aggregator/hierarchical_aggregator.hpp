@@ -24,13 +24,15 @@ private:
 
     std::unique_ptr<MediatorConsumer> central_mc;
 
-    node_name central_aggregator_name;
+    protocol::node_name central_aggregator_name;
+
+    bool first_global_model = true;
 
     void send_model_to_central_aggregator();
 
     void setup_central_nm();  
 public:
-    HierarchicalAggregator(std::unordered_map<std::string, std::string> *args, node_name name);
+    HierarchicalAggregator(std::unordered_map<std::string, std::string> *args, protocol::node_name name);
     ~HierarchicalAggregator() {};
     void run() override;
 };

@@ -3,12 +3,15 @@
 #include <simgrid/s4u.hpp>
 #include <xbt/log.h>
 #include "hierarchical_aggregator.hpp"
+#include "../../network_managers/hierarchical_nm.hpp"
 #include "../../../utils/utils.hpp"
 #include "../../node.hpp"
 
-using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_hierachical_aggregator, "Messages specific for this example");
+
+using namespace std;
+using namespace protocol;
 
 HierarchicalAggregator::HierarchicalAggregator(std::unordered_map<std::string, std::string> *args, node_name name) : Aggregator(name)
 {
@@ -19,6 +22,11 @@ HierarchicalAggregator::HierarchicalAggregator(std::unordered_map<std::string, s
             case str2int("central_aggregator_name"):
                 XBT_INFO("central_aggregator_name=%s", value.c_str());
                 this->central_aggregator_name = value;
+                break;
+            case str2int("is_main_aggregator"):
+                bool ima = std::stoi(value);
+                XBT_INFO("is_main_aggregator=%b", ima);
+                this->is_main_aggregator = ima;
                 break;
         }
     } 
@@ -36,12 +44,12 @@ void HierarchicalAggregator::setup_central_nm()
     // Pretend we are a trainer to be able to register to the central aggregator
     auto my_node_info = NodeInfo { .name = new_node_name, .role = NodeRole::Trainer};
         
-    auto central_nm = new StarNetworkManager(my_node_info);
+    auto central_nm = new HierarchicalNetworkManager(my_node_info);
 
     // Set the central_aggregator_name as bootstrap node so we can register to it when the hierarchical_aggregator is run.
     central_nm->set_bootstrap_nodes(
         new vector<NodeInfo>({ 
-            NodeInfo { .name=this->central_aggregator_name, .role=NodeRole::Aggregator } 
+            NodeInfo { .name=this->central_aggregator_name, .role=NodeRole::MainAggregator } 
         })
     );
 
@@ -78,6 +86,23 @@ void HierarchicalAggregator::run()
             }
         case INITIALIZING_CLUSTER:
             {
+
+                // First prepare sending the first global model because some topology need to do
+                // it first before in order to receive the ClusterConnected event
+                if (this->first_global_model)
+                {
+                    // Waiting global model from the central aggregator
+                    auto op = this->central_mc->get_received_operation();
+
+                    // If the operation is a SendGlobalModel
+                    if (auto *op_glob = get_if<operations::SendGlobalModel>(op.get()))
+                    {
+                        this->send_global_model();
+                    }
+
+                    this->first_global_model = false;
+                }
+
                 // Waiting connections of the nodes on our own cluster
                 auto e = this->mc->get_nm_event();
 
@@ -85,31 +110,31 @@ void HierarchicalAggregator::run()
                 if (auto *conneted_event = get_if<Mediator::ClusterConnected>(e.get()))
                 {
                     this->number_client_training = conneted_event->number_client_connected;
-                    this->state = WAITING_GLOBAL_MODEL;
+                    // skip directly to waiting local models as we already sent the first one
+                    this->state = WAITING_LOCAL_MODELS;
                 }
                 break;
             }
         case WAITING_GLOBAL_MODEL:
             {
                 // Waiting global model from the central aggregator
-                auto packet = this->central_mc->get_received_packet();
+                auto op = this->central_mc->get_received_operation();
 
                 // If the operation is a SendGlobalModel
-                if (auto *op_glob = get_if<Packet::SendGlobalModel>(&packet->op))
+                if (auto *op_glob = get_if<operations::SendGlobalModel>(op.get()))
                 {
                     this->send_global_model();
                     this->state = WAITING_LOCAL_MODELS;
                 }
-                // Note that the hierarchical aggregator receives kill packet from the central_nm
                 break;
             }
         case WAITING_LOCAL_MODELS: 
             {
                 // If a packet have been received
-                auto packet = this->mc->get_received_packet();
+                auto op = this->mc->get_received_operation();
 
                 // If the packet's operation is a SendLocalModel
-                if (auto *send_local = get_if<Packet::SendLocalModel>(&packet->op))
+                if (auto *send_local = get_if<operations::SendLocalModel>(op.get()))
                 {
                     this->number_local_models += 1;
                     XBT_INFO("nb local models: %lu", this->number_local_models);
@@ -137,10 +162,8 @@ void HierarchicalAggregator::run()
 void HierarchicalAggregator::send_model_to_central_aggregator()
 {
     // Send as if it was a local model (which is the case in theory?).
-    auto p = new Packet(
-        this->central_aggregator_name, this->central_aggregator_name,
-        Packet::SendLocalModel()
+    this->central_mc->put_async_to_be_sent_packet(
+        filters::aggregators,
+        operations::SendLocalModel()
     );
-
-    this->central_mc->put_to_be_sent_packet(p);
 }
