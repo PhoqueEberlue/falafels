@@ -47,7 +47,7 @@ public:
     /**
      * Call set_bootstrap_nodes() of the Node's NetworkManager.
      */
-    void set_bootstrap_nodes(std::vector<NodeInfo> *nodes);
+    void set_bootstrap_nodes(std::vector<protocol::NodeInfo> *nodes);
 
     /**
      * Set the Node's Role.
@@ -65,16 +65,18 @@ public:
      * Return a NodeInfo struct representing Node's information.
      * @return NodeInfo*.
      */
-    NodeInfo get_node_info();
+    protocol::NodeInfo get_node_info();
 
     static void run_role(Role *r)
     {
-        while (true) { r->run(); }; delete r;
+        simgrid::s4u::this_actor::on_exit([r](bool failed) { delete r; });
+        while (true) { r->run(); };
     }
 
     static void run_network_manager(NetworkManager *nm)
     {
-        while (true) { nm->run(); }; delete nm;
+        simgrid::s4u::this_actor::on_exit([nm](bool failed) { delete nm; });
+        while (true) { nm->run(); };
     }
 };
 

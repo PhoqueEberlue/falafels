@@ -8,9 +8,11 @@
 #include <vector>
 #include <xbt/log.h>
 
-using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_node, "Messages specific for this example");
+
+using namespace std;
+using namespace protocol;
 
 Node::Node(Role *r, NetworkManager *nm)
 {
