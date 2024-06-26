@@ -18,9 +18,10 @@
 #include "../../dot.hpp"
 #include "nm.hpp"
 
-using namespace std;
-
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_full_nm, "Messages specific for this example");
+
+using namespace std;
+using namespace protocol;
 
 FullyConnectedNetworkManager::FullyConnectedNetworkManager(NodeInfo node_info) : NetworkManager(node_info)
 {
@@ -31,6 +32,11 @@ FullyConnectedNetworkManager::~FullyConnectedNetworkManager()
 {
     delete this->connected_nodes;
 };
+
+void FullyConnectedNetworkManager::run()
+{
+    xbt_die("unimplemented");
+}
 
 void FullyConnectedNetworkManager::handle_registration_requests()
 {
@@ -68,13 +74,13 @@ void FullyConnectedNetworkManager::handle_registration_requests()
             std::format("{} -> {} [color=green]", this->my_node_info.name, request.node_to_register.name)
         );
 
-        auto res_p = new Packet(
+        auto res_p = make_unique<Packet>(Packet(
             request.node_to_register.name, request.node_to_register.name,
-            Packet::RegistrationConfirmation {
+            operations::RegistrationConfirmation {
                 // Here full list is sent, including the same node that we send the packet to
                 .node_list=nodes_to_connect
             }
-        );
+        ));
 
         this->send_async(res_p);
     }
@@ -94,18 +100,18 @@ void FullyConnectedNetworkManager::send_registration_request()
     // Take the first bootstrap node, in a centralized topology we should have only one anyways.
     auto bootstrap_node = this->bootstrap_nodes->at(0);
 
-    auto p = new Packet(
+    auto p = make_unique<Packet>(Packet(
         bootstrap_node.name, bootstrap_node.name,
-        Packet::RegistrationRequest(
+        operations::RegistrationRequest(
             this->my_node_info
         )
-    );
+    ));
 
     this->send_async(p);
 }
 
 
-void FullyConnectedNetworkManager::handle_registration_confirmation(const Packet::RegistrationConfirmation &confirmation)
+void FullyConnectedNetworkManager::handle_registration_confirmation(const operations::RegistrationConfirmation &confirmation)
 {
     for (auto node: *confirmation.node_list)
     {
@@ -119,21 +125,28 @@ void FullyConnectedNetworkManager::handle_registration_confirmation(const Packet
     );
 }
 
-void FullyConnectedNetworkManager::broadcast(Packet *p)
+void FullyConnectedNetworkManager::broadcast(const unique_ptr<Packet> &p, bool is_redirected)
 {
     for(auto node_info : *this->connected_nodes)
     {
         // Apply the filter function and send if it returned true
-        if ((*p->filter)(&node_info))
+        if ((*p->broadcast_filter)(&node_info))
         {
             p->dst = node_info.name;
-            this->send_async(p);
+            this->send_async(p, is_redirected);
         }
     }
 }
 
-void FullyConnectedNetworkManager::route_packet(Packet *p)
+void FullyConnectedNetworkManager::route_packet(unique_ptr<Packet> p)
 {
     // In full_nm we route everything to the Role.
-    this->mp->put_received_packet(p);
+    this->mp->put_received_operation(p->op);
+}
+
+void FullyConnectedNetworkManager::handle_kill_phase()
+{
+    // Wait to sent to kill packet to everyone on the network
+    if (this->my_node_info.role == NodeRole::MainAggregator)
+        this->pending_async_put->wait_all();
 }

@@ -1,12 +1,9 @@
 #include <cstdint>
-#include <cstdlib>
-#include <cstring>
 #include <format>
-#include <iterator>
 #include <memory>
 #include <optional>
-#include <ostream>
 #include <simgrid/Exception.hpp>
+#include <simgrid/s4u/Actor.hpp>
 #include <simgrid/s4u/Engine.hpp>
 #include <simgrid/s4u/Mailbox.hpp>
 #include <variant>
@@ -14,26 +11,26 @@
 #include <xbt/asserts.h>
 #include <xbt/log.h>
 
-#include "star_nm.hpp"
+#include "hierarchical_nm.hpp"
 #include "../../dot.hpp"
 #include "nm.hpp"
 
-XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_star_nm, "Messages specific for this example");
+XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_hierarchical_nm, "Messages specific for this example");
 
 using namespace std;
 using namespace protocol;
 
-StarNetworkManager::StarNetworkManager(NodeInfo node_info) : NetworkManager(node_info)
+HierarchicalNetworkManager::HierarchicalNetworkManager(NodeInfo node_info) : NetworkManager(node_info)
 {
     this->connected_nodes = new vector<NodeInfo>();
 }
 
-StarNetworkManager::~StarNetworkManager() 
+HierarchicalNetworkManager::~HierarchicalNetworkManager() 
 {
     delete this->connected_nodes;
 };
 
-void StarNetworkManager::run()
+void HierarchicalNetworkManager::run()
 {
     switch (this->state)
     {
@@ -48,7 +45,7 @@ void StarNetworkManager::run()
                     this->state = WAITING_REGISTRATION_REQUEST;
                     break;
                 case NodeRole::Aggregator:
-                    xbt_die("The StarNetworkManager can't have a secondary Aggregator, only a Main one.");
+                    xbt_die("The HierarchicalNetworkManager can't have a secondary Aggregator, only a Main one.");
                     break;
             }
             break;
@@ -108,25 +105,18 @@ void StarNetworkManager::run()
                     // Can we handle this log better? is it possible to print it with a callback maybe?
                     XBT_INFO("%s <--%s(%lu)--- %s", p->dst.c_str(), p->get_op_name(), p->id, p->src.c_str());
 
-                    // Case where we receive Kill
+                    // Only the trainer (The hierarchical aggregators under a fake identity) can receive a Kill
                     if (auto *kill = get_if<operations::Kill>(&p->op))
                     {
                         this->state = KILLING;
                         this->clear_async_puts();
 
                         // Redirect to the main node upon receiving kill
-                        if (this->get_my_node_name().contains("hierarchical"))
-                        {
-                            std::string hierarchical_aggregator_name = this->my_node_info.name;
-                            replace_first(hierarchical_aggregator_name, "hierarchical_", "");
-                            p->dst = hierarchical_aggregator_name;
-                            this->send_async(p, true);
-                        }
-                        // main node receives the redirect from hierarchical Broadcast to everyone else
-                        else
-                        {
-                            this->broadcast(p);
-                        }
+                        std::string hierarchical_aggregator_name = this->my_node_info.name;
+                        replace_first(hierarchical_aggregator_name, "hierarchical_", "");
+                        p->dst = hierarchical_aggregator_name;
+                        this->send_async(p, true);
+                        break;
                     }
 
                     this->if_target_put_op(std::move(p));
@@ -143,9 +133,11 @@ void StarNetworkManager::run()
                     if (auto *kill = get_if<operations::Kill>(&p->op))
                     {
                         this->state = KILLING;
-                        this->clear_async_puts();                        
+                        this->clear_async_puts();
                     }
 
+                    // Send to Central Aggregator if we're hierarchical node
+                    // Or send to hierarchical nodes if we're the Central Aggregator
                     this->broadcast(p);
                 }
                 break;
@@ -159,7 +151,7 @@ void StarNetworkManager::run()
     }
 }
 
-void StarNetworkManager::handle_registration_requests()
+void HierarchicalNetworkManager::handle_registration_requests()
 {
     xbt_assert(this->my_node_info.role == NodeRole::MainAggregator);
 
@@ -202,7 +194,7 @@ void StarNetworkManager::handle_registration_requests()
     );
 }
 
-void StarNetworkManager::send_registration_request()
+void HierarchicalNetworkManager::send_registration_request()
 {
     // This assert is'nt true in the case of hierarchical aggregator...
     // xbt_assert(this->my_node_info.role == NodeRole::Trainer);
@@ -221,7 +213,7 @@ void StarNetworkManager::send_registration_request()
 }
 
 
-void StarNetworkManager::handle_registration_confirmation(const operations::RegistrationConfirmation &confirmation)
+void HierarchicalNetworkManager::handle_registration_confirmation(const operations::RegistrationConfirmation &confirmation)
 {
     for (auto node: *confirmation.node_list)
     {
@@ -233,7 +225,7 @@ void StarNetworkManager::handle_registration_confirmation(const operations::Regi
     );
 }
 
-void StarNetworkManager::broadcast(const unique_ptr<Packet> &p, bool is_redirected)
+void HierarchicalNetworkManager::broadcast(const unique_ptr<Packet> &p, bool is_redirected)
 {
     for(auto node_info : *this->connected_nodes)
     {
@@ -242,9 +234,12 @@ void StarNetworkManager::broadcast(const unique_ptr<Packet> &p, bool is_redirect
     }
 }
 
-void StarNetworkManager::handle_kill_phase()
+void HierarchicalNetworkManager::handle_kill_phase()
 {
     // Wait to sent to kill packet to everyone on the network
-    if (this->my_node_info.role != NodeRole::Trainer || this->get_my_node_name().contains("hierarchical_"))
-        this->pending_async_put->wait_all();
+    // This includes:
+    // Central NM -> Hierarchical NM 
+    // and 
+    // Hierarchical NM -> real NM
+    this->pending_async_put->wait_all();
 }

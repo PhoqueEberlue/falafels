@@ -9,47 +9,21 @@
 #include <xbt/log.h>
 #include <simgrid/s4u/Engine.hpp>
 
-#include "uni_ring_nm.hpp"
+#include "ring_uni_nm.hpp"
 #include "../../dot.hpp"
 #include "nm.hpp"
 
 
-XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_uni_ring_nm, "Messages specific for this example");
+XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_ring_uni_nm, "Messages specific for this example");
 
 using namespace std;
 using namespace protocol;
 
-UniRingNetworkManager::UniRingNetworkManager(NodeInfo node_info) : NetworkManager(node_info) {}
+RingUniNetworkManager::RingUniNetworkManager(NodeInfo node_info) : NetworkManager(node_info) {}
 
-UniRingNetworkManager::~UniRingNetworkManager() {}
+RingUniNetworkManager::~RingUniNetworkManager() {}
 
-// static filters::NodeFilter broadcast_op_table_uni_ring(const operations::Operation &op)
-// {
-//     return std::visit(overloaded {
-//         [](operations::SendGlobalModel) -> filters::NodeFilter 
-//         {
-//             return filters::everyone;
-//         },
-//         [](operations::Kill) -> filters::NodeFilter
-//         {
-//             return filters::trainers_and_aggregators;
-//         },
-//         [](operations::SendLocalModel) -> filters::NodeFilter 
-//         {
-//             return filters::everyone;
-//         },
-//         [](operations::RegistrationConfirmation) -> filters::NodeFilter
-//         {
-//             xbt_die("RegistrationConfirmation shoudn't be coming from the Role as a to be sent packet");
-//         },
-//         [](operations::RegistrationRequest) -> filters::NodeFilter 
-//         {
-//             xbt_die("RegistrationRequest shoudn't be coming from the Role as a to be sent packet");
-//         }
-//     }, op);
-// }
-
-void UniRingNetworkManager::run()
+void RingUniNetworkManager::run()
 {
     switch (this->state)
     {
@@ -206,7 +180,7 @@ void UniRingNetworkManager::run()
     }
 }
 
-void UniRingNetworkManager::handle_registration_requests()
+void RingUniNetworkManager::handle_registration_requests()
 {
     xbt_assert(this->my_node_info.role == NodeRole::MainAggregator, "Only MainAggregator is allowed to handle registration requests");
 
@@ -303,7 +277,7 @@ void UniRingNetworkManager::handle_registration_requests()
     // --------------------------------------------- 
 }
 
-void UniRingNetworkManager::send_registration_request()
+void RingUniNetworkManager::send_registration_request()
 {
     xbt_assert(this->my_node_info.role == NodeRole::Trainer || this->my_node_info.role == NodeRole::Aggregator, 
                "MainAggregator isn't supposed to be calling send_registration_request()");
@@ -322,7 +296,7 @@ void UniRingNetworkManager::send_registration_request()
     this->send_async(p);
 }
 
-void UniRingNetworkManager::handle_registration_confirmation(const operations::RegistrationConfirmation &confirmation)
+void RingUniNetworkManager::handle_registration_confirmation(const operations::RegistrationConfirmation &confirmation)
 {
     XBT_INFO("Succesfully registered");
 
@@ -335,14 +309,14 @@ void UniRingNetworkManager::handle_registration_confirmation(const operations::R
     );
 }
 
-void UniRingNetworkManager::send_to_neighbour(const unique_ptr<Packet> &p, bool is_redirected) 
+void RingUniNetworkManager::send_to_neighbour(const unique_ptr<Packet> &p, bool is_redirected) 
 {
     p->dst = this->left_node.name;
     this->send_async(p, is_redirected);
 }
 
 
-void UniRingNetworkManager::handle_kill_phase()
+void RingUniNetworkManager::handle_kill_phase()
 {
     // Only wait if the last node isn't a MainAggregator, because this last will already be killed anyways
     if (this->pending_async_put->size() > 0)

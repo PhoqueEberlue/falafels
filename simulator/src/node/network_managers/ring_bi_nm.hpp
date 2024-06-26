@@ -1,14 +1,12 @@
-/* Unidirectional Ring Network Manager */
-#ifndef FALAFELS_UNI_RING_NM_HPP
-#define FALAFELS_UNI_RING_NM_HPP
+/* Bidirectional Ring Network Manager */
+#ifndef FALAFELS_BI_RING_NM_HPP
+#define FALAFELS_BI_RING_NM_HPP
 
 #include "nm.hpp"
-#include <cstdint>
 #include <memory>
 #include <simgrid/forward.h>
-#include <vector>
 
-class UniRingNetworkManager : public NetworkManager
+class RingBiNetworkManager : public NetworkManager
 {
 private:
     /** Left neighbour of the current node */
@@ -19,8 +17,8 @@ private:
     /** Redirect a packet to a neighbour of the ring */
     void redirect(const std::unique_ptr<protocol::Packet> &p);
 public:
-    UniRingNetworkManager(protocol::NodeInfo);
-    ~UniRingNetworkManager();
+    RingBiNetworkManager(protocol::NodeInfo);
+    ~RingBiNetworkManager();
 
     // See nm.hpp for documentation
     void run();
@@ -33,4 +31,4 @@ public:
 };
 
 
-#endif // !FALAFELS_UNI_RING_NM_HPP
+#endif // !FALAFELS_BI_RING_NM_HPP
