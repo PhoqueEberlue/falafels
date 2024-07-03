@@ -64,9 +64,10 @@ void SimpleAggregator::run()
                 auto op = this->mc->get_received_operation();
 
                 // If the packet's operation is a SendLocalModel
-                if (auto *send_local = get_if<operations::SendLocalModel>(op.get()))
+                if (auto *op_send_local = get_if<operations::SendLocalModel>(op.get()))
                 {
                     this->number_local_models += 1;
+                    this->total_number_local_epochs += op_send_local->number_local_epochs_done;
                     XBT_INFO("nb local models: %lu", this->number_local_models);
 
                     if (this->number_local_models >= this->number_client_training)

@@ -137,6 +137,9 @@ void HierarchicalAggregator::run()
                 if (auto *send_local = get_if<operations::SendLocalModel>(op.get()))
                 {
                     this->number_local_models += 1;
+                    this->total_number_local_epochs += send_local->number_local_epochs_done;
+                    this->current_number_local_epochs_cluster += send_local->number_local_epochs_done;
+
                     XBT_INFO("nb local models: %lu", this->number_local_models);
 
                     if (this->number_local_models >= this->number_client_training)
@@ -151,8 +154,11 @@ void HierarchicalAggregator::run()
                 // If the aggregating activity has finished (start it if not launched)
                 this->aggregate();
 
-                this->number_local_models = 0;
                 this->send_model_to_central_aggregator();
+
+                // Reset numbers
+                this->number_local_models = 0;
+                this->current_number_local_epochs_cluster = 0;
                 this->state = WAITING_GLOBAL_MODEL;
             }
             break;
@@ -164,6 +170,6 @@ void HierarchicalAggregator::send_model_to_central_aggregator()
     // Send as if it was a local model (which is the case in theory?).
     this->central_mc->put_async_to_be_sent_packet(
         filters::aggregators,
-        operations::SendLocalModel()
+        operations::SendLocalModel(this->current_number_local_epochs_cluster)
     );
 }

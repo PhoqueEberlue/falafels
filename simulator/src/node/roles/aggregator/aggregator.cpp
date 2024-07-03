@@ -65,26 +65,31 @@ void Aggregator::send_kills()
 }
 
 bool Aggregator::check_end_condition()
-{ 
-    if (Constants::END_CONDITION_DURATION_TRAINING_PHASE != -1.0)
+{
+    if (Constants::END_CONDITION_DURATION_TRAINING_PHASE != 0.0)
     {
-        xbt_assert(false, "NOT IMPLEMENTED");
+        xbt_die("NOT IMPLEMENTED");
         // return simgrid::s4u::Engine::get_instance()->get_clock() > this->initialization_time + Constants::END_CONDITION_DURATION_TRAINING_PHASE;
     }
-    else if (Constants::END_CONDITION_NUMBER_GLOBAL_EPOCHS != 0)
+    else if (Constants::END_CONDITION_NUMBER_ROUNDS != 0)
     {
-        return this->number_global_epochs >= Constants::END_CONDITION_NUMBER_GLOBAL_EPOCHS;        
+        return this->number_global_epochs >= Constants::END_CONDITION_NUMBER_ROUNDS;
+    }
+    else if (Constants::END_CONDITION_TOTAL_NUMBER_LOCAL_EPOCHS != 0)
+    {
+        return this->total_number_local_epochs >= Constants::END_CONDITION_TOTAL_NUMBER_LOCAL_EPOCHS;
     }
     else
     {
         // Always crash when we reach this branch
-        xbt_assert(false, "No END_CONDITION have been defined");
+        xbt_die("No END_CONDITION have been defined");
     }
 }
 
-void Aggregator::print_end_report() 
+void Aggregator::print_end_report()
 {
     XBT_INFO("---------------------------- End Report----------------------------------");
+    XBT_INFO("Total number of local epochs: %lu", this->total_number_local_epochs);
     XBT_INFO("Number of model aggregated: %lu", this->total_aggregated_models);
     XBT_INFO("Number of client that were training: %u", this->number_client_training);
     XBT_INFO("Number of global epochs done: %u", this->number_global_epochs);

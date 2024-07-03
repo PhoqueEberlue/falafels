@@ -2,6 +2,7 @@
 #ifndef FALAFELS_HIERARCHICAL_AGGREGATOR_HPP
 #define FALAFELS_HIERARCHICAL_AGGREGATOR_HPP
 
+#include <cstdint>
 #include <memory>
 
 #include "aggregator.hpp"
@@ -25,6 +26,9 @@ private:
     std::unique_ptr<MediatorConsumer> central_mc;
 
     protocol::node_name central_aggregator_name;
+
+    /** Current number of local epochs performed by our cluster */
+    uint64_t current_number_local_epochs_cluster;
 
     bool first_global_model = true;
 

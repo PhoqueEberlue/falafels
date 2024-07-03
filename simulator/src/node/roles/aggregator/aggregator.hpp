@@ -26,6 +26,8 @@ protected:
     /** Number of the local models collected at a moment in time */
     uint64_t number_local_models = 0;    
 
+    uint64_t total_number_local_epochs = 0;
+
     /** Simgrid activity representing the training */
     simgrid::s4u::ActivitySet *aggregating_activities;
 

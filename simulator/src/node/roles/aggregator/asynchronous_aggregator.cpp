@@ -66,6 +66,7 @@ void AsynchronousAggregator::run()
                 if (auto *op_send_local = get_if<operations::SendLocalModel>(op.get()))
                 {
                     this->number_local_models += 1;
+                    this->total_number_local_epochs += op_send_local->number_local_epochs_done;
 
                     if (this->number_local_models >= this->number_client_training * this->proportion_threshold)
                     {
