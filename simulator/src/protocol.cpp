@@ -94,17 +94,6 @@ const char *Packet::get_op_name() const
     );
 }
 
-void Packet::increment_hops()
-{
-    if (!this->seal_hops)
-        this->nb_hops++;
-}
-
-// void Packet::attach_broadcast_filter(BroadcastOpTable f)
-// {
-//     this->broadcast_filter = f(this->op);
-// }
-
 /**
  * Clone a packet
  */
@@ -124,7 +113,6 @@ Packet *Packet::clone()
     res->id = this->id;
     res->packet_size = this->packet_size;
     res->nb_hops = this->nb_hops;
-    res->seal_hops = this->seal_hops;
 
     // Decrement the total packet number because a clone isn't considered as a new packet
     Packet::total_packet_number -= 1;

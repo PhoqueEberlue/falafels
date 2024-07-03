@@ -50,7 +50,7 @@ void Trainer::send_local_model()
 {
     this->mc->put_async_to_be_sent_packet(
         filters::aggregators,
-        operations::SendLocalModel()
+        operations::SendLocalModel(this->number_local_epochs)
     );
 }
 

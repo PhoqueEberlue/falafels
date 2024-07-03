@@ -41,7 +41,8 @@ int main(int argc, char* argv[])
     /* Run the simulation */
     e.run();
 
-    // DOTGenerator::get_instance().generate_state_files();
+    if (Constants::GENERATE_DOT_FILES)
+        DOTGenerator::get_instance().generate_state_files();
 
     delete nodes_map;
 

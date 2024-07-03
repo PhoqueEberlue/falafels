@@ -90,6 +90,7 @@ namespace operations {
 
     struct SendLocalModel 
     {
+        uint8_t number_local_epochs_done; // the number of local epochs that the trainer actually did.
         // static constexpr std::string_view op_name = "SEND_LOCAL_MODEL\0";
         static constexpr std::string_view op_name = "\x1B[32mSEND_LOCAL_MODEL\033[0m\0";
     };
@@ -131,8 +132,8 @@ public:
     /** Unique packet identifier */
     packet_id id = 0;
 
-    /** Prevent nb_hops from being incremented */
-    bool seal_hops = false;
+    /** used in p2p scenario when you want to count the hops from a redirected packet */
+    uint32_t nb_hops = 0;
 
     /** Clone a packet. Note that pointers in the data variant are also cloned, thus the pointed value will be accessible
      * both by the cloned packet and the original one. */
@@ -149,11 +150,6 @@ public:
     /** Compute the simulated size of a packet by following the pointers stored in the data union */
     uint64_t get_packet_size();
 
-    /** Increment the number of hops the packet did */
-    void increment_hops();
-
-    uint32_t get_nb_hops() { return this->nb_hops; };
-
     /** Get the printable name of Packet's Operation */
     const char* get_op_name() const;
 
@@ -167,9 +163,6 @@ private:
 
     /** Cache variable to prevent computing the packet's size multiple times */
     uint64_t packet_size = 0;
-
-    /** used in p2p scenario when you want to count the hops from a redirected packet */
-    uint32_t nb_hops = 0;
 };
 
 } //! namespace protocol
