@@ -23,14 +23,20 @@ public:
     /** Timeout for the registration phase */
     inline static double REGISTRATION_TIMEOUT = 4.0;
 
+    /** Wether or not we should generate graph of the communications */ 
+    inline static bool GENERATE_DOT_FILES = false;
     /* -------------------------- SIMULATION ENDING CONDITIONS -------------------------- */
     /*                        Exactly one condition should be defined                     */
 
-    /** Duration in seconds for the training phase. -1.0 when the feature isn't used */
-    inline static double END_CONDITION_DURATION_TRAINING_PHASE = -1.0;
+    /** Duration in seconds for the training phase. 0.0 when the feature isn't used */
+    inline static double END_CONDITION_DURATION_TRAINING_PHASE = 0.0;
 
-    /** Number of global epochs before the simulation ends. 0 when the feature isn't used */
-    inline static uint64_t END_CONDITION_NUMBER_GLOBAL_EPOCHS = 10;
+    /** Number of rounds (number of aggregation phase) before the simulation ends. 0 when the feature isn't used */
+    inline static uint64_t END_CONDITION_NUMBER_ROUNDS = 0;
+
+    /** Total number of local epochs before the simulation ends. 0 when the feature isn't used */
+    inline static uint64_t END_CONDITION_TOTAL_NUMBER_LOCAL_EPOCHS = 0;
+    /* ---------------------------------------------------------------------------------- */
 };
 
 #endif // !CONSTANTS_HPP
