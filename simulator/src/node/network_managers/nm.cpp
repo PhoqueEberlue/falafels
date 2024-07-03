@@ -86,10 +86,13 @@ void NetworkManager::send_async(const std::unique_ptr<Packet> &p, bool is_redire
 
     auto receiver_mailbox = simgrid::s4u::Mailbox::by_name(p_clone->dst);
 
-    DOTGenerator::get_instance().add_to_state(
-        simgrid::s4u::Engine::get_instance()->get_clock(), 
-        std::format("{} -> {} [label=\"{}\", style=dotted];", p_clone->src, p_clone->dst, p_clone->get_op_name())
-    );
+    if (Constants::GENERATE_DOT_FILES)
+    {
+        DOTGenerator::get_instance().add_to_state(
+            simgrid::s4u::Engine::get_instance()->get_clock(), 
+            std::format("{} -> {} [label=\"{}\", style=dotted];", p_clone->src, p_clone->dst, p_clone->get_op_name())
+        );
+    }
 
 
     auto comm = receiver_mailbox->put_async(p_clone, p_clone->get_packet_size());

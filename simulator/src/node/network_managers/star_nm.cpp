@@ -163,24 +163,30 @@ void StarNetworkManager::handle_registration_requests()
 {
     xbt_assert(this->my_node_info.role == NodeRole::MainAggregator);
 
-    DOTGenerator::get_instance().add_to_cluster(
-        std::format("cluster-{}", this->my_node_info.name),
-        std::format("{} [label=\"{}\", color=green]", this->my_node_info.name, this->my_node_info.name)
-    );
+    if (Constants::GENERATE_DOT_FILES)
+    {
+        DOTGenerator::get_instance().add_to_cluster(
+            std::format("cluster-{}", this->my_node_info.name),
+            std::format("{} [label=\"{}\", color=green]", this->my_node_info.name, this->my_node_info.name)
+        );
+    }
 
     for (auto request : *this->registration_requests)
     {
         this->connected_nodes->push_back(request.node_to_register); 
 
-        DOTGenerator::get_instance().add_to_cluster(
-            std::format("cluster-{}", this->my_node_info.name),
-            std::format("{} [label=\"{}\", color=yellow]", request.node_to_register.name, request.node_to_register.name)
-        );
+        if (Constants::GENERATE_DOT_FILES)
+        {
+            DOTGenerator::get_instance().add_to_cluster(
+                std::format("cluster-{}", this->my_node_info.name),
+                std::format("{} [label=\"{}\", color=yellow]", request.node_to_register.name, request.node_to_register.name)
+            );
 
-        DOTGenerator::get_instance().add_to_cluster(
-            std::format("cluster-{}", this->my_node_info.name),
-            std::format("{} -> {} [color=green]", this->my_node_info.name, request.node_to_register.name)
-        );
+            DOTGenerator::get_instance().add_to_cluster(
+                std::format("cluster-{}", this->my_node_info.name),
+                std::format("{} -> {} [color=green]", this->my_node_info.name, request.node_to_register.name)
+            );
+        }
 
         auto node_list = vector<NodeInfo>();
         node_list.push_back(this->my_node_info);

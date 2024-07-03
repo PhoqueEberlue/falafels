@@ -111,15 +111,13 @@ void RingBiNetworkManager::run()
                     else if (this->my_node_info.role == NodeRole::Trainer)
                     {
                         // Increment the number of hops to track the number of Trainers in the ring
-                        p->increment_hops();
+                        p->nb_hops++;
                         // Always redirect packets as a Trainer
                         this->send_to_neighbour(p, true);
                     }
                     // Case where MainAggregator or Aggregator receives a packet
                     else 
-                    {
-                        p->seal_hops = true; // Seal the counter whenever the first Aggregator is met
-                        
+                    { 
                         if (auto *global_model = get_if<operations::SendGlobalModel>(&p->op))
                         {
                             // Check if this global_model was originally sent by this Aggregator
@@ -131,7 +129,7 @@ void RingBiNetworkManager::run()
                                     XBT_INFO("Sending ClusterConnected");
                                     this->mp->put_nm_event(
                                         new Mediator::Event {
-                                            Mediator::ClusterConnected { .number_client_connected=(uint16_t)p->get_nb_hops() }
+                                            Mediator::ClusterConnected { .number_client_connected=(uint16_t)p->nb_hops }
                                         }
                                     );
 
@@ -144,6 +142,10 @@ void RingBiNetworkManager::run()
                             {
                                 // Aggregator only redirects SendGlobalModel that wasn't sent by itself
                                 this->send_to_neighbour(p, true);
+
+                                // Reset the number of hops, so that the original aggregator (that sent the GlobalModel)
+                                // can know how many trainers there are before itself.
+                                p->nb_hops = 0; 
                             }
                         }
                     }

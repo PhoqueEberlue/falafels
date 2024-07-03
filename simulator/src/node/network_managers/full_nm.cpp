@@ -42,10 +42,13 @@ void FullyConnectedNetworkManager::handle_registration_requests()
 {
     xbt_assert(this->my_node_info.role == NodeRole::Aggregator);
 
-    DOTGenerator::get_instance().add_to_cluster(
-        std::format("cluster-{}", this->my_node_info.name),
-        std::format("{} [label=\"{}\", color=green]", this->my_node_info.name, this->my_node_info.name)
-    );
+    if (Constants::GENERATE_DOT_FILES)
+    {
+        DOTGenerator::get_instance().add_to_cluster(
+            std::format("cluster-{}", this->my_node_info.name),
+            std::format("{} [label=\"{}\", color=green]", this->my_node_info.name, this->my_node_info.name)
+        );
+    }
 
     // List containing all nodes of the network that will be sent back to all nodes
     auto nodes_to_connect = make_shared<vector<NodeInfo>>();
@@ -64,15 +67,18 @@ void FullyConnectedNetworkManager::handle_registration_requests()
     // Second loop to send confirmation to each nodes
     for (auto request : *this->registration_requests)
     {
-        DOTGenerator::get_instance().add_to_cluster(
-            std::format("cluster-{}", this->my_node_info.name),
-            std::format("{} [label=\"{}\", color=yellow]", request.node_to_register.name, request.node_to_register.name)
-        );
+        if (Constants::GENERATE_DOT_FILES)
+        {
+            DOTGenerator::get_instance().add_to_cluster(
+                std::format("cluster-{}", this->my_node_info.name),
+                std::format("{} [label=\"{}\", color=yellow]", request.node_to_register.name, request.node_to_register.name)
+            );
 
-        DOTGenerator::get_instance().add_to_cluster(
-            std::format("cluster-{}", this->my_node_info.name),
-            std::format("{} -> {} [color=green]", this->my_node_info.name, request.node_to_register.name)
-        );
+            DOTGenerator::get_instance().add_to_cluster(
+                std::format("cluster-{}", this->my_node_info.name),
+                std::format("{} -> {} [color=green]", this->my_node_info.name, request.node_to_register.name)
+            );
+        }
 
         auto res_p = make_unique<Packet>(Packet(
             request.node_to_register.name, request.node_to_register.name,
