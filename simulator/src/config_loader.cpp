@@ -248,8 +248,11 @@ void set_constant(const xml_attribute *name, xml_attribute *value)
         case str2int("END_CONDITION_DURATION_TRAINING_PHASE"):
             Constants::END_CONDITION_DURATION_TRAINING_PHASE = value->as_double();
             break;
-        case str2int("END_CONDITION_NUMBER_GLOBAL_EPOCHS"):
-            Constants::END_CONDITION_NUMBER_GLOBAL_EPOCHS = value->as_double();
+        case str2int("END_CONDITION_NUMBER_ROUNDS"):
+            Constants::END_CONDITION_NUMBER_ROUNDS = value->as_int();
+            break;
+        case str2int("END_CONDITION_TOTAL_NUMBER_LOCAL_EPOCHS"):
+            Constants::END_CONDITION_TOTAL_NUMBER_LOCAL_EPOCHS = value->as_int();
             break;
         }
 }
