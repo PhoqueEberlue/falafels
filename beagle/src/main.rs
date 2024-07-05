@@ -27,10 +27,10 @@ const COLORS: &'static [&'static str; 10] = &[
 fn main() {
     // Study with varying machines number
     let mut study = Study::new(
-        "Comparision of Algorithms/Topology combination with varying machines number".to_string(), 
-        "./records/varying_machines".to_string()
+        "Comparision of Algorithms/Topology combination with varying machines number, heterogeneous platform AND fixed workload huge and slow network".to_string(), 
+        "./records/10_250_heteregeneous_fixed_workload_huge_huge_slow_network".to_string()
     );
-
+ 
     study.varying_machines_number_sim();
     study.export_to_json();
     study.plot_results();
@@ -72,8 +72,8 @@ impl Study {
     pub fn varying_machines_number_sim(&mut self) {
         let mut factory = IndividualFactory::new("../xml/raw-falafels.xml", &self.output_dir);
 
-        let total_number_gen = 5;
-        let step_trainer = 50;
+        let total_number_gen = 25;
+        let step_trainer = 10;
 
         // let start_number = 500;
         // factory.base_rf.clusters.list.get_mut(0).unwrap().trainers.as_mut().unwrap().number = start_number;

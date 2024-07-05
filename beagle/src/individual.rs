@@ -66,34 +66,61 @@ impl IndividualFactory {
 
         individuals.push(
             self.init_individual(
-                ClusterTopology::Ring, AggregatorType::Simple, "RingSimple".to_string()
+                ClusterTopology::RingUni, AggregatorType::Simple, "RingUniSimple".to_string()
             )
         );
 
         individuals.push(
             self.init_individual(
-                ClusterTopology::Ring, AggregatorType::Asynchronous, "RingAsynchronous".to_string()
+                ClusterTopology::RingUni, AggregatorType::Asynchronous, "RingUniAsynchronous".to_string()
             )
         );
+
+        // individuals.push(
+        //     self.init_hierarchical_individual(
+        //         vec![ClusterTopology::Star, ClusterTopology::Star], 
+        //         AggregatorType::Simple,
+        //         "StarStarHierarchical".to_string()
+        //     )
+        // );
+
+        // individuals.push(
+        //     self.init_hierarchical_individual(
+        //         vec![ClusterTopology::RingUni, ClusterTopology::Star], 
+        //         AggregatorType::Simple,
+        //         "RingUniStarHierarchical".to_string()
+        //     )
+        // );
+
+        // individuals.push(
+        //     self.init_hierarchical_individual(
+        //         vec![ClusterTopology::RingUni, ClusterTopology::RingUni], 
+        //         AggregatorType::Simple,
+        //         "RingUniRingUniHierarchical".to_string()
+        //     )
+        // );
 
         individuals.push(
             self.init_hierarchical_individual(
                 vec![ClusterTopology::Star, ClusterTopology::Star], 
-                "StarStarHierarchical".to_string()
+                AggregatorType::Asynchronous,
+                "StarStarHierarchicalAsync".to_string()
             )
         );
 
         individuals.push(
             self.init_hierarchical_individual(
-                vec![ClusterTopology::Ring, ClusterTopology::Star], 
-                "RingStarHierarchical".to_string()
+                vec![ClusterTopology::RingUni, ClusterTopology::Star], 
+                AggregatorType::Asynchronous,
+                "RingUniStarHierarchicalAsync".to_string()
             )
         );
 
         individuals.push(
             self.init_hierarchical_individual(
-                vec![ClusterTopology::Ring, ClusterTopology::Ring], 
-                "RingRingHierarchical".to_string()
+                vec![ClusterTopology::RingUni, ClusterTopology::RingUni], 
+                AggregatorType::Asynchronous,
+                "RingUniRingUniHierarchicalAsync".to_string()
             )
         );
 
@@ -128,6 +155,7 @@ impl IndividualFactory {
     fn init_hierarchical_individual(
         &mut self,
         topologies: Vec<ClusterTopology>,
+        agg_type: AggregatorType,
         name: String,
     ) -> Individual {
         // Start by cloning the base RawFalafels
@@ -180,8 +208,11 @@ impl IndividualFactory {
         // Delete trainers
         central_cluster.trainers = None;
 
-        // Force star topology
-        central_cluster.topology = ClusterTopology::Star;
+        // Force Hierarchical topology for the central cluster
+        central_cluster.topology = ClusterTopology::Hierarchical;
+
+        // Set central aggregator type
+        central_cluster.aggregators.aggregator_type = agg_type;
 
         // And create a connection to each sub_cluster to add it to the central cluster
         central_cluster.connections = Some(
