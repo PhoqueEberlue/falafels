@@ -110,7 +110,7 @@ Aggregator *create_aggregator(xml_node *role_elem, unordered_map<string, string>
     }
     else if (strcmp(aggregator_type, "hierarchical") == 0)
     {
-        XBT_INFO("With role: Hierarchical");
+        XBT_INFO("With role: HierarchicalAggregator");
         aggregator = new HierarchicalAggregator(args, name);
     }
 
