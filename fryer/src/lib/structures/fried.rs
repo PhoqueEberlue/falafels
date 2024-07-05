@@ -34,18 +34,17 @@ pub struct Node {
 
     // Rename XML element as the name of the enum member
     #[serde(rename = "$value")]
-    pub role: RoleEnum,
+    pub role: NodeRole,
 
     #[serde(rename = "network-manager")]
     pub network_manager: NetworkManager,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub enum RoleEnum {
+pub enum NodeRole {
     // Renaming members without capital leter as in XML format 
     #[serde(rename = "aggregator")]
     Aggregator(Aggregator),
-
     #[serde(rename = "trainer")]
     Trainer(Trainer)
 }

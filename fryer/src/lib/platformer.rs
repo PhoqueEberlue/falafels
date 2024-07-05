@@ -306,14 +306,14 @@ impl<'a, P: ProfileTrait, R: ProfileRefTrait> ProfilesHandler<'a, P, R> {
     }
 
     /// Pick a profile depending on Node's Role
-    fn pick_profile(&mut self, node_role: &fried::RoleEnum) -> &P {
+    fn pick_profile(&mut self, node_role: &fried::NodeRole) -> &P {
         match node_role {
-            fried::RoleEnum::Trainer(_) => {
+            fried::NodeRole::Trainer(_) => {
                 // Theoritically the cycle iterator never ends so its safe to unwrap.
                 let profile_name = self.profiles_iter_trainers.next().unwrap();
                 self.get_profile(profile_name.get_rname())
             }
-            fried::RoleEnum::Aggregator(_) => {
+            fried::NodeRole::Aggregator(_) => {
                 let profile_name = self.profiles_iter_aggregators.next().unwrap();
                 self.get_profile(profile_name.get_rname())
             }

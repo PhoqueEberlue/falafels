@@ -53,12 +53,16 @@ pub struct Prop {
     pub value: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub enum ClusterTopology {
     #[serde(rename = "star")]
     Star,
-    #[serde(rename = "ring")]
-    Ring,
+    #[serde(rename = "ring-bi")]
+    RingBi,
+    #[serde(rename = "ring-uni")]
+    RingUni,
+    #[serde(rename = "hierarchical")]
+    Hierarchical,
     #[serde(rename = "fully-connected")]
     FullyConnected,
 }
