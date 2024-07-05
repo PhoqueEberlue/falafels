@@ -16,8 +16,10 @@ private:
 
     /** State of the Aggregator */
     State state = INITIALIZING;
+
+    bool first_global_model = true;
 public:
-    SimpleAggregator(std::unordered_map<std::string, std::string> *args, node_name name);
+    SimpleAggregator(std::unordered_map<std::string, std::string> *args, protocol::node_name name);
     ~SimpleAggregator() {}
     void run();
 };

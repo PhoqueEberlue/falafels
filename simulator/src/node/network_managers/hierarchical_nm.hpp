@@ -1,18 +1,18 @@
-/* Star Network Manager */
-#ifndef FALAFELS_STAR_NM_HPP
-#define FALAFELS_STAR_NM_HPP
+/* Hierarchical Network Manager */
+#ifndef FALAFELS_HIERARCHICAL_NM_HPP
+#define FALAFELS_HIERARCHICAL_NM_HPP
 
 #include "nm.hpp"
 #include <memory>
 #include <vector>
 
-class StarNetworkManager : public NetworkManager 
+class HierarchicalNetworkManager : public NetworkManager 
 {
 private:
     std::vector<protocol::NodeInfo> *connected_nodes;
 public:
-    StarNetworkManager(protocol::NodeInfo);
-    ~StarNetworkManager();
+    HierarchicalNetworkManager(protocol::NodeInfo);
+    ~HierarchicalNetworkManager();
     
     // See nm.hpp for documentation
     void run();
@@ -23,4 +23,4 @@ public:
     void handle_kill_phase();
 };
 
-#endif // !FALAFELS_STAR_NM_HPP
+#endif // !FALAFELS_HIERARCHICAL_NM_HPP

@@ -1,4 +1,4 @@
-use crate::structures::{fried::RoleEnum, raw::ConnectedTo};
+use crate::structures::{common::{Arg, ClusterTopology}, fried::NodeRole, raw::ConnectedTo};
 
 use super::structures::{common, fried, raw};
 use core::panic;
@@ -107,7 +107,7 @@ impl Fryer {
             if cluster_to_connect.contains(&fried_cluster.name) {
 
                 fried_cluster.nodes.iter_mut().for_each(|node| {
-                    if let RoleEnum::Aggregator(a) = node.role.borrow_mut() { 
+                    if let NodeRole::Aggregator(a) = node.role.borrow_mut() { 
                         // Get mut ref of existing vector of arguments OR create an empty one and return its mut ref
                         let args = a.args.get_or_insert_with(|| Vec::<common::Arg>::new());
 
@@ -133,31 +133,33 @@ impl Fryer {
             .sum::<u16>()
     }
 
-    // TODO: support multiple aggregators
     fn create_cluster(&mut self, cluster: &raw::Cluster) -> fried::Cluster {
-        assert!(
-            cluster.aggregators.number == 1,
-            "Only one aggregator is allowed in a star cluster, but `{}` were specified.",
-            cluster.aggregators.number
-        );
-
         let mut fried_cluster = fried::Cluster {
             name: cluster.name.clone(),
             nodes: Vec::new(),
             topology: cluster.topology.clone(),
         };
+
         let mut trainer_nodes = self.create_trainer_nodes(cluster);
-        let aggregator_node = self.create_aggregator_nodes(cluster).pop().unwrap();
+
+        let mut aggregator_nodes = self.create_aggregator_nodes(cluster);
+
+        // The first aggregator is the main one
+        let main_aggregator_name = aggregator_nodes.first().unwrap().name.clone();
 
         // Setting bootstrap nodes
         for trainer_node in trainer_nodes.iter_mut() {
-            // By convention every node knows the Aggregator at start
-            // trainer -> aggregator
-            Fryer::set_bootstrap_node(trainer_node, &aggregator_node.name);
+            // By convention every node knows the main Aggregator at start
+            Fryer::set_bootstrap_node(trainer_node, &main_aggregator_name);
+        }
+
+        for aggregator_node in aggregator_nodes.iter_mut() {
+            // Same for the secondary aggregators
+            Fryer::set_bootstrap_node(aggregator_node, &main_aggregator_name);
         }
 
         fried_cluster.nodes.append(&mut trainer_nodes);
-        fried_cluster.nodes.push(aggregator_node);
+        fried_cluster.nodes.append(&mut aggregator_nodes);
 
         fried_cluster
     }
@@ -183,7 +185,7 @@ impl Fryer {
             Some(trainers) => {
                 // Creating the trainers(s)
                 for _ in 0..trainers.number {
-                    let role = fried::RoleEnum::Trainer(fried::Trainer {
+                    let role = fried::NodeRole::Trainer(fried::Trainer {
                         trainer_type: trainers.trainer_type.clone(),
                         args: trainers.args.clone(),
                     });
@@ -209,14 +211,30 @@ impl Fryer {
     }
 
     fn create_aggregator_nodes(&mut self, cluster_param: &raw::Cluster) -> Vec<fried::Node> {
+        if cluster_param.topology != ClusterTopology::RingUni 
+        && cluster_param.aggregators.number > 1 {
+            panic!("Only UniRing can support multiple aggregators");
+        }
+
         let mut res = Vec::<fried::Node>::new();
+        let mut main_aggregator = false;
 
         // Creating the aggregator(s)
         for _ in 0..cluster_param.aggregators.number {
-            let role = fried::RoleEnum::Aggregator(fried::Aggregator {
+            let mut aggregator = fried::Aggregator {
                 aggregator_type: cluster_param.aggregators.aggregator_type.clone(),
                 args: cluster_param.aggregators.args.clone(),
-            });
+            };
+
+            // Assign one main aggregator
+            if !main_aggregator {
+                let args = aggregator.args.get_or_insert_with(|| Vec::new());
+                // push argument to enable is_main_aggregator flag
+                args.push(Arg { name: "is_main_aggregator".to_string(), value: "1".to_string() });
+                main_aggregator = true;
+            }
+
+            let role = fried::NodeRole::Aggregator(aggregator);
 
             let nm = match &cluster_param.aggregators.network_manager {
                 Some(nm) => nm.clone(),

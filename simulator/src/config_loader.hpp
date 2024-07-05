@@ -13,6 +13,6 @@
  * @param file path to the fried falafels deployment file.
  * @return A map pairing each created node pointer with its name as a key
  */
-std::unordered_map<node_name, Node*> *load_config(const char* file_path);
+std::unordered_map<protocol::node_name, Node*> *load_config(const char* file_path);
 
 #endif // !FALAFELS_CONFIG_LOADER_HPP

@@ -21,16 +21,20 @@ protected:
     uint64_t total_aggregated_models = 0;
 
     /** The actual number of trainers */
-    uint16_t number_client_training = 0;
+    uint16_t number_client_training = 65535; // Set it to max value until we get the actual one
 
     /** Number of the local models collected at a moment in time */
     uint64_t number_local_models = 0;    
+
+    uint64_t total_number_local_epochs = 0;
 
     /** Simgrid activity representing the training */
     simgrid::s4u::ActivitySet *aggregating_activities;
 
     /** Time when the aggregator has been initialized */
     double initialization_time;
+
+    bool is_main_aggregator = false;
 
     /**
      * Run and wait all aggregations steps in parallel, sharing activities among the Host's cores.
@@ -59,10 +63,13 @@ protected:
      */
     bool check_end_condition();
 public:
-    Aggregator(node_name name);
-    virtual ~Aggregator() {} 
+    Aggregator(protocol::node_name name);
+    virtual ~Aggregator() { delete this->aggregating_activities; } 
 
-    NodeRole get_role_type() { return NodeRole::Aggregator; };
+    protocol::NodeRole get_role_type()
+    {
+        return this->is_main_aggregator ? protocol::NodeRole::MainAggregator : protocol::NodeRole::Aggregator; 
+    };
 
     /* --- Functions to be implemented by the children classes --- */
     virtual void run() = 0;

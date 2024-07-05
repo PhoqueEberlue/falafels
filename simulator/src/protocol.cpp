@@ -8,9 +8,12 @@
 #include "protocol.hpp"
 #include "utils/utils.hpp"
 
-using namespace std;
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_falafels_protocol, "Messages specific for this example");
+
+using namespace std;
+using namespace protocol;
+using namespace protocol::operations;
 
 Packet::Packet(node_name dst, node_name final_dst, Operation op) : 
     dst(dst), final_dst(final_dst), op(op), broadcast(false)
@@ -18,8 +21,8 @@ Packet::Packet(node_name dst, node_name final_dst, Operation op) :
     this->init();
 }
 
-Packet::Packet(NodeFilter filter, Operation op) : 
-    filter(filter), op(op), broadcast(true)
+Packet::Packet(filters::NodeFilter target_filter, Operation op) : 
+    target_filter(target_filter), op(op), broadcast(true)
 {
     this->init();
 }
@@ -59,7 +62,7 @@ uint64_t Packet::get_packet_size()
             {
                 result += Constants::MODEL_SIZE_BYTES + sizeof(uint8_t);
             },
-            [result](KillTrainer op) mutable
+            [result](Kill op) mutable
             {
                 // No arguments...
             },
@@ -98,9 +101,9 @@ Packet *Packet::clone()
 {
     Packet *res;
 
-    if (this->filter)
+    if (this->target_filter)
     {
-        res = new Packet(*this->filter, this->op);
+        res = new Packet(*this->target_filter, this->op);
     }
     else
     {
@@ -109,6 +112,7 @@ Packet *Packet::clone()
 
     res->id = this->id;
     res->packet_size = this->packet_size;
+    res->nb_hops = this->nb_hops;
 
     // Decrement the total packet number because a clone isn't considered as a new packet
     Packet::total_packet_number -= 1;

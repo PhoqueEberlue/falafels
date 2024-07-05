@@ -35,17 +35,19 @@ protected:
      * Initialize queues to enable communication between Role and NetworkManager.
      * The format for MessageQueue name is the following: `<node name>_mq_<message queue name>`.
      */
-    Mediator(node_name name)
+    Mediator(protocol::node_name name)
     {
-        this->mq_received_packets = simgrid::s4u::MessageQueue::by_name(std::format("{}_mq_rp", name));
+        this->mq_received_operations = simgrid::s4u::MessageQueue::by_name(std::format("{}_mq_rp", name));
         this->mq_to_be_sent_packets = simgrid::s4u::MessageQueue::by_name(std::format("{}_mq_tbsp", name));
         this->mq_nm_events = simgrid::s4u::MessageQueue::by_name(std::format("{}_mq_nme", name));
 
         this->async_messages = new simgrid::s4u::ActivitySet();
     } 
+
+    ~Mediator() { delete this->async_messages; };
     
     /** MessageQueue of packets received through the network */
-    simgrid::s4u::MessageQueue *mq_received_packets;
+    simgrid::s4u::MessageQueue *mq_received_operations;
 
     /** MessageQueue of packets to send via the network */
     simgrid::s4u::MessageQueue *mq_to_be_sent_packets;

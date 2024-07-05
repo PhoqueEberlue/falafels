@@ -1,7 +1,8 @@
 use fryer::{fryer::Fryer, platformer::Platformer};
 
 fn main() {
-    let mut fryer = Fryer::new(Some("../name-champions-lol.txt"));
+    //let mut fryer = Fryer::new(Some("../name-champions-lol.txt"));
+    let mut fryer = Fryer::new(None);
 
     let raw_falafels = fryer.load_raw_falafels("../xml/raw-falafels.xml");
 
