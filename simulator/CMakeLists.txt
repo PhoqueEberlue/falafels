@@ -11,61 +11,50 @@ project(falafels)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 find_package(SimGrid REQUIRED)
-
 include_directories(${SimGrid_INCLUDE_DIR})
 
 set(falafels_files
-    src/node/mediator/mediator.hpp
-    src/node/mediator/mediator_consumer.cpp
-    src/node/mediator/mediator_consumer.hpp
-    src/node/mediator/mediator_producer.cpp
-    src/node/mediator/mediator_producer.hpp
+    src/node/mediator/s_mediator.hpp
+    src/node/mediator/s_mediator_consumer.cpp
+    src/node/mediator/s_mediator_consumer.hpp
+    src/node/mediator/s_mediator_producer.cpp
+    src/node/mediator/s_mediator_producer.hpp
 
     # src/node/network_managers/full_nm.cpp
     # src/node/network_managers/full_nm.hpp
-    src/node/network_managers/hierarchical_nm.cpp
-    src/node/network_managers/hierarchical_nm.hpp
-    src/node/network_managers/nm.cpp
-    src/node/network_managers/nm.hpp
-    src/node/network_managers/ring_bi_nm.cpp
-    src/node/network_managers/ring_bi_nm.hpp
-    src/node/network_managers/ring_uni_nm.cpp
-    src/node/network_managers/ring_uni_nm.hpp
-    src/node/network_managers/star_nm.cpp
-    src/node/network_managers/star_nm.hpp
-
-    src/node/roles/aggregator/aggregator.cpp
-    src/node/roles/aggregator/aggregator.hpp
-    src/node/roles/aggregator/asynchronous_aggregator.cpp
-    src/node/roles/aggregator/asynchronous_aggregator.hpp
-    src/node/roles/aggregator/hierarchical_aggregator.cpp
-    src/node/roles/aggregator/hierarchical_aggregator.hpp
-    src/node/roles/aggregator/simple_aggregator.cpp
-    src/node/roles/aggregator/simple_aggregator.hpp
-
-    # src/node/roles/proxy/proxy.cpp
-    # src/node/roles/proxy/proxy.hpp
-
-    src/node/roles/trainer/trainer.cpp
-    src/node/roles/trainer/trainer.hpp
-
-    src/node/roles/role.hpp
-    
-    src/node/node.cpp
-    src/node/node.hpp
- 
-    src/utils/utils.cpp
-    src/utils/utils.hpp
-
-    src/config_loader.cpp
-    src/config_loader.hpp
-    src/constants.hpp
-
-    src/dot.cpp
-    src/dot.hpp
-
-    src/protocol.cpp
-    src/protocol.hpp
+#    src/node/network_managers/hierarchical_nm.cpp
+#    src/node/network_managers/hierarchical_nm.hpp
+#    src/node/network_managers/nm.cpp
+#    src/node/network_managers/nm.hpp
+#    src/node/network_managers/ring_bi_nm.cpp
+#    src/node/network_managers/ring_bi_nm.hpp
+#    src/node/network_managers/ring_uni_nm.cpp
+#    src/node/network_managers/ring_uni_nm.hpp
+#    src/node/network_managers/star_nm.cpp
+#    src/node/network_managers/star_nm.hpp
+#
+#    src/node/roles/aggregator/aggregator.cpp
+#    src/node/roles/aggregator/aggregator.hpp
+#    src/node/roles/aggregator/asynchronous_aggregator.cpp
+#    src/node/roles/aggregator/asynchronous_aggregator.hpp
+#    src/node/roles/aggregator/hierarchical_aggregator.cpp
+#    src/node/roles/aggregator/hierarchical_aggregator.hpp
+#    src/node/roles/aggregator/simple_aggregator.cpp
+#    src/node/roles/aggregator/simple_aggregator.hpp
+#
+#    src/node/roles/trainer/trainer.cpp
+#    src/node/roles/trainer/trainer.hpp
+#
+#    src/node/roles/role.hpp
+#    
+#    src/node/node.cpp
+#    src/node/node.hpp
+# 
+#    src/utils/utils.cpp
+#    src/utils/utils.hpp
+#
+#    src/config_loader.cpp
+#    src/config_loader.hpp
 )
 
 add_executable(main 
@@ -73,5 +62,4 @@ add_executable(main
     ${falafels_files}
 )
 
-target_link_libraries(main ${SimGrid_LIBRARY})
-target_link_libraries(main pugixml)
+target_link_libraries(main ${SimGrid_LIBRARY} pugixml dml)

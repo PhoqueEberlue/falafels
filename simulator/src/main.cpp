@@ -7,9 +7,8 @@
 #include <string>
 #include <xbt/log.h>
 
-#include "config_loader.hpp"
-#include "dot.hpp"
-#include "node/node.hpp"
+// #include "config_loader.hpp"
+// #include "node/node.hpp"
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_main, "Messages specific for this example");
 
@@ -29,22 +28,19 @@ int main(int argc, char* argv[])
     // Using our own deployment function instead of simgrid's one
     // e.load_deployment(argv[2]);
 
-    auto nodes_map = load_config(argv[2]); 
+    // auto nodes_map = load_config(argv[2]); 
 
-    for (auto [name, node] : *nodes_map)
-    {
-        XBT_INFO("Initializing node '%s'", name.c_str());
-        node->run();
-        delete node;
-    }
+    // for (auto [name, node] : *nodes_map)
+    // {
+    //     XBT_INFO("Initializing node '%s'", name.c_str());
+    //     node->run();
+    //     delete node;
+    // }
 
-    /* Run the simulation */
-    e.run();
+    // /* Run the simulation */
+    // e.run();
 
-    if (Constants::GENERATE_DOT_FILES)
-        DOTGenerator::get_instance().generate_state_files();
-
-    delete nodes_map;
+    // delete nodes_map;
 
     XBT_INFO("Simulation is over");
 
