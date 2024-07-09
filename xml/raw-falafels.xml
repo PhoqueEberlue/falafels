@@ -10,65 +10,133 @@ will receive its corresponding simgrid Host.
 <raw version="0.1">
     <!-- List of constants that can be accessed through the whole program -->
     <constants>
-        <constant name="MODEL_SIZE_BYTES" value="2000"/>
-        <constant name="GLOBAL_MODEL_AGGREGATING_FLOPS" value="1000000.0"/>
-        <constant name="LOCAL_MODEL_TRAINING_FLOPS" value="1000000.0"/>
-    </constants>
+        <constant name="MODEL_SIZE_BYTES" value="6655480"/>
+        <!-- Google first FL paper workload 
+        <constant name="GLOBAL_MODEL_AGGREGATING_FLOPS" value="1996044000.0"/>
+        <constant name="LOCAL_MODEL_TRAINING_FLOPS" value="1996044000.0"/>
+        -->
 
-    <!-- List of profiles to be used for our nodes and their cables -->
+        <!-- Custom workload with big values -->
+        <constant name="GLOBAL_MODEL_AGGREGATING_FLOPS" value="1996044000000.0"/>
+        <constant name="LOCAL_MODEL_TRAINING_FLOPS" value="1996044000000.0"/>
+
+        <constant name="END_CONDITION_TOTAL_NUMBER_LOCAL_EPOCHS" value="10000"/>
+        <constant name="REGISTRATION_TIMEOUT" value="20"/>
+    </constants>
+ 
     <profiles>
-        <host-profile name="big-server" speed="500.0Mf,250.0Mf,100.0Mf" core="32" pstate="0">
-            <prop id="wattage_per_state" value="200.0:193.33333333333333:400.0, 193.0:190.0:370.0, 190.0:190.0:250.0"/>
-            <prop id="wattage_off" value="50"/>
+        <!-- 
+        Host profiles to be used for our nodes and their cables.
+        Reference for finding FLOPS capacity of different processors:
+        https://en.wikipedia.org/wiki/FLOPS#Floating-point_operations_per_clock_cycle_for_various_processors
+        -->
+
+        <!--
+        Device: Precision 7865 Tower Workstation, see: https://www.dell.com/en-uk/shop/desktop-computers/precision-7865-tower-workstation/spd/precision-7865-workstation/n003p7865temea_vp (default config)
+        Processor: AMD Ryzen Threadripper PRO 5955WX @4.5 GHz, see: https://www.amd.com/fr/products/processors/workstations/ryzen-threadripper.html#tabs-d57cdd11c6-item-548bfe4da9-tab
+
+        Theorical max FP64 FLOPS: 72Gf = 16 (FP64 operations per cycle) * 4.5 GHz (Turbo Frequency of the processor, not using Intel boost)
+        Theorical max FP32 FLOPS: 144Gf = 32 (FP32 operations per cycle) * 4.5 GHz (Turbo Frequency of the processor, not using Intel boost)
+        -->
+        <host-profile name="Precision 7865" speed="144Gf" core="32"> <!-- 32 threads, 16 cores -->
+            <!-- Cannot find measurements, using approximatives values -->
+            <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+            <!-- No data -->
+            <!-- <prop id="wattage_off" value=""/> -->
         </host-profile>
-        <host-profile name="average-computer" speed="100.0Mf,50.0Mf,20.0Mf" core="4" pstate="0">
-            <prop id="wattage_per_state" value="100.0:93.33333333333333:200.0, 93.0:90.0:170.0, 90.0:90.0:150.0"/>
-            <prop id="wattage_off" value="10"/>
+
+        <!-- 
+        Device: MSI GP72 7RD Leopard, see: https://www.msi.com/Laptop/GP72-7RD-Leopard/Specification
+        Processor: Intel Core i7 7700HQ (Kaby Lake) @2.8 GHz, see: https://en.wikipedia.org/wiki/Kaby_Lake#Mobile_processors
+        Theorical max FP64 FLOPS: 44.8Gf = 16 (FP64 operations per cycle) * 2.8 GHz (Max Frequency of the processor)
+        Theorical max FP32 FLOPS: 89.6Gf = 32 (FP32 operations per cycle) * 2.8 GHz (Max Frequency of the processor)
+        -->
+        <host-profile name="MSI GP72 7RD Leopard" speed="89.6Gf" core="8"> <!-- 8 threads, 4 cores -->
+            <!-- Wattage measured with https://github.com/ColinIanKing/powerstat -->
+            <prop id="wattage_per_state" value="20:21.6:59.33"/>
+            <!-- No data -->
+            <!-- <prop id="wattage_off" value=""/> -->
         </host-profile>
-        <host-profile name="small-device" speed="50.0Mf,25.0Mf,10.0Mf" core="1" pstate="0">
-            <prop id="wattage_per_state" value="100.0:200.0:200.0, 93.0:170.0:170.0, 90.0:150.0:150.0" />
-            <prop id="wattage_off" value="10" />
+
+        <!--
+        Device: Raspberry Pi 4B, see: https://www.raspberrypi.com/products/raspberry-pi-4-model-b/specifications/
+        Processor: Quad Core Cortex-A72 (ArmV8) @ 1.8 GHz
+        Theorical max FP64 FLOPS: 7.2Gf = 4 (FP64 operations per cycle) * 1.8 GHz (Base Frequency of the processor)
+        Theorical max FP32 FLOPS: 14.4Gf = 8 (FP32 operations per cycle) * 1.8 GHz (Base Frequency of the processor)
+        -->
+        <host-profile name="raspberry Pi 4B" speed="14.4Gf" core="4">
+            <!-- Wattage with launch firmware, source: https://www.raspberrypi.com/news/thermal-testing-raspberry-pi-4/ -->
+            <prop id="wattage_per_state" value="2.89:3.000:7.28"/>
+            <!-- No data -->
+            <!-- <prop id="wattage_off" value=""/> -->
         </host-profile>
 
         <link-profile name="fiber" bandwidth="1.618875GBps" latency="19.98us">
-            <prop id="wattage_range" value="100.0:200.0"/>
-            <prop id="wattage_off" value="10"/>
+            <!-- I honestly have no idea on how to estimate that -->
+            <prop id="wattage_range" value="25.0:40.0"/>
         </link-profile>
         <link-profile name="adsl" bandwidth="10.179966MBps" latency="190.98us">
-            <prop id="wattage_range" value="100.0:200.0"/>
-            <prop id="wattage_off" value="10"/>
+            <!-- I honestly have no idea on how to estimate that -->
+            <prop id="wattage_range" value="15.0:30.0"/>
         </link-profile>
+        <link-profile name="poor-adsl" bandwidth="0.0179966MBps" latency="570.98us">
+            <!-- I honestly have no idea on how to estimate that -->
+            <prop id="wattage_range" value="15.0:30.0"/>
+        </link-profile>
+
     </profiles>
 
     <!--
-    <clusters> 
+    <cluster name="cluster-uni-ring" topology="ring-uni">
+        <aggregators number="1" type="simple">
+            <host-profile-ref name="Precision 7865"/>
+            <link-profile-ref name="fiber"/>
+        </aggregators>
 
-        <cluster name="cluster-star" topology="star">
-            <aggregators number="1" type="simple" host-profiles="big-server" link-profiles="fiber"/>
-            <trainers number="4" type="simple" host-profiles="average-computer,small-device" link-profiles="fiber,adsl"/>
-        </cluster>
-
-    </clusters> 
+        <trainers number="10" type="simple">
+            <host-profile-ref name="MSI GP72 7RD Leopard"/>
+            <host-profile-ref name="raspberry Pi 4B"/>
+            <link-profile-ref name="fiber"/>
+            <link-profile-ref name="adsl"/>
+        </trainers>
+    </cluster>
     -->
 
-    <clusters> 
+    <cluster topology="star">
+        <aggregators number="1" type="hierarchical">
+            <host-profile-ref name="Precision 7865"/>
+            <link-profile-ref name="fiber"/>
+        </aggregators>
+        <trainers number="4" type="simple">
+            <host-profile-ref name="MSI GP72 7RD Leopard"/>
+            <host-profile-ref name="raspberry Pi 4B"/>
+            <link-profile-ref name="fiber"/>
+            <link-profile-ref name="adsl"/>
+        </trainers>
+    </cluster>
 
-        <cluster name="sub-cluster-star" topology="star">
-            <aggregators number="1" type="hierarchical" host-profiles="big-server" link-profiles="fiber"/>
-            <trainers number="4" type="simple" host-profiles="average-computer,small-device" link-profiles="fiber,adsl"/>
-        </cluster>
+    <cluster topology="ring-uni">
+        <aggregators number="1" type="hierarchical">
+            <host-profile-ref name="MSI GP72 7RD Leopard"/>
+            <link-profile-ref name="fiber"/>
+        </aggregators>
+        <trainers number="4" type="simple">
+            <host-profile-ref name="raspberry Pi 4B"/>
+            <host-profile-ref name="MSI GP72 7RD Leopard"/>
+            <link-profile-ref name="fiber"/>
+            <link-profile-ref name="adsl"/>
+        </trainers>
+    </cluster>
 
-        <cluster name="sub-cluster-ring" topology="ring">
-            <aggregators number="1" type="hierarchical" host-profiles="big-server" link-profiles="fiber"/>
-            <trainers number="4" type="simple" host-profiles="average-computer,small-device" link-profiles="fiber,adsl"/>
-        </cluster>
-
-        <cluster name="main-cluster" topology="star">
-            <aggregators number="1" type="simple" host-profiles="big-server" link-profiles="fiber"/>
-            <connected-to cluster-name="sub-cluster-star"/>
-            <connected-to cluster-name="sub-cluster-ring"/>
-        </cluster>
-
-    </clusters>
+    <cluster topology="hierarchical">
+        <aggregators number="1" type="simple">
+            <host-profile-ref name="Precision 7865"/>
+            <link-profile-ref name="fiber"/>
+        </aggregators>
+        <trainers number="0" type="none">
+            <host-profile-ref name=""/>
+            <link-profile-ref name=""/>
+        </trainers>
+    </cluster>
 
 </raw>

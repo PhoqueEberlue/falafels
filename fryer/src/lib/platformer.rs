@@ -35,7 +35,7 @@ impl<'a> Platformer<'a> {
     /// and that the "logical" or "applicative" topology will be handled in the simulator as the
     /// implementation of the network algorithms.
     pub fn create_star_topology(&mut self) -> Platform {
-        let number_nodes = self.ff.clusters.list.iter().map(|c| c.nodes.len()).sum(); // N
+        let number_nodes = self.ff.clusters.iter().map(|c| c.nodes.len()).sum(); // N
         let zone_name = "zone1";
         let router_name = format!("{}-router", zone_name);
 
@@ -58,7 +58,7 @@ impl<'a> Platformer<'a> {
         // Create one loopback link to be used for every host.
         // links.push(self.create_loopback_link());
 
-        for (raw_cluster, fried_cluster) in self.rf.clusters.list.iter().zip(&self.ff.clusters.list)
+        for (raw_cluster, fried_cluster) in self.rf.clusters.iter().zip(&self.ff.clusters)
         {
             let (mut h, mut l, mut r) =
                 self.create_cluster_components(raw_cluster, &fried_cluster, &router_name);
@@ -94,29 +94,14 @@ impl<'a> Platformer<'a> {
         let mut links = Vec::<Link>::new();
         let mut routes = Vec::<Route>::new();
 
-        // Rework that later, this is absolutely ugly
-        let empty_vector_h: Vec<raw::HostProfileRef> = vec![];
-        let empty_vector_l: Vec<raw::LinkProfileRef> = vec![];
-
-        // Trainers can be optional when defining a cluster with only "connected-to"
-        let trainers_host_profiles = match &raw_cluster.trainers {
-            Some(t) => &t.host_profiles,
-            None => &empty_vector_h,
-        };
-
-        let trainers_link_profiles = match &raw_cluster.trainers {
-            Some(t) => &t.link_profiles,
-            None => &empty_vector_l,
-        };
-
         let mut profile_handler_host = ProfilesHandler::new(
-            &trainers_host_profiles,
+            &raw_cluster.trainers.host_profiles,
             &raw_cluster.aggregators.host_profiles,
             &self.rf.profiles.host_profiles,
         );
 
         let mut profile_handler_link = ProfilesHandler::new(
-            &trainers_link_profiles,
+            &raw_cluster.trainers.link_profiles,
             &raw_cluster.aggregators.link_profiles,
             &self.rf.profiles.link_profiles,
         );

@@ -3,125 +3,103 @@
 <platform version="4.1">
     <zone id="zone1" routing="Floyd">
         <router id="zone1-router"/>
-        <host id="Pyke" speed="100.0Mf,50.0Mf,20.0Mf" core="4" pstate="0">
-            <prop id="wattage_per_state" value="100.0:93.33333333333333:200.0, 93.0:90.0:170.0, 90.0:90.0:150.0"/>
-            <prop id="wattage_off" value="10"/>
+        <host id="Node 1" speed="89.6Gf" core="8">
+            <prop id="wattage_per_state" value="20:21.6:59.33"/>
         </host>
-        <host id="Morgana" speed="50.0Mf,25.0Mf,10.0Mf" core="1" pstate="0">
-            <prop id="wattage_per_state" value="100.0:200.0:200.0, 93.0:170.0:170.0, 90.0:150.0:150.0"/>
-            <prop id="wattage_off" value="10"/>
+        <host id="Node 2" speed="14.4Gf" core="4">
+            <prop id="wattage_per_state" value="2.89:3.000:7.28"/>
         </host>
-        <host id="Maokai" speed="100.0Mf,50.0Mf,20.0Mf" core="4" pstate="0">
-            <prop id="wattage_per_state" value="100.0:93.33333333333333:200.0, 93.0:90.0:170.0, 90.0:90.0:150.0"/>
-            <prop id="wattage_off" value="10"/>
+        <host id="Node 3" speed="89.6Gf" core="8">
+            <prop id="wattage_per_state" value="20:21.6:59.33"/>
         </host>
-        <host id="Zoe" speed="50.0Mf,25.0Mf,10.0Mf" core="1" pstate="0">
-            <prop id="wattage_per_state" value="100.0:200.0:200.0, 93.0:170.0:170.0, 90.0:150.0:150.0"/>
-            <prop id="wattage_off" value="10"/>
+        <host id="Node 4" speed="14.4Gf" core="4">
+            <prop id="wattage_per_state" value="2.89:3.000:7.28"/>
         </host>
-        <host id="Soraka" speed="500.0Mf,250.0Mf,100.0Mf" core="32" pstate="0">
-            <prop id="wattage_per_state" value="200.0:193.33333333333333:400.0, 193.0:190.0:370.0, 190.0:190.0:250.0"/>
-            <prop id="wattage_off" value="50"/>
+        <host id="Node 5" speed="144Gf" core="32">
+            <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
         </host>
-        <host id="Illaoi" speed="100.0Mf,50.0Mf,20.0Mf" core="4" pstate="0">
-            <prop id="wattage_per_state" value="100.0:93.33333333333333:200.0, 93.0:90.0:170.0, 90.0:90.0:150.0"/>
-            <prop id="wattage_off" value="10"/>
+        <host id="Node 6" speed="14.4Gf" core="4">
+            <prop id="wattage_per_state" value="2.89:3.000:7.28"/>
         </host>
-        <host id="Wukong" speed="50.0Mf,25.0Mf,10.0Mf" core="1" pstate="0">
-            <prop id="wattage_per_state" value="100.0:200.0:200.0, 93.0:170.0:170.0, 90.0:150.0:150.0"/>
-            <prop id="wattage_off" value="10"/>
+        <host id="Node 7" speed="89.6Gf" core="8">
+            <prop id="wattage_per_state" value="20:21.6:59.33"/>
         </host>
-        <host id="Akali" speed="100.0Mf,50.0Mf,20.0Mf" core="4" pstate="0">
-            <prop id="wattage_per_state" value="100.0:93.33333333333333:200.0, 93.0:90.0:170.0, 90.0:90.0:150.0"/>
-            <prop id="wattage_off" value="10"/>
+        <host id="Node 8" speed="14.4Gf" core="4">
+            <prop id="wattage_per_state" value="2.89:3.000:7.28"/>
         </host>
-        <host id="Neeko" speed="50.0Mf,25.0Mf,10.0Mf" core="1" pstate="0">
-            <prop id="wattage_per_state" value="100.0:200.0:200.0, 93.0:170.0:170.0, 90.0:150.0:150.0"/>
-            <prop id="wattage_off" value="10"/>
+        <host id="Node 9" speed="89.6Gf" core="8">
+            <prop id="wattage_per_state" value="20:21.6:59.33"/>
         </host>
-        <host id="Evelynn" speed="500.0Mf,250.0Mf,100.0Mf" core="32" pstate="0">
-            <prop id="wattage_per_state" value="200.0:193.33333333333333:400.0, 193.0:190.0:370.0, 190.0:190.0:250.0"/>
-            <prop id="wattage_off" value="50"/>
+        <host id="Node 10" speed="89.6Gf" core="8">
+            <prop id="wattage_per_state" value="20:21.6:59.33"/>
         </host>
-        <host id="Ahri" speed="500.0Mf,250.0Mf,100.0Mf" core="32" pstate="0">
-            <prop id="wattage_per_state" value="200.0:193.33333333333333:400.0, 193.0:190.0:370.0, 190.0:190.0:250.0"/>
-            <prop id="wattage_off" value="50"/>
+        <host id="Node 11" speed="144Gf" core="32">
+            <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
         </host>
         <link id="1" bandwidth="1.618875GBps" latency="19.98us">
-            <prop id="wattage_range" value="100.0:200.0"/>
-            <prop id="wattage_off" value="10"/>
+            <prop id="wattage_range" value="25.0:40.0"/>
         </link>
         <link id="2" bandwidth="10.179966MBps" latency="190.98us">
-            <prop id="wattage_range" value="100.0:200.0"/>
-            <prop id="wattage_off" value="10"/>
+            <prop id="wattage_range" value="15.0:30.0"/>
         </link>
         <link id="3" bandwidth="1.618875GBps" latency="19.98us">
-            <prop id="wattage_range" value="100.0:200.0"/>
-            <prop id="wattage_off" value="10"/>
+            <prop id="wattage_range" value="25.0:40.0"/>
         </link>
         <link id="4" bandwidth="10.179966MBps" latency="190.98us">
-            <prop id="wattage_range" value="100.0:200.0"/>
-            <prop id="wattage_off" value="10"/>
+            <prop id="wattage_range" value="15.0:30.0"/>
         </link>
         <link id="5" bandwidth="1.618875GBps" latency="19.98us">
-            <prop id="wattage_range" value="100.0:200.0"/>
-            <prop id="wattage_off" value="10"/>
+            <prop id="wattage_range" value="25.0:40.0"/>
         </link>
         <link id="6" bandwidth="1.618875GBps" latency="19.98us">
-            <prop id="wattage_range" value="100.0:200.0"/>
-            <prop id="wattage_off" value="10"/>
+            <prop id="wattage_range" value="25.0:40.0"/>
         </link>
         <link id="7" bandwidth="10.179966MBps" latency="190.98us">
-            <prop id="wattage_range" value="100.0:200.0"/>
-            <prop id="wattage_off" value="10"/>
+            <prop id="wattage_range" value="15.0:30.0"/>
         </link>
         <link id="8" bandwidth="1.618875GBps" latency="19.98us">
-            <prop id="wattage_range" value="100.0:200.0"/>
-            <prop id="wattage_off" value="10"/>
+            <prop id="wattage_range" value="25.0:40.0"/>
         </link>
         <link id="9" bandwidth="10.179966MBps" latency="190.98us">
-            <prop id="wattage_range" value="100.0:200.0"/>
-            <prop id="wattage_off" value="10"/>
+            <prop id="wattage_range" value="15.0:30.0"/>
         </link>
         <link id="10" bandwidth="1.618875GBps" latency="19.98us">
-            <prop id="wattage_range" value="100.0:200.0"/>
-            <prop id="wattage_off" value="10"/>
+            <prop id="wattage_range" value="25.0:40.0"/>
         </link>
         <link id="11" bandwidth="1.618875GBps" latency="19.98us">
-            <prop id="wattage_range" value="100.0:200.0"/>
-            <prop id="wattage_off" value="10"/>
+            <prop id="wattage_range" value="25.0:40.0"/>
         </link>
-        <route src="Pyke" dst="zone1-router">
+        <route src="Node 1" dst="zone1-router">
             <link_ctn id="1"/>
         </route>
-        <route src="Morgana" dst="zone1-router">
+        <route src="Node 2" dst="zone1-router">
             <link_ctn id="2"/>
         </route>
-        <route src="Maokai" dst="zone1-router">
+        <route src="Node 3" dst="zone1-router">
             <link_ctn id="3"/>
         </route>
-        <route src="Zoe" dst="zone1-router">
+        <route src="Node 4" dst="zone1-router">
             <link_ctn id="4"/>
         </route>
-        <route src="Soraka" dst="zone1-router">
+        <route src="Node 5" dst="zone1-router">
             <link_ctn id="5"/>
         </route>
-        <route src="Illaoi" dst="zone1-router">
+        <route src="Node 6" dst="zone1-router">
             <link_ctn id="6"/>
         </route>
-        <route src="Wukong" dst="zone1-router">
+        <route src="Node 7" dst="zone1-router">
             <link_ctn id="7"/>
         </route>
-        <route src="Akali" dst="zone1-router">
+        <route src="Node 8" dst="zone1-router">
             <link_ctn id="8"/>
         </route>
-        <route src="Neeko" dst="zone1-router">
+        <route src="Node 9" dst="zone1-router">
             <link_ctn id="9"/>
         </route>
-        <route src="Evelynn" dst="zone1-router">
+        <route src="Node 10" dst="zone1-router">
             <link_ctn id="10"/>
         </route>
-        <route src="Ahri" dst="zone1-router">
+        <route src="Node 11" dst="zone1-router">
             <link_ctn id="11"/>
         </route>
     </zone>

@@ -6,7 +6,8 @@ use super::common::{AggregatorType, Arg, Constants, NetworkManager, TrainerType,
 pub struct RawFalafels {
     pub constants: Constants,
     pub profiles: Profiles,
-    pub clusters: Clusters,
+    #[serde(rename = "cluster")]
+    pub clusters: Vec<Cluster>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -58,27 +59,11 @@ pub struct LinkProfileRef {
 }
 
 #[derive(Deserialize, Debug, Clone)]
-pub struct Clusters {
-    #[serde(rename = "cluster")]
-    pub list: Vec<Cluster>,
-}
-
-#[derive(Deserialize, Debug, Clone)]
 pub struct Cluster {
-    #[serde(rename = "@name")]
-    pub name: String,
     #[serde(rename = "@topology")]
     pub topology: ClusterTopology,
-    pub trainers: Option<Trainers>,
+    pub trainers: Trainers,
     pub aggregators: Aggregators,
-    #[serde(rename = "connected-to")]
-    pub connections: Option<Vec<ConnectedTo>>,
-}
-
-#[derive(Deserialize, Debug, Clone)]
-pub struct ConnectedTo {
-    #[serde(rename = "@cluster-name")]
-    pub cluster_name: String,
 }
 
 #[derive(Deserialize, Debug, Clone)]

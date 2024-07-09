@@ -289,15 +289,15 @@ unordered_map<node_name, Node*> *load_config(const char* file_path)
 
     xml_node root_elem = doc.child("fried");
     xml_node constants_elem = root_elem.child("constants");
-    xml_node clusters_elem = root_elem.child("clusters");
+    auto clusters_elem = root_elem.children("cluster");
 
     init_constants(&constants_elem);
 
     auto nodes_map = new unordered_map<node_name, Node*>();
 
-    for (auto cluster: clusters_elem.children())
+    for (auto cluster: clusters_elem)
     {
-        create_nodes(nodes_map, &cluster);  
+        create_nodes(nodes_map, &cluster);
     }
     return nodes_map; 
 }

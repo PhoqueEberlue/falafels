@@ -1,86 +1,90 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <fried version="0.1">
     <constants>
-        <constant name="MODEL_SIZE_BYTES" value="2000"/>
-        <constant name="GLOBAL_MODEL_AGGREGATING_FLOPS" value="1000000.0"/>
-        <constant name="LOCAL_MODEL_TRAINING_FLOPS" value="1000000.0"/>
+        <constant name="MODEL_SIZE_BYTES" value="6655480"/>
+        <constant name="GLOBAL_MODEL_AGGREGATING_FLOPS" value="1996044000000.0"/>
+        <constant name="LOCAL_MODEL_TRAINING_FLOPS" value="1996044000000.0"/>
+        <constant name="END_CONDITION_TOTAL_NUMBER_LOCAL_EPOCHS" value="1000"/>
+        <constant name="REGISTRATION_TIMEOUT" value="20"/>
     </constants>
-    <clusters>
-        <cluster name="sub-cluster-star" topology="star">
-            <node name="Pyke">
-                <trainer type="simple"/>
-                <network-manager>
-                    <arg name="bootstrap-node" value="Soraka"/>
-                </network-manager>
-            </node>
-            <node name="Morgana">
-                <trainer type="simple"/>
-                <network-manager>
-                    <arg name="bootstrap-node" value="Soraka"/>
-                </network-manager>
-            </node>
-            <node name="Maokai">
-                <trainer type="simple"/>
-                <network-manager>
-                    <arg name="bootstrap-node" value="Soraka"/>
-                </network-manager>
-            </node>
-            <node name="Zoe">
-                <trainer type="simple"/>
-                <network-manager>
-                    <arg name="bootstrap-node" value="Soraka"/>
-                </network-manager>
-            </node>
-            <node name="Soraka">
-                <aggregator type="hierarchical">
-                    <arg name="central_aggregator_name" value="Ahri"/>
-                </aggregator>
-                <network-manager>
-                    <arg/>
-                </network-manager>
-            </node>
-        </cluster>
-        <cluster name="sub-cluster-ring" topology="ring">
-            <node name="Illaoi">
-                <trainer type="simple"/>
-                <network-manager>
-                    <arg name="bootstrap-node" value="Evelynn"/>
-                </network-manager>
-            </node>
-            <node name="Wukong">
-                <trainer type="simple"/>
-                <network-manager>
-                    <arg name="bootstrap-node" value="Evelynn"/>
-                </network-manager>
-            </node>
-            <node name="Akali">
-                <trainer type="simple"/>
-                <network-manager>
-                    <arg name="bootstrap-node" value="Evelynn"/>
-                </network-manager>
-            </node>
-            <node name="Neeko">
-                <trainer type="simple"/>
-                <network-manager>
-                    <arg name="bootstrap-node" value="Evelynn"/>
-                </network-manager>
-            </node>
-            <node name="Evelynn">
-                <aggregator type="hierarchical">
-                    <arg name="central_aggregator_name" value="Ahri"/>
-                </aggregator>
-                <network-manager>
-                    <arg/>
-                </network-manager>
-            </node>
-        </cluster>
-        <cluster name="main-cluster" topology="star">
-            <node name="Ahri">
-                <aggregator type="simple"/>
-                <network-manager>
-                    <arg/>
-                </network-manager>
-            </node>
-        </cluster>
-    </clusters>
+    <cluster topology="star">
+        <node name="Node 1">
+            <trainer type="simple"/>
+            <network-manager>
+                <arg name="bootstrap-node" value="Node 5"/>
+            </network-manager>
+        </node>
+        <node name="Node 2">
+            <trainer type="simple"/>
+            <network-manager>
+                <arg name="bootstrap-node" value="Node 5"/>
+            </network-manager>
+        </node>
+        <node name="Node 3">
+            <trainer type="simple"/>
+            <network-manager>
+                <arg name="bootstrap-node" value="Node 5"/>
+            </network-manager>
+        </node>
+        <node name="Node 4">
+            <trainer type="simple"/>
+            <network-manager>
+                <arg name="bootstrap-node" value="Node 5"/>
+            </network-manager>
+        </node>
+        <node name="Node 5">
+            <aggregator type="hierarchical">
+                <arg name="is_main_aggregator" value="1"/>
+                <arg name="central_aggregator_name" value="Node 11"/>
+            </aggregator>
+            <network-manager>
+                <arg name="bootstrap-node" value="Node 5"/>
+            </network-manager>
+        </node>
+    </cluster>
+    <cluster topology="ring-uni">
+        <node name="Node 6">
+            <trainer type="simple"/>
+            <network-manager>
+                <arg name="bootstrap-node" value="Node 10"/>
+            </network-manager>
+        </node>
+        <node name="Node 7">
+            <trainer type="simple"/>
+            <network-manager>
+                <arg name="bootstrap-node" value="Node 10"/>
+            </network-manager>
+        </node>
+        <node name="Node 8">
+            <trainer type="simple"/>
+            <network-manager>
+                <arg name="bootstrap-node" value="Node 10"/>
+            </network-manager>
+        </node>
+        <node name="Node 9">
+            <trainer type="simple"/>
+            <network-manager>
+                <arg name="bootstrap-node" value="Node 10"/>
+            </network-manager>
+        </node>
+        <node name="Node 10">
+            <aggregator type="hierarchical">
+                <arg name="is_main_aggregator" value="1"/>
+                <arg name="central_aggregator_name" value="Node 11"/>
+            </aggregator>
+            <network-manager>
+                <arg name="bootstrap-node" value="Node 10"/>
+            </network-manager>
+        </node>
+    </cluster>
+    <cluster topology="hierarchical">
+        <node name="Node 11">
+            <aggregator type="simple">
+                <arg name="is_main_aggregator" value="1"/>
+            </aggregator>
+            <network-manager>
+                <arg name="bootstrap-node" value="Node 11"/>
+            </network-manager>
+        </node>
+    </cluster>
 </fried>

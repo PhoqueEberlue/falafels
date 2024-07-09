@@ -8,19 +8,12 @@ pub struct FriedFalafels {
     #[serde(rename = "@version")]
     pub version: String,
     pub constants: Constants,
-    pub clusters: Clusters,
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct Clusters {
     #[serde(rename = "cluster")]
-    pub list: Vec<Cluster>,
+    pub clusters: Vec<Cluster>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Cluster {
-    #[serde(rename = "@name")]
-    pub name: String,
     #[serde(rename = "@topology")]
     pub topology: ClusterTopology,
     #[serde(rename = "node")]

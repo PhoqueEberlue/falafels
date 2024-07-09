@@ -43,6 +43,8 @@ pub enum AggregatorType {
 pub enum TrainerType {
     #[serde(rename = "simple")]
     Simple,
+    #[serde(rename = "none")]
+    None,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
