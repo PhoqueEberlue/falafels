@@ -12,14 +12,14 @@
  * SimulatedMediator enables communication between NetworkManagers and Roles.
  * Its constructor is protected to ensure the user only uses SimulatedMediatorProducer and SimulatedMediatorConsumer. 
  */
-class SimulatedMediator
+class SMediator
 { 
 protected:
     /** 
      * Initialize queues to enable communication between Role and NetworkManager.
      * The format for MessageQueue name is the following: `<node name>_mq_<message queue name>`.
      */
-    SimulatedMediator(protocol::node_name name)
+    SMediator(protocol::node_name name)
     {
         this->mq_received_operations = simgrid::s4u::MessageQueue::by_name(std::format("{}_mq_rp", name));
         this->mq_to_be_sent_packets = simgrid::s4u::MessageQueue::by_name(std::format("{}_mq_tbsp", name));
@@ -28,7 +28,7 @@ protected:
         this->async_messages = new simgrid::s4u::ActivitySet();
     } 
 
-    ~SimulatedMediator() { delete this->async_messages; };
+    ~SMediator() { delete this->async_messages; };
     
     /** MessageQueue of packets received through the network */
     simgrid::s4u::MessageQueue *mq_received_operations;

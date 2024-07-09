@@ -21,12 +21,11 @@ public:
 
     void set_mediator_producer(std::unique_ptr<IMediatorProducer> mp) { this->mp = std::move(mp); };
 
-
     std::unique_ptr<IMediatorProducer> mp;
 
     std::unique_ptr<INetworkManager> nm;
 
-    std::unique_ptr<ICommon> commons;
+    std::unique_ptr<ICommon> common;
 
     /** Vector of nodes to connect to when launching the NetworkManager. Used by Trainers that knows in advance 
         one of the aggregators */
@@ -41,6 +40,7 @@ public:
     /** TODO: currently only use by aggregator: this is a bad habit */
     std::optional<double> start_time;
 
+    void if_target_put_op(std::unique_ptr<protocol::Packet> p);
 
 private:
     /** Handle the registration regquests by creating the network links and sending confirmations to the connected nodes */

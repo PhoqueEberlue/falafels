@@ -1,12 +1,12 @@
 /* Star Network Manager */
-#ifndef FALAFELS_STAR_NM_HPP
-#define FALAFELS_STAR_NM_HPP
+#ifndef FALAFELS_STAR_MOM_HPP
+#define FALAFELS_STAR_MOM_HPP
 
-#include "nm.hpp"
+#include "../../include/mom.hpp"
 #include <memory>
 #include <vector>
 
-class StarNetworkManager : public NetworkManager 
+class StarMOM : public MOM 
 {
 private:
     using State = enum
@@ -18,13 +18,13 @@ private:
         KILLING,
     };
 
-    /** State of the NetworkManager */
+    /** State of the MOM */
     State state = INITIALIZING;
 
     std::vector<protocol::NodeInfo> *connected_nodes;
 public:
-    StarNetworkManager(protocol::NodeInfo);
-    ~StarNetworkManager();
+    StarMOM(protocol::NodeInfo);
+    ~StarMOM();
     
     // See nm.hpp for documentation
     void run();
@@ -35,4 +35,4 @@ public:
     void handle_kill_phase();
 };
 
-#endif // !FALAFELS_STAR_NM_HPP
+#endif // !FALAFELS_STAR_MOM_HPP

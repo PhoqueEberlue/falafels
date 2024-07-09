@@ -13,10 +13,10 @@ using namespace std;
  * - Get event from the Networkmanager
  * - Put packets to be sent by the Networkmanager
  */
-class SimulatedMediatorConsumer : public IMediatorConsumer, SimulatedMediator
+class SMediatorConsumer : public IMediatorConsumer, SMediator
 {
 public:
-    SimulatedMediatorConsumer(protocol::node_name name) : IMediatorConsumer(), SimulatedMediator(name) {}
+    SMediatorConsumer(protocol::node_name name) : IMediatorConsumer(), SMediator(name) {}
 
     /** -------------- IMPLEMENTATION OF VIRTUAL METHODS -------------- */
     /** Blocking get for retrieving a received operation */

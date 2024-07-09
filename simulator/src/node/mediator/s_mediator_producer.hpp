@@ -15,14 +15,14 @@ using namespace std;
  * - Put Network events
  * - Get packets to be sent
  */
-class SimulatedMediatorProducer : public IMediatorProducer, public SimulatedMediator
+class SMediatorProducer : public IMediatorProducer, public SMediator
 {
 public:
     /** 
      * Initialize queues to enable communication between Role and NetworkManager.
      * The format for MessageQueue name is the following: `<node name>_mq_<message queue name>`.
      */
-    SimulatedMediatorProducer(protocol::node_name name) : IMediatorProducer(), SimulatedMediator(name) {}
+    SMediatorProducer(protocol::node_name name) : IMediatorProducer(), SMediator(name) {}
 
     /** -------------- IMPLEMENTATION OF VIRTUAL METHODS -------------- */
     /** Blocking get for retrieving a packet to be sent */

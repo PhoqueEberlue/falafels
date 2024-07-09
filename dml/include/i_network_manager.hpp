@@ -25,7 +25,7 @@ protected:
     std::optional<double> start_time;
 
 public:  
-    INetworkManager(protocol::NodeInfo node_info);
+    INetworkManager() {};
     virtual ~INetworkManager();
 
     /** Get NetworkManager's NodeInfo */

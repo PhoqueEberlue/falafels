@@ -6,34 +6,27 @@
 #include <memory>
 #include <optional>
 #include <ostream>
-#include <simgrid/Exception.hpp>
-#include <simgrid/s4u/Engine.hpp>
-#include <simgrid/s4u/Mailbox.hpp>
 #include <variant>
 #include <vector>
-#include <xbt/asserts.h>
-#include <xbt/log.h>
 
-#include "star_nm.hpp"
-#include "../../dot.hpp"
-#include "nm.hpp"
+#include "./star_mom.hpp"
 
-XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_star_nm, "Messages specific for this example");
+XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_star_mom, "Messages specific for this example");
 
 using namespace std;
 using namespace protocol;
 
-StarNetworkManager::StarNetworkManager(NodeInfo node_info) : NetworkManager(node_info)
+StarMOM::StarMOM(NodeInfo node_info) : MOM(node_info)
 {
     this->connected_nodes = new vector<NodeInfo>();
 }
 
-StarNetworkManager::~StarNetworkManager() 
+StarMOM::~StarMOM() 
 {
     delete this->connected_nodes;
 };
 
-void StarNetworkManager::run()
+void StarMOM::run()
 {
     switch (this->state)
     {
@@ -48,13 +41,13 @@ void StarNetworkManager::run()
                     this->state = WAITING_REGISTRATION_REQUEST;
                     break;
                 case NodeRole::Aggregator:
-                    xbt_die("The StarNetworkManager can't have a secondary Aggregator, only a Main one.");
+                    // xbt_die("The StarMOM can't have a secondary Aggregator, only a Main one.");
                     break;
             }
             break;
         case WAITING_REGISTRATION_CONFIRMATION:
             {
-                auto packet = this->get();
+                auto packet = this->nm->get();
 
                 if (auto *confirmation = get_if<operations::RegistrationConfirmation>(&packet->op))
                 {
@@ -68,22 +61,22 @@ void StarNetworkManager::run()
         case WAITING_REGISTRATION_REQUEST:
             {
                 if (!this->start_time.has_value())
-                    this->start_time = simgrid::s4u::Engine::get_instance()->get_clock();
+                    this->start_time = this->common->get_time();
 
-                const auto time_elapsed = simgrid::s4u::Engine::get_instance()->get_clock() - *this->start_time;
+                const auto time_elapsed = this->common->get_time() - *this->start_time;
                 const auto remaining_time = Constants::REGISTRATION_TIMEOUT - time_elapsed;
 
                 try 
                 { 
                     // try to wait for incoming RegistrationRequests
-                    auto packet = this->get(remaining_time); 
+                    auto packet = this->nm->get(remaining_time); 
 
                     if (auto *request = get_if<operations::RegistrationRequest>(&packet->op))
                     {
                         this->registration_requests->push_back(*request);
                     }
                 }
-                catch (simgrid::TimeoutException) 
+                catch (exceptions::TimeoutException)
                 {
                     // when timeout, handle registrations and change state
                     this->handle_registration_requests();
@@ -154,39 +147,19 @@ void StarNetworkManager::run()
             {
                 this->kill_role_actor();
                 this->handle_kill_phase();
-                simgrid::s4u::this_actor::exit();
+                // Replace with the kill_process from Common?
+                // simgrid::s4u::this_actor::exit();
             }
     }
 }
 
-void StarNetworkManager::handle_registration_requests()
+void StarMOM::handle_registration_requests()
 {
-    xbt_assert(this->my_node_info.role == NodeRole::MainAggregator);
-
-    if (Constants::GENERATE_DOT_FILES)
-    {
-        DOTGenerator::get_instance().add_to_cluster(
-            std::format("cluster-{}", this->my_node_info.name),
-            std::format("{} [label=\"{}\", color=green]", this->my_node_info.name, this->my_node_info.name)
-        );
-    }
+    // xbt_assert(this->my_node_info.role == NodeRole::MainAggregator);
 
     for (auto request : *this->registration_requests)
     {
         this->connected_nodes->push_back(request.node_to_register); 
-
-        if (Constants::GENERATE_DOT_FILES)
-        {
-            DOTGenerator::get_instance().add_to_cluster(
-                std::format("cluster-{}", this->my_node_info.name),
-                std::format("{} [label=\"{}\", color=yellow]", request.node_to_register.name, request.node_to_register.name)
-            );
-
-            DOTGenerator::get_instance().add_to_cluster(
-                std::format("cluster-{}", this->my_node_info.name),
-                std::format("{} -> {} [color=green]", this->my_node_info.name, request.node_to_register.name)
-            );
-        }
 
         auto node_list = vector<NodeInfo>();
         node_list.push_back(this->my_node_info);
@@ -208,7 +181,7 @@ void StarNetworkManager::handle_registration_requests()
     );
 }
 
-void StarNetworkManager::send_registration_request()
+void StarMOM::send_registration_request()
 {
     // This assert is'nt true in the case of hierarchical aggregator...
     // xbt_assert(this->my_node_info.role == NodeRole::Trainer);
@@ -227,7 +200,7 @@ void StarNetworkManager::send_registration_request()
 }
 
 
-void StarNetworkManager::handle_registration_confirmation(const operations::RegistrationConfirmation &confirmation)
+void StarMOM::handle_registration_confirmation(const operations::RegistrationConfirmation &confirmation)
 {
     for (auto node: *confirmation.node_list)
     {
@@ -239,7 +212,7 @@ void StarNetworkManager::handle_registration_confirmation(const operations::Regi
     );
 }
 
-void StarNetworkManager::broadcast(const unique_ptr<Packet> &p, bool is_redirected)
+void StarMOM::broadcast(const unique_ptr<Packet> &p, bool is_redirected)
 {
     for(auto node_info : *this->connected_nodes)
     {
@@ -248,7 +221,7 @@ void StarNetworkManager::broadcast(const unique_ptr<Packet> &p, bool is_redirect
     }
 }
 
-void StarNetworkManager::handle_kill_phase()
+void StarMOM::handle_kill_phase()
 {
     // Wait to sent to kill packet to everyone on the network
     if (this->my_node_info.role != NodeRole::Trainer || this->get_my_node_name().contains("hierarchical_"))

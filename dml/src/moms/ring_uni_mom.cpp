@@ -7,7 +7,7 @@
 #include "./ring_uni_mom.hpp"
 #include "../../include/i_network_manager.hpp"
 
-XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_ring_uni_nm, "Messages specific for this example");
+XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_ring_uni_mom, "Messages specific for this example");
 
 using namespace std;
 using namespace protocol;
@@ -51,9 +51,9 @@ void RingUniMOM::run()
         case WAITING_REGISTRATION_REQUEST:
             {
                 if (!this->start_time.has_value())
-                    this->start_time = this->commons->get_time();
+                    this->start_time = this->common->get_time();
 
-                const auto time_elapsed = this->commons->get_time() - *this->start_time;
+                const auto time_elapsed = this->common->get_time() - *this->start_time;
                 const auto remaining_time = Constants::REGISTRATION_TIMEOUT - time_elapsed;
 
                 // try 

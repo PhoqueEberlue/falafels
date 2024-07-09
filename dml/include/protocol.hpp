@@ -2,6 +2,7 @@
 #define DML_PROTOCOL_HPP
 
 #include <cstdint>
+#include <exception>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -10,6 +11,7 @@
 #include <variant>
 #include <vector>
 #include <xbt/log.h>
+#include <exception>
 
 #include "./constants.hpp"
 
@@ -29,6 +31,15 @@ namespace events {
     };
 
     using NetworkEvent = std::variant<NodeConnected, ClusterConnected>; 
+}
+
+namespace exceptions {
+    class TimeoutException : public std::exception {
+    private: 
+        std::string message;
+    public:
+        TimeoutException(const char* msg) : message(msg) {}
+    };
 }
 
 enum class NodeRole

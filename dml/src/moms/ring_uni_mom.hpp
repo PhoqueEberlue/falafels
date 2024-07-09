@@ -4,7 +4,6 @@
 
 #include "../../include/mom.hpp"
 #include <memory>
-#include <simgrid/forward.h>
 
 class RingUniMOM : public MOM 
 {
