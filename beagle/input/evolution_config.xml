@@ -1,0 +1,10 @@
+<?xml version='1.0'?>
+<!-- Describe the hardware available on our target platform by referencing profiles contained in profiles.xml -->
+<hardware>
+    <hosts>
+        <host-profile-ref name="raspberry Pi 4B" number="10"/>
+    </hosts>
+    <links>
+        <link-profile-ref name="poor-adsl" number="10"/>
+    </links>
+</hardware>
