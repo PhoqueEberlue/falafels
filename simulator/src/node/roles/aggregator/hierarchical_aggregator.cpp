@@ -20,14 +20,25 @@ HierarchicalAggregator::HierarchicalAggregator(std::unordered_map<std::string, s
         switch (str2int(key.c_str()))
         {
             case str2int("central_aggregator_name"):
-                XBT_INFO("central_aggregator_name=%s", value.c_str());
-                this->central_aggregator_name = value;
-                break;
+                {
+                    XBT_INFO("central_aggregator_name=%s", value.c_str());
+                    this->central_aggregator_name = value;
+                    break;
+                }
             case str2int("is_main_aggregator"):
-                bool ima = std::stoi(value);
-                XBT_INFO("is_main_aggregator=%b", ima);
-                this->is_main_aggregator = ima;
-                break;
+                {
+                    bool ima = std::stoi(value);
+                    XBT_INFO("is_main_aggregator=%b", ima);
+                    this->is_main_aggregator = ima;
+                    break;
+                }
+            case str2int("number_local_epochs"):
+                {
+                    int nble = std::stoi(value);
+                    XBT_INFO("number_local_epochs=%i", nble);
+                    this->number_local_epochs = nble;
+                    break;
+                }
         }
     } 
 
