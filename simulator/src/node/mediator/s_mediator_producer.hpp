@@ -4,7 +4,7 @@
 
 #include "s_mediator.hpp"
 #include "../../../../dml/include/i_mediator_producer.hpp"
-#include "../../../../dml/include/async_wrapper.hpp"
+#include "../../../../dml/include/activity.hpp"
 
 using namespace std;
 
@@ -29,7 +29,7 @@ public:
     std::shared_ptr<protocol::Packet> get_to_be_sent_packet();
 
     /** Async get for retrieving a packet to be sent */
-    AsyncWrapper get_async_to_be_sent_packet();
+    Activity get_async_to_be_sent_packet();
 
     /** Async put an operation received by the network */
     void put_received_operation(const protocol::operations::Operation op);

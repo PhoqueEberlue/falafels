@@ -9,6 +9,7 @@
 
 // #include "config_loader.hpp"
 // #include "node/node.hpp"
+#include "node/common/s_common.hpp"
 
 XBT_LOG_NEW_DEFAULT_CATEGORY(s4u_main, "Messages specific for this example");
 
@@ -25,6 +26,9 @@ int main(int argc, char* argv[])
     /* Load the platform description and then deploy the application */
     e.load_platform(argv[1]);
 
+
+    auto common = new SCommon();
+    XBT_INFO("%f", common->get_time());
     // Using our own deployment function instead of simgrid's one
     // e.load_deployment(argv[2]);
 

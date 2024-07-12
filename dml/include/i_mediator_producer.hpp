@@ -2,7 +2,7 @@
 #define DML_I_MEDIATOR_PRODUCER_HPP
 
 #include "./protocol.hpp"
-#include "./async_wrapper.hpp"
+#include "./activity.hpp"
 
 /**
  * IMediatorProducer is the end to be used my MOMs.
@@ -21,7 +21,7 @@ public:
     virtual std::shared_ptr<protocol::Packet> get_to_be_sent_packet() = 0;
 
     /** Async get for retrieving a packet to be sent */
-    virtual AsyncWrapper get_async_to_be_sent_packet() = 0;
+    virtual Activity get_async_to_be_sent_packet() = 0;
 
     /** Async put an operation received by the network */
     virtual void put_received_operation(const protocol::operations::Operation op) = 0;

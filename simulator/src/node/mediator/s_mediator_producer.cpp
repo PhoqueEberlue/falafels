@@ -14,7 +14,7 @@ shared_ptr<Packet> SMediatorProducer::get_to_be_sent_packet()
     return res;
 }
 
-AsyncWrapper SMediatorProducer::get_async_to_be_sent_packet()
+Activity SMediatorProducer::get_async_to_be_sent_packet()
 {
     // return this->mq_to_be_sent_packets->get_async();
 }

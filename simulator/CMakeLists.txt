@@ -13,7 +13,12 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 find_package(SimGrid REQUIRED)
 include_directories(${SimGrid_INCLUDE_DIR})
 
+include_directories(${dml_LIB_HDRS})
+
 set(falafels_files
+    src/node/common/s_common.cpp
+    src/node/common/s_common.hpp
+
     src/node/mediator/s_mediator.hpp
     src/node/mediator/s_mediator_consumer.cpp
     src/node/mediator/s_mediator_consumer.hpp
