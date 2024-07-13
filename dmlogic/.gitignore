@@ -1,0 +1,2 @@
+# Cargo lock is ingored in rust libraries
+Cargo.lock
