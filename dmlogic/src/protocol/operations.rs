@@ -1,4 +1,4 @@
-use super::NodeInfo;
+use crate::bridge::ffi::NodeInfo;
 use std::sync::Arc;
 use std::fmt;
 use std::fmt::Formatter;
@@ -24,7 +24,7 @@ pub struct RegistrationRequest {
 
 #[derive(Clone)]
 pub struct SendLocalModel {
-    pub number_local_epochs_done: u8, // the number of local epochs that the trainer actually did.
+    pub number_local_epochs_done: u64, // the number of local epochs that the trainer actually did.
 }
 
 #[derive(Clone)]

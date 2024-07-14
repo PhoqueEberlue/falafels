@@ -1,4 +1,4 @@
-use super::{NodeInfo, NodeRole};
+use crate::bridge::ffi::{NodeInfo, RoleEnum};
 
 #[derive(Debug, Clone)]
 pub enum NodeFilter {
@@ -11,14 +11,16 @@ pub enum NodeFilter {
 impl NodeFilter {
     pub fn filter(&self, node_info: &NodeInfo) -> bool {
         match self {
-            NodeFilter::Trainers => node_info.role == NodeRole::Trainer,
-            NodeFilter::Aggregators => node_info.role == NodeRole::Aggregator || node_info.role == NodeRole::MainAggregator,
-            NodeFilter::TrainersAndAggregators => matches!(node_info.role, NodeRole::Trainer | NodeRole::Aggregator),
+            NodeFilter::Trainers => node_info.role == RoleEnum::Trainer,
+            NodeFilter::Aggregators => node_info.role == RoleEnum::Aggregator || node_info.role == RoleEnum::MainAggregator,
+            NodeFilter::TrainersAndAggregators => matches!(node_info.role, RoleEnum::Trainer | RoleEnum::Aggregator),
             NodeFilter::Everyone => true,
         }
     }
 }
 
+
+// TODO: review and add some tests because it has been generated with ChatGPT
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -28,7 +30,7 @@ mod tests {
     fn test_trainers_filter() {
         let node_info = NodeInfo {
             name: "Node1".to_string(),
-            role: NodeRole::Trainer,
+            role: RoleEnum::Trainer,
         };
 
         let trainers_filter = NodeFilter::Trainers;
@@ -39,7 +41,7 @@ mod tests {
     fn test_aggregators_filter() {
         let node_info = NodeInfo {
             name: "Node2".to_string(),
-            role: NodeRole::Aggregator,
+            role: RoleEnum::Aggregator,
         };
 
         let aggregators_filter = NodeFilter::Aggregators;
@@ -50,7 +52,7 @@ mod tests {
     fn test_main_aggregator_filter() {
         let node_info = NodeInfo {
             name: "Node3".to_string(),
-            role: NodeRole::MainAggregator,
+            role: RoleEnum::MainAggregator,
         };
 
         let aggregators_filter = NodeFilter::Aggregators;
@@ -61,7 +63,7 @@ mod tests {
     fn test_everyone_filter() {
         let node_info = NodeInfo {
             name: "Node4".to_string(),
-            role: NodeRole::Trainer,
+            role: RoleEnum::Trainer,
         };
 
         let everyone_filter = NodeFilter::Everyone;
@@ -69,14 +71,14 @@ mod tests {
 
         let node_info = NodeInfo {
             name: "Node5".to_string(),
-            role: NodeRole::Aggregator,
+            role: RoleEnum::Aggregator,
         };
 
         assert!(everyone_filter.filter(&node_info));
 
         let node_info = NodeInfo {
             name: "Node6".to_string(),
-            role: NodeRole::MainAggregator,
+            role: RoleEnum::MainAggregator,
         };
 
         assert!(everyone_filter.filter(&node_info));
