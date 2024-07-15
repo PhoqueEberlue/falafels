@@ -1,7 +1,6 @@
 use super::AggregatorBase;
-use crate::bridge::ffi::{EventEndExec, TaskExec};
 use crate::moms::MOMEvent;
-use crate::motherboard::{MotherboardEvent, MotherboardOrMOMEvent};
+use crate::motherboard::{MotherboardEvent, MotherboardOrMOMEvent, TaskExec};
 use crate::protocol::operations::Operation;
 use crate::roles::{Role, RoleEvent};
 
@@ -30,16 +29,12 @@ impl SimpleAggregator {
 
     fn initializing(&mut self, event: MotherboardOrMOMEvent) -> Option<RoleEvent> {
         match event {
-            // At initialization, send the first global model
-            MotherboardOrMOMEvent::Motherboard(
-                MotherboardEvent::MotherboardInitialized()) => {
-                return Some(self.base.create_send_global_model_event());
-            },
             // Case where we receive ClusterConnected event 
             MotherboardOrMOMEvent::MOM(
                 MOMEvent::ClusterConnected(nb_clients_connected)) => {
                 self.base.number_client_training = nb_clients_connected;
                 self.state = State::WaitingLocalModels;
+                return Some(self.base.create_send_global_model_event());
             },
             _ => {}, // Ignore all other events
         }
@@ -51,12 +46,16 @@ impl SimpleAggregator {
         match event {
             MotherboardOrMOMEvent::MOM(
                 MOMEvent::OperationReceived(
-                    Operation::SendLocalModel(op_send_global))) => {
+                    Operation::SendLocalModel { number_local_epochs_done })) => {
 
                 self.base.number_local_models += 1;
-                self.base.total_number_local_epochs += op_send_global.number_local_epochs_done;
+                self.base.total_number_local_epochs += number_local_epochs_done;
 
                 if self.base.number_local_models >= self.base.number_client_training {
+                    // Send the aggregation task and change state
+                    self.add_task(
+                        self.base.create_aggregating_task()
+                    );
                     self.state = State::Aggregating;
                 }
             },
@@ -67,14 +66,6 @@ impl SimpleAggregator {
     }
 
     fn aggregating(&mut self, event: MotherboardOrMOMEvent) -> Option<RoleEvent> {
-        // If not already sent, send execution task
-        if !self.base.aggregating_task_sent {
-            self.add_task(
-                self.base.create_aggregation_task()
-            );
-            return None;
-        }
-
         // TODO: Do we still need MainAggregator???? It's pretty annoying ngl
         // Only check end condition as MainAggregator
         // if (this->get_role_type() == NodeRole::MainAggregator 
@@ -84,13 +75,21 @@ impl SimpleAggregator {
         // Only check End condition or send global model when the aggregation task finished
         match event {
             MotherboardOrMOMEvent::Motherboard(
-                MotherboardEvent::EndExec(event)) => {
+                MotherboardEvent::TaskExecDone) => {
+
+                // Increment the number of aggregated models
+                self.base.total_aggregated_models += self.base.number_local_models;
+                // Compute the number of global epochs
+                self.base.number_global_epochs = self.base.total_aggregated_models / self.base.number_client_training;
+
                 if self.base.check_end_condition() {
                     self.base.print_end_report();
-                    self.base.send_kills();
+                    // Return TBSP with Kill op
+                    return Some(self.base.send_kills());
                 } else {
                     self.base.number_local_models = 0;
                     self.state = State::WaitingLocalModels;
+                    // Return TBSP with GlobalModel op 
                     return Some(self.base.create_send_global_model_event());
                 }
             },
@@ -130,23 +129,42 @@ impl Role for SimpleAggregator {
 
 #[cfg(test)]
 mod tests {
+    use crate::motherboard::KindExec;
+
     use super::*;
 
     #[test]
-    fn test_initializing() {
+    fn test_typical_work_flow() {
         let mut sa = SimpleAggregator::new();
-        let res = sa.put_event(MotherboardOrMOMEvent::Motherboard(MotherboardEvent::MotherboardInitialized()));
-
-        // Verify that after MotherboardInitialized the aggregator sends a ToBeSentPacket event
-        assert!(matches!(res.unwrap(), RoleEvent::ToBeSentPacket(_)));
 
         // It should be still in initializing mode
         assert!(matches!(sa.state, State::Initializing));
 
-        sa.put_event(MotherboardOrMOMEvent::MOM(MOMEvent::ClusterConnected(12)));
+        // Pretend that 12 clients have connected
+        let event = sa.put_event(MotherboardOrMOMEvent::MOM(MOMEvent::ClusterConnected(12)));
 
         // Should have 12 training clients and in WaitingLocalModels state
         assert!(sa.base.number_client_training == 12);
         assert!(matches!(sa.state, State::WaitingLocalModels));
+
+        // The Aggregator sends a ToBeSentPacket event to the MOM
+        assert!(matches!(event.unwrap(), RoleEvent::ToBeSentPacket { .. }));
+
+        for i in 0..12 {
+            sa.put_event(MotherboardOrMOMEvent::MOM(
+                MOMEvent::OperationReceived(
+                    Operation::SendLocalModel { number_local_epochs_done: 3 })));
+            
+            if i == 11 { // <- last local model
+                // When all local models have been received, it should have changed its state to Aggregating
+                assert!(matches!(sa.state, State::Aggregating));
+                assert!(matches!(sa.pop_task().unwrap(), TaskExec { kind: KindExec::Aggregating }));
+            } else {
+                // Otherwise it should still be listening for new local models
+                assert!(matches!(sa.state, State::WaitingLocalModels));
+            }
+        }
+
+        sa.put_event(MotherboardOrMOMEvent::Motherboard(MotherboardEvent::TaskExecDone));
     }
 }

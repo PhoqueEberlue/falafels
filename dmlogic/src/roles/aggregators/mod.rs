@@ -1,20 +1,19 @@
 pub mod asynchronous_aggregator;
 pub mod simple_aggregator;
 
-use crate::{bridge::ffi::TaskExec, motherboard::MotherboardTask, roles::Role};
+use crate::{motherboard::{KindExec, TaskExec}, protocol::{filters::NodeFilter, operations::Operation}, roles::Role};
 
 use super::RoleEvent;
 
 struct AggregatorBase {
-    number_local_epochs: u8,
-    number_global_epochs: u16,
+    number_local_epochs: u64,
+    number_global_epochs: u64,
     total_aggregated_models: u64,
-    number_client_training: u32,
-    number_local_models: u32,
+    number_client_training: u64,
+    number_local_models: u64,
     total_number_local_epochs: u64,
     initialization_time: f64,
     is_main_aggregator: bool,
-    aggregating_task_sent: bool,
 }
 
 impl AggregatorBase {
@@ -28,22 +27,29 @@ impl AggregatorBase {
             total_number_local_epochs: 0,
             initialization_time: 0.0,     // Set actual initialization time
             is_main_aggregator: false,
-            aggregating_task_sent: false,
         }
     }
 
     /// Create an aggregation task
-    fn create_aggregation_task(&self) -> TaskExec {
-        MotherboardTask::Exec(TaskExec { yep: 45 });
-        unimplemented!()
+    fn create_aggregating_task(&self) -> TaskExec {
+        TaskExec { kind: KindExec::Aggregating }
     }
 
     fn create_send_global_model_event(&self) -> RoleEvent {
-        unimplemented!()
+        RoleEvent::ToBeSentPacket {
+            filter: NodeFilter::Trainers,
+            op: Operation::SendGlobalModel {
+                number_local_epochs: self.number_local_epochs 
+            }
+        }
     }
 
-    fn send_kills(&self) {
-        unimplemented!()
+    fn send_kills(&self) -> RoleEvent {
+        // TODO: Add unit test for that
+        RoleEvent::ToBeSentPacket {
+            filter: NodeFilter::Everyone,
+            op: Operation::Kill,
+        }
     }
 
     fn print_end_report(&self) {
@@ -51,7 +57,10 @@ impl AggregatorBase {
     }
 
     fn check_end_condition(&self) -> bool {
-        unimplemented!()
+        // TODO: make it an argument for the aggregator
+        // Support multiple end_conditions
+        // TODO: Add unit test for that
+        return self.total_number_local_epochs >= 1000;
     }
 }
 

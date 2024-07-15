@@ -1,8 +1,7 @@
 pub mod aggregators;
 pub mod trainers;
 
-use crate::bridge::ffi::TaskExec;
-use crate::motherboard::MotherboardOrMOMEvent;
+use crate::motherboard::{MotherboardOrMOMEvent, TaskExec};
 use crate::protocol::filters::NodeFilter;
 use crate::protocol::operations::Operation;
 
@@ -18,10 +17,8 @@ pub trait Role {
 }
 
 pub enum RoleEvent {
-    ToBeSentPacket(ToBeSentPacket)
-}
-
-pub struct ToBeSentPacket {
-    filter: NodeFilter,
-    op: Operation,
+    ToBeSentPacket {
+        filter: NodeFilter,
+        op: Operation,
+    }
 }

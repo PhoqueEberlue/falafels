@@ -1,13 +1,11 @@
 use crate::protocol::operations::Operation;
-use crate::bridge::ffi::TaskSend;
-use crate::motherboard::MotherboardOrMOMEvent;
-
+use crate::motherboard::{MotherboardOrMOMEvent, TaskSend};
 
 pub enum MOMEvent {
     OperationReceived(Operation),
     NodeConnected(),
     // Contains the number of connected clients
-    ClusterConnected(u32),
+    ClusterConnected(u64),
 }
 
 pub trait MOM {

@@ -3,47 +3,31 @@ use std::sync::Arc;
 use std::fmt;
 use std::fmt::Formatter;
 
-
-#[derive(Clone)]
-pub struct RegistrationConfirmation {
-    pub node_list: Arc<Vec<NodeInfo>>, // list of nodes attributed by the aggregator.
-}
-
-#[derive(Clone)]
-pub struct SendGlobalModel {
-    pub number_local_epochs: u8, // number of local epochs the trainer should perform.
-}
-
-#[derive(Clone)]
-pub struct Kill;
-
-#[derive(Clone)]
-pub struct RegistrationRequest {
-    pub node_to_register: NodeInfo, // the node that the aggregator should register.
-}
-
-#[derive(Clone)]
-pub struct SendLocalModel {
-    pub number_local_epochs_done: u64, // the number of local epochs that the trainer actually did.
-}
-
 #[derive(Clone)]
 pub enum Operation {
-    RegistrationConfirmation(RegistrationConfirmation),
-    SendGlobalModel(SendGlobalModel),
-    Kill(Kill),
-    RegistrationRequest(RegistrationRequest),
-    SendLocalModel(SendLocalModel),
+    RegistrationConfirmation {
+        node_list: Arc<Vec<NodeInfo>>, // list of nodes attributed by the aggregator.
+    },
+    SendGlobalModel { 
+        number_local_epochs: u64, // number of local epochs the trainer should perform.
+    },
+    Kill,
+    RegistrationRequest {
+        node_to_register: NodeInfo, // the node that the aggregator should register.
+    },
+    SendLocalModel {
+        number_local_epochs_done: u64, // the number of local epochs that the trainer actually did.
+    },
 }
 
 impl fmt::Display for Operation {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Operation::RegistrationConfirmation(_) => write!(f, "RegistrationConfirmation"),
-            Operation::SendGlobalModel(_) => write!(f, "SendGlobalModel"),
-            Operation::Kill(_) => write!(f, "Kill"),
-            Operation::RegistrationRequest(_) => write!(f, "RegistrationRequest"),
-            Operation::SendLocalModel(_) => write!(f, "SendLocalModel"),
+            Operation::RegistrationConfirmation { .. } => write!(f, "RegistrationConfirmation"),
+            Operation::SendGlobalModel { .. } => write!(f, "SendGlobalModel"),
+            Operation::Kill => write!(f, "Kill"),
+            Operation::RegistrationRequest { .. } => write!(f, "RegistrationRequest"),
+            Operation::SendLocalModel { .. } => write!(f, "SendLocalModel"),
         }
     }
 }
