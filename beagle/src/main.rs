@@ -7,16 +7,13 @@ mod study;
 use clap::Parser;
 
 use options::{Cli, Commands};
-use study::Study;
+use study::{InputForVarying, Study};
 
 fn main() {
     let args = Cli::parse();
 
     // Study with varying machines number
-    let mut study = Study::new(
-        args.simulation_name.clone(),
-        format!("./records/{}", args.simulation_name.replace(" ", "_"))
-    );
+    let mut study;
 
     match args.command {
         Some(c) => {
@@ -24,10 +21,13 @@ fn main() {
                 Commands::Varying { clusters_path, step, total_number_gen } => {
                     // Create two Rawfalafels structures, one to be the base for "normal"
                     // topologies, one for hierarchical topologies
-                    let base_rf = Study::recompose_rf(
-                        &clusters_path, &args.constants_path, &args.profiles_path).unwrap();
+                    study = Study::new(
+                        args.simulation_name.clone(),
+                        format!("./records/{}", args.simulation_name.replace(" ", "_")),
+                        InputForVarying { clusters_path, constants_path: args.constants_path, profiles_path: args.profiles_path }
+                    );
 
-                    study.varying_machines_number_sim(base_rf, step, total_number_gen);
+                    study.varying_machines_number_sim(step, total_number_gen);
                 },
                 Commands::Evolution { evolution_config_path } => {
                     unimplemented!();

@@ -4,12 +4,11 @@ use plotly::{common::{Anchor, Marker, Title}, layout::{themes::{PLOTLY_DARK, PLO
 
 use serde::{Serialize, Deserialize};
 use crate::environment::Environment;
-use fryer::{platformer::Platformer, structures::{common::{Arg, Constants}, raw::{Profiles, RawFalafels}}};
+use fryer::{platformer::{Platformer, RawAndFried}, structures::{common::{Arg, Constants}, platform_specs::{self, PlatformSpecs}, raw::{Profiles, RawFalafels}}};
 use crate::individual::{Individual, IndividualFactory};
 use launcher::Outcome;
 use crate::structures::base::Clusters;
 use crate::launcher;
-use quick_xml::de::from_str;
 
 
 // Colors for dark mode
@@ -33,41 +32,61 @@ fn create_dir_if_not_exists<P: AsRef<Path>>(path: P) {
     }
 }
 
+
+/// Struct containing the necessary inputs for a study that inspects varying parameters
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Study {
+pub struct InputForVarying {
+    pub clusters_path: String, 
+    pub constants_path: String,
+    pub profiles_path: String,
+}
+
+/// Struct containing the necessary inputs for an evolution based study
+#[derive(Debug, Serialize, Deserialize)]
+pub struct InputForEvolution {
+    platform_specs: String,
+    constants_path: String,
+    profiles_path: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Study<T> {
+    pub input: T,
     pub name: String,
     pub output_dir: String,
     pub outcomes_map: HashMap<String, Vec<Outcome>>,
     pub x_axis: Vec<u16>,
 }
 
-impl Study {
-    pub fn new(name: String, output_dir: String) -> Study {
+impl<'a, T: Serialize + for<'de> Deserialize<'de>> Study<T> {
+    pub fn new(name: String, output_dir: String, input: T) -> Study<T> {
         create_dir_if_not_exists(&output_dir);
         create_dir_if_not_exists(format!("{}/logs", &output_dir));
         create_dir_if_not_exists(format!("{}/fried", &output_dir));
         create_dir_if_not_exists(format!("{}/platform", &output_dir));
 
-        Study { name, output_dir, outcomes_map: HashMap::new(), x_axis: Vec::new() }
+        Study { name, output_dir, outcomes_map: HashMap::new(), x_axis: Vec::new(), input }
     } 
 
-    pub fn load_from_json(study_path: &str) -> Study {
+    pub fn load_from_json(study_path: &str) -> Study<T> {
         let content = String::from_utf8(fs::read(study_path).unwrap()).unwrap();
         serde_json::from_str(&content).unwrap()
     }
+}
 
+impl Study<InputForVarying> {
     /// Creates a RawFalafels structure by loading and combininig 3 xml files:
     /// - base (the clusters)
     /// - constants
     /// - profiles
-    pub fn recompose_rf(base_path: &str, constants_path: &str, profiles_path: &str) -> Result<RawFalafels, Box<dyn Error>> {
-        let base_content = fs::read_to_string(base_path)?;
-        let constants_content = fs::read_to_string(constants_path)?;
-        let profiles_content = fs::read_to_string(profiles_path)?;
+    fn recompose_rf(&self) -> Result<RawFalafels, Box<dyn Error>> {
+        let base_content = fs::read_to_string(&self.input.clusters_path)?;
+        let constants_content = fs::read_to_string(&self.input.constants_path)?;
+        let profiles_content = fs::read_to_string(&self.input.profiles_path)?;
 
-        let base: Clusters = from_str(&base_content)?;
-        let constants: Constants = from_str(&constants_content)?;
-        let profiles: Profiles = from_str(&profiles_content)?;
+        let base: Clusters = quick_xml::de::from_str(&base_content)?;
+        let constants: Constants = quick_xml::de::from_str(&constants_content)?;
+        let profiles: Profiles = quick_xml::de::from_str(&profiles_content)?;
 
         Ok(RawFalafels { constants, profiles, clusters: base.list })
     }
@@ -77,9 +96,9 @@ impl Study {
         fs::write(format!("{}/study_obj.json", self.output_dir), content).unwrap();
     }
 
-    pub fn varying_machines_number_sim(&mut self, base_rf: RawFalafels, step: u16, total_number_gen: u16) {
-
-
+    pub fn varying_machines_number_sim(&mut self, step: u16, total_number_gen: u16) {
+        let base_rf = self.recompose_rf().unwrap();
+        
         let mut factory = IndividualFactory::new(base_rf, &self.output_dir);
 
         // let main_cluster = factory.base_rf.clusters.get_mut(0).unwrap();
@@ -99,8 +118,12 @@ impl Study {
             // we generate one platform for hierarchical topologies and one for others
             let non_hierachical_ind = &individuals.get(0).unwrap();
             let hierarchical_ind = &individuals.last().unwrap();
-            let mut platformer = Platformer::new(&non_hierachical_ind.rf, &non_hierachical_ind.ff);
-            let mut platformer_h = Platformer::new(&hierarchical_ind.rf, &hierarchical_ind.ff);
+
+            let mut platformer = Platformer::new(
+                RawAndFried { rf: &non_hierachical_ind.rf, ff: &non_hierachical_ind.ff } );
+
+            let mut platformer_h = Platformer::new(
+                RawAndFried { rf: &hierarchical_ind.rf, ff: &hierarchical_ind.ff } );
 
             let platform = platformer.create_star_topology();
             let platform_h = platformer_h.create_star_topology();
@@ -305,5 +328,23 @@ impl Study {
 
         plot.write_html(format!("{}/out.html", self.output_dir));
         plot.write_image(format!("{}/out_white.ext", self.output_dir), ImageFormat::PNG, 1920, 1080, 1.0);
+    }
+}
+
+impl Study<InputForEvolution> {
+    /// Creates a RawFalafels structure by loading and combininig 3 xml files:
+    /// - base (the clusters)
+    /// - constants
+    /// - profiles
+    fn recompose_rf(&self) -> Result<(), Box<dyn Error>> {
+        let platform_specs = fs::read_to_string(&self.input.platform_specs)?;
+        let constants_content = fs::read_to_string(&self.input.constants_path)?;
+        let profiles_content = fs::read_to_string(&self.input.profiles_path)?;
+
+        let : PlatformSpecs = quick_xml::de::from_str(&platform_specs)?;
+        let constants: Constants = quick_xml::de::from_str(&constants_content)?;
+        let profiles: Profiles = quick_xml::de::from_str(&profiles_content)?;
+
+        Ok(())
     }
 }
