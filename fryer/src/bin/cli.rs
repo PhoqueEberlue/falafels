@@ -1,4 +1,4 @@
-use fryer::{fryer::Fryer, platformer::Platformer};
+use fryer::{fryer::Fryer, platformer::{self, Platformer}};
 
 fn main() {
     //let mut fryer = Fryer::new(Some("../name-champions-lol.txt"));
@@ -10,7 +10,8 @@ fn main() {
 
     fryer.write_fried_falafels("../xml/fried-falafels.xml", &fried_falafels);
 
-    let mut platformer = Platformer::new(&raw_falafels, &fried_falafels);
+    let raw_and_fried = platformer::RawAndFried { rf: &raw_falafels, ff: &fried_falafels };
+    let mut platformer = Platformer::new(raw_and_fried);
 
     let platform = platformer.create_star_topology();
 

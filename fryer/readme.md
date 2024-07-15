@@ -48,3 +48,7 @@ rename our field to $value
 #[serde(rename = "$value")]
 pub content: Content
 ```
+
+## Running
+
+Note: prefer running in Debug mode because Rust doesn't check for integer overflow in release.

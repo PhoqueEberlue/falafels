@@ -10,3 +10,4 @@ pub mod fried;
 pub mod common;
 pub mod platform;
 pub mod raw;
+pub mod platform_specs;
