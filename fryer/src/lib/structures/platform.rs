@@ -1,9 +1,8 @@
+use super::common::Prop;
 /// Rewrite of the simgrid platform XML definition using serde.
 /// See https://simgrid.org/doc/latest/XML_reference.html for full specification
 /// Not everything is available yet.
-
-use serde::{Serialize, Deserialize};
-use super::common::Prop;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename = "platform")]
@@ -34,7 +33,7 @@ pub struct Router {
     #[serde(rename = "@id")]
     pub id: String,
     #[serde(rename = "@coordinates", skip_serializing_if = "Option::is_none")]
-    pub coordinates: Option<String>
+    pub coordinates: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

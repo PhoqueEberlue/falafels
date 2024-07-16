@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Constants {
@@ -12,7 +12,7 @@ pub struct Constant {
     name: String,
 
     #[serde(rename = "@value")]
-    value: String
+    value: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

@@ -1,4 +1,7 @@
-use crate::structures::{common::{AggregatorType, Arg, ClusterTopology}, fried::NodeRole};
+use crate::structures::{
+    common::{AggregatorType, Arg, ClusterTopology},
+    fried::NodeRole,
+};
 
 use super::structures::{common, fried, raw};
 use core::panic;
@@ -75,24 +78,27 @@ impl Fryer {
                 // Start by iter every fried cluster
                 fried_clusters.iter_mut().for_each(
                     // Iter through each node
-                    |c| c.nodes.iter_mut().for_each(
-                        // If node is aggregator
-                        |n| if let NodeRole::Aggregator(a) = n.role.borrow_mut() {
-                            // of type hierarchical
-                            if let AggregatorType::Hierarchical = a.aggregator_type {
-                                // We add the central_aggregator_name argument
-                                let args = a.args.get_or_insert_with(|| Vec::<common::Arg>::new());
+                    |c| {
+                        c.nodes.iter_mut().for_each(
+                            // If node is aggregator
+                            |n| {
+                                if let NodeRole::Aggregator(a) = n.role.borrow_mut() {
+                                    // of type hierarchical
+                                    if let AggregatorType::Hierarchical = a.aggregator_type {
+                                        // We add the central_aggregator_name argument
+                                        let args =
+                                            a.args.get_or_insert_with(|| Vec::<common::Arg>::new());
 
-                                // Add argument with value of the central_aggregator_name
-                                args.push(
-                                    common::Arg { 
-                                        name: String::from("central_aggregator_name"), 
-                                        value: central_aggregator_name.clone() 
+                                        // Add argument with value of the central_aggregator_name
+                                        args.push(common::Arg {
+                                            name: String::from("central_aggregator_name"),
+                                            value: central_aggregator_name.clone(),
+                                        });
                                     }
-                                );
-                            }
-                        }
-                    )
+                                }
+                            },
+                        )
+                    },
                 )
             }
         }
@@ -196,8 +202,9 @@ impl Fryer {
     }
 
     fn create_aggregator_nodes(&mut self, cluster_param: &raw::Cluster) -> Vec<fried::Node> {
-        if cluster_param.topology != ClusterTopology::RingUni 
-        && cluster_param.aggregators.number > 1 {
+        if cluster_param.topology != ClusterTopology::RingUni
+            && cluster_param.aggregators.number > 1
+        {
             panic!("Only UniRing can support multiple aggregators");
         }
 
@@ -215,7 +222,10 @@ impl Fryer {
             if !main_aggregator {
                 let args = aggregator.args.get_or_insert_with(|| Vec::new());
                 // push argument to enable is_main_aggregator flag
-                args.push(Arg { name: "is_main_aggregator".to_string(), value: "1".to_string() });
+                args.push(Arg {
+                    name: "is_main_aggregator".to_string(),
+                    value: "1".to_string(),
+                });
                 main_aggregator = true;
             }
 
