@@ -1,5 +1,7 @@
+mod star_mom;
+
+use crate::motherboard::{MotherbroadOrRoleEvent, TaskSend};
 use crate::protocol::operations::Operation;
-use crate::motherboard::{MotherboardOrMOMEvent, TaskSend};
 
 pub enum MOMEvent {
     OperationReceived(Operation),
@@ -9,8 +11,7 @@ pub enum MOMEvent {
 }
 
 pub trait MOM {
-    // fn get_role_type(&self) -> RoleEnum;
-    fn put_event(&self, mb_event: MotherboardOrMOMEvent) -> Option<MOMEvent>;
+    fn put_event(&mut self, mb_event: MotherbroadOrRoleEvent) -> Option<MOMEvent>;
 
     // To be used by the implemented to add execution tasks
     fn add_task(&mut self, task: TaskSend);

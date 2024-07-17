@@ -1,14 +1,14 @@
 use crate::bridge::ffi::NodeInfo;
-use std::sync::Arc;
 use std::fmt;
 use std::fmt::Formatter;
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub enum Operation {
     RegistrationConfirmation {
-        node_list: Arc<Vec<NodeInfo>>, // list of nodes attributed by the aggregator.
+        node_list: Vec<NodeInfo>, // list of nodes attributed by the aggregator.
     },
-    SendGlobalModel { 
+    SendGlobalModel {
         number_local_epochs: u64, // number of local epochs the trainer should perform.
     },
     Kill,

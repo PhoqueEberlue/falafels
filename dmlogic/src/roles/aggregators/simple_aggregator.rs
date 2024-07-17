@@ -20,8 +20,8 @@ pub struct SimpleAggregator {
 
 impl SimpleAggregator {
     pub fn new() -> SimpleAggregator {
-        SimpleAggregator { 
-            base: AggregatorBase::new(), 
+        SimpleAggregator {
+            base: AggregatorBase::new(),
             state: State::Initializing,
             tasks: Vec::new(),
         }
@@ -29,14 +29,13 @@ impl SimpleAggregator {
 
     fn initializing(&mut self, event: MotherboardOrMOMEvent) -> Option<RoleEvent> {
         match event {
-            // Case where we receive ClusterConnected event 
-            MotherboardOrMOMEvent::MOM(
-                MOMEvent::ClusterConnected(nb_clients_connected)) => {
+            // Case where we receive ClusterConnected event
+            MotherboardOrMOMEvent::MOM(MOMEvent::ClusterConnected(nb_clients_connected)) => {
                 self.base.number_client_training = nb_clients_connected;
                 self.state = State::WaitingLocalModels;
                 return Some(self.base.create_send_global_model_event());
-            },
-            _ => {}, // Ignore all other events
+            }
+            _ => {} // Ignore all other events
         }
 
         None
@@ -44,22 +43,21 @@ impl SimpleAggregator {
 
     fn waiting_local_models(&mut self, event: MotherboardOrMOMEvent) -> Option<RoleEvent> {
         match event {
-            MotherboardOrMOMEvent::MOM(
-                MOMEvent::OperationReceived(
-                    Operation::SendLocalModel { number_local_epochs_done })) => {
-
+            MotherboardOrMOMEvent::MOM(MOMEvent::OperationReceived(
+                Operation::SendLocalModel {
+                    number_local_epochs_done,
+                },
+            )) => {
                 self.base.number_local_models += 1;
                 self.base.total_number_local_epochs += number_local_epochs_done;
 
                 if self.base.number_local_models >= self.base.number_client_training {
                     // Send the aggregation task and change state
-                    self.add_task(
-                        self.base.create_aggregating_task()
-                    );
+                    self.add_task(self.base.create_aggregating_task());
                     self.state = State::Aggregating;
                 }
-            },
-            _ => {}, // Ignore all other events
+            }
+            _ => {} // Ignore all other events
         }
 
         None
@@ -68,19 +66,18 @@ impl SimpleAggregator {
     fn aggregating(&mut self, event: MotherboardOrMOMEvent) -> Option<RoleEvent> {
         // TODO: Do we still need MainAggregator???? It's pretty annoying ngl
         // Only check end condition as MainAggregator
-        // if (this->get_role_type() == NodeRole::MainAggregator 
+        // if (this->get_role_type() == NodeRole::MainAggregator
         //     && this->check_end_condition())
         // {
         //
         // Only check End condition or send global model when the aggregation task finished
         match event {
-            MotherboardOrMOMEvent::Motherboard(
-                MotherboardEvent::TaskExecDone) => {
-
+            MotherboardOrMOMEvent::Motherboard(MotherboardEvent::TaskExecDone) => {
                 // Increment the number of aggregated models
                 self.base.total_aggregated_models += self.base.number_local_models;
                 // Compute the number of global epochs
-                self.base.number_global_epochs = self.base.total_aggregated_models / self.base.number_client_training;
+                self.base.number_global_epochs =
+                    self.base.total_aggregated_models / self.base.number_client_training;
 
                 if self.base.check_end_condition() {
                     self.base.print_end_report();
@@ -89,25 +86,24 @@ impl SimpleAggregator {
                 } else {
                     self.base.number_local_models = 0;
                     self.state = State::WaitingLocalModels;
-                    // Return TBSP with GlobalModel op 
+                    // Return TBSP with GlobalModel op
                     return Some(self.base.create_send_global_model_event());
                 }
-            },
-            _ => {}, // Ignore all other events
+            }
+            _ => {} // Ignore all other events
         }
-        
+
         None
     }
 
     fn run_one_step(&mut self, event: MotherboardOrMOMEvent) -> Option<RoleEvent> {
         match self.state {
-            State::Initializing => { self.initializing(event) },
-            State::WaitingLocalModels => { self.waiting_local_models(event) },
-            State::Aggregating => { self.aggregating(event) },
+            State::Initializing => self.initializing(event),
+            State::WaitingLocalModels => self.waiting_local_models(event),
+            State::Aggregating => self.aggregating(event),
         }
     }
 }
-
 
 impl Role for SimpleAggregator {
     // fn get_role_type(&self) -> RoleEnum {
@@ -121,7 +117,7 @@ impl Role for SimpleAggregator {
     fn pop_task(&mut self) -> Option<TaskExec> {
         self.tasks.pop()
     }
-    
+
     fn add_task(&mut self, task: TaskExec) {
         self.tasks.push(task);
     }
@@ -134,7 +130,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_typical_work_flow() {
+    fn test_typical_workflow() {
         let mut sa = SimpleAggregator::new();
 
         // It should be still in initializing mode
@@ -148,23 +144,33 @@ mod tests {
         assert!(matches!(sa.state, State::WaitingLocalModels));
 
         // The Aggregator sends a ToBeSentPacket event to the MOM
-        assert!(matches!(event.unwrap(), RoleEvent::ToBeSentPacket { .. }));
+        assert!(matches!(event, Some(RoleEvent::ToBeSentPacket { .. })));
 
         for i in 0..12 {
-            sa.put_event(MotherboardOrMOMEvent::MOM(
-                MOMEvent::OperationReceived(
-                    Operation::SendLocalModel { number_local_epochs_done: 3 })));
-            
-            if i == 11 { // <- last local model
+            sa.put_event(MotherboardOrMOMEvent::MOM(MOMEvent::OperationReceived(
+                Operation::SendLocalModel {
+                    number_local_epochs_done: 3,
+                },
+            )));
+
+            if i == 11 {
+                // <- last local model
                 // When all local models have been received, it should have changed its state to Aggregating
                 assert!(matches!(sa.state, State::Aggregating));
-                assert!(matches!(sa.pop_task().unwrap(), TaskExec { kind: KindExec::Aggregating }));
+                assert!(matches!(
+                    sa.pop_task(),
+                    Some(TaskExec {
+                        kind: KindExec::Aggregating
+                    })
+                ));
             } else {
                 // Otherwise it should still be listening for new local models
                 assert!(matches!(sa.state, State::WaitingLocalModels));
             }
         }
 
-        sa.put_event(MotherboardOrMOMEvent::Motherboard(MotherboardEvent::TaskExecDone));
+        sa.put_event(MotherboardOrMOMEvent::Motherboard(
+            MotherboardEvent::TaskExecDone,
+        ));
     }
 }

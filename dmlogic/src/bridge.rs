@@ -1,9 +1,9 @@
 use core::panic;
 
+use crate::motherboard::MotherboardEvent;
 use ffi::*;
-use crate::motherboard::{MotherboardEvent};
 
-use crate::motherboard::{Motherboard, new_motherboard};
+use crate::motherboard::{new_motherboard, Motherboard};
 
 #[cxx::bridge(namespace = "bridge::dml")]
 pub mod ffi {
@@ -51,7 +51,7 @@ pub mod ffi {
 // pub struct TaskWrapper {
 //     pub task: MotherboardTask
 // }
-// 
+//
 // // TODO: can we handle this better? The constraints is that we are limited to C-like enums, that
 // // why we need the wrapper
 // impl TaskWrapper {
@@ -61,7 +61,7 @@ pub mod ffi {
 //             MotherboardTask::Send(_) => TaskKind::Send,
 //         }
 //     }
-// 
+//
 //     fn get_send(&self) -> TaskSend {
 //         if let MotherboardTask::Send(t) = &self.task {
 //             return t.clone();
@@ -69,7 +69,7 @@ pub mod ffi {
 //             panic!("Called get_send() on a Task that wasn't a send()")
 //         }
 //     }
-// 
+//
 //     fn get_exec(&self) -> TaskExec {
 //         if let MotherboardTask::Exec(t) = &self.task {
 //             return t.clone();
@@ -78,20 +78,20 @@ pub mod ffi {
 //         }
 //     }
 // }
-// 
+//
 // fn new_event() -> Box<EventWrapper> {
 //     Box::new(EventWrapper { event: MotherboardEvent::NotInstanciated })
 // }
-// 
+//
 // pub struct EventWrapper {
 //     pub event: MotherboardEvent
 // }
-// 
+//
 // impl EventWrapper {
 //     fn set_receiv(&mut self, event_send: EventReceiv) {
 //         self.event = MotherboardEvent::Receiv(event_send);
 //     }
-// 
+//
 //     fn set_exec(&mut self, event_exec: EventEndExec) {
 //         self.event = MotherboardEvent::EndExec(event_exec);
 //     }

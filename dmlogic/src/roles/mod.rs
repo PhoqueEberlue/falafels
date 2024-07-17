@@ -17,8 +17,5 @@ pub trait Role {
 }
 
 pub enum RoleEvent {
-    ToBeSentPacket {
-        filter: NodeFilter,
-        op: Operation,
-    }
+    ToBeSentPacket { filter: NodeFilter, op: Operation },
 }

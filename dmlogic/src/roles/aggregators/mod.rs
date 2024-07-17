@@ -1,7 +1,11 @@
 pub mod asynchronous_aggregator;
 pub mod simple_aggregator;
 
-use crate::{motherboard::{KindExec, TaskExec}, protocol::{filters::NodeFilter, operations::Operation}, roles::Role};
+use crate::{
+    motherboard::{KindExec, TaskExec},
+    protocol::{filters::NodeFilter, operations::Operation},
+    roles::Role,
+};
 
 use super::RoleEvent;
 
@@ -25,22 +29,24 @@ impl AggregatorBase {
             number_client_training: 65535,
             number_local_models: 0,
             total_number_local_epochs: 0,
-            initialization_time: 0.0,     // Set actual initialization time
+            initialization_time: 0.0, // Set actual initialization time
             is_main_aggregator: false,
         }
     }
 
     /// Create an aggregation task
     fn create_aggregating_task(&self) -> TaskExec {
-        TaskExec { kind: KindExec::Aggregating }
+        TaskExec {
+            kind: KindExec::Aggregating,
+        }
     }
 
     fn create_send_global_model_event(&self) -> RoleEvent {
         RoleEvent::ToBeSentPacket {
             filter: NodeFilter::Trainers,
             op: Operation::SendGlobalModel {
-                number_local_epochs: self.number_local_epochs 
-            }
+                number_local_epochs: self.number_local_epochs,
+            },
         }
     }
 
@@ -66,5 +72,5 @@ impl AggregatorBase {
 
 // Is this needed?
 // pub trait AggregatorTrait: Role {
-// 
+//
 // }

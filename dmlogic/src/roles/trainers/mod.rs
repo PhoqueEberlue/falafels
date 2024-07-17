@@ -1,4 +1,7 @@
-use crate::{motherboard::{KindExec, TaskExec}, protocol::{filters::NodeFilter, operations::Operation}};
+use crate::{
+    motherboard::{KindExec, TaskExec},
+    protocol::{filters::NodeFilter, operations::Operation},
+};
 
 use super::RoleEvent;
 
@@ -19,7 +22,9 @@ impl TrainerBase {
 
     // Method to run and wait for the training activities in parallel
     pub fn create_training_task(&self) -> TaskExec {
-        TaskExec { kind: KindExec::Training }
+        TaskExec {
+            kind: KindExec::Training,
+        }
     }
 
     // Method to send the local model to aggregator(s)
@@ -27,8 +32,8 @@ impl TrainerBase {
         RoleEvent::ToBeSentPacket {
             filter: NodeFilter::Aggregators,
             op: Operation::SendLocalModel {
-                number_local_epochs_done: self.number_local_epochs 
-            }
+                number_local_epochs_done: self.number_local_epochs,
+            },
         }
     }
 }

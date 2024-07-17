@@ -12,13 +12,16 @@ impl NodeFilter {
     pub fn filter(&self, node_info: &NodeInfo) -> bool {
         match self {
             NodeFilter::Trainers => node_info.role == RoleEnum::Trainer,
-            NodeFilter::Aggregators => node_info.role == RoleEnum::Aggregator || node_info.role == RoleEnum::MainAggregator,
-            NodeFilter::TrainersAndAggregators => matches!(node_info.role, RoleEnum::Trainer | RoleEnum::Aggregator),
+            NodeFilter::Aggregators => {
+                node_info.role == RoleEnum::Aggregator || node_info.role == RoleEnum::MainAggregator
+            }
+            NodeFilter::TrainersAndAggregators => {
+                matches!(node_info.role, RoleEnum::Trainer | RoleEnum::Aggregator)
+            }
             NodeFilter::Everyone => true,
         }
     }
 }
-
 
 // TODO: review and add some tests because it has been generated with ChatGPT
 #[cfg(test)]
