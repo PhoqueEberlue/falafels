@@ -1,5 +1,5 @@
-use serde::{Serialize, Deserialize};
 use fryer::structures::raw::Cluster;
+use serde::{Deserialize, Serialize};
 
 /// Contains the clusters only (compared to RawFalafels). Used to tweak the parameters of the
 /// Clusters in a Study

@@ -1,15 +1,32 @@
-use std::{collections::hash_map::HashMap, error::Error, fs, path::Path, thread};
+use std::{
+    collections::hash_map::HashMap,
+    error::Error,
+    fs,
+    path::Path,
+    thread::{self, JoinHandle},
+};
 
-use plotly::{common::{Anchor, Marker, Title}, layout::{themes::{PLOTLY_DARK, PLOTLY_WHITE}, Annotation, Axis, GridPattern, LayoutGrid}, ImageFormat, Layout, Plot, Scatter};
+use plotly::{
+    common::{Anchor, Marker, Title},
+    layout::{
+        themes::{PLOTLY_DARK, PLOTLY_WHITE},
+        Annotation, Axis, GridPattern, LayoutGrid,
+    },
+    ImageFormat, Layout, Plot, Scatter,
+};
 
-use serde::{Serialize, Deserialize};
-use crate::environment::Environment;
-use fryer::{platformer::{Platformer, RawAndFried}, structures::{common::{Arg, Constants}, platform_specs::{self, PlatformSpecs}, raw::{Profiles, RawFalafels}}};
-use crate::individual::{Individual, IndividualFactory};
-use launcher::Outcome;
 use crate::structures::base::Clusters;
-use crate::launcher;
-
+use crate::{individual_factory::IndividualFactory, structures::environment::Environment};
+use crate::{launcher, structures::individual::Individual};
+use fryer::{
+    platformer::{Platformer, RawAndFried, SpecsAndProfiles},
+    structures::{
+        common::{Arg, Constants},
+        raw::{PlatformSpecs, Profiles, RawFalafels},
+    },
+};
+use launcher::Outcome;
+use serde::{Deserialize, Serialize};
 
 // Colors for dark mode
 // const COLORS: &'static [&'static str; 10] = &[
@@ -19,76 +36,53 @@ use crate::launcher;
 
 // Colors for white mode
 const COLORS: &'static [&'static str; 10] = &[
-            "#636efa", "#EF553B", "#00cc96", "#ab63fa", "#FFA15A", "#19d3f3", "#FF6692", "#B6E880",
-            "#FF97FF", "#FECB52",
+    "#636efa", "#EF553B", "#00cc96", "#ab63fa", "#FFA15A", "#19d3f3", "#FF6692", "#B6E880",
+    "#FF97FF", "#FECB52",
 ];
 
 fn create_dir_if_not_exists<P: AsRef<Path>>(path: P) {
     match fs::create_dir(&path) {
-        Ok(()) => {},
+        Ok(()) => {}
         // Ignore if directory already exists
-        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {},
+        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
         Err(e) => panic!("{}", e),
     }
 }
 
-
-/// Struct containing the necessary inputs for a study that inspects varying parameters
+/// Struct containing the necessary inputs for a study
 #[derive(Debug, Serialize, Deserialize)]
-pub struct InputForVarying {
-    pub clusters_path: String, 
+pub struct InputFiles {
+    pub clusters_path: String,
     pub constants_path: String,
     pub profiles_path: String,
-}
-
-/// Struct containing the necessary inputs for an evolution based study
-#[derive(Debug, Serialize, Deserialize)]
-pub struct InputForEvolution {
-    platform_specs: String,
-    constants_path: String,
-    profiles_path: String,
+    pub platform_specs: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Study<T> {
-    pub input: T,
+pub struct Study {
+    pub input_files: InputFiles,
     pub name: String,
     pub output_dir: String,
     pub outcomes_map: HashMap<String, Vec<Outcome>>,
+    pub outcomes_vec: Vec<Vec<Outcome>>,
     pub x_axis: Vec<u16>,
 }
 
-impl<'a, T: Serialize + for<'de> Deserialize<'de>> Study<T> {
-    pub fn new(name: String, output_dir: String, input: T) -> Study<T> {
+impl Study {
+    pub fn new(name: String, output_dir: String, input_files: InputFiles) -> Study {
         create_dir_if_not_exists(&output_dir);
         create_dir_if_not_exists(format!("{}/logs", &output_dir));
         create_dir_if_not_exists(format!("{}/fried", &output_dir));
         create_dir_if_not_exists(format!("{}/platform", &output_dir));
 
-        Study { name, output_dir, outcomes_map: HashMap::new(), x_axis: Vec::new(), input }
-    } 
-
-    pub fn load_from_json(study_path: &str) -> Study<T> {
-        let content = String::from_utf8(fs::read(study_path).unwrap()).unwrap();
-        serde_json::from_str(&content).unwrap()
-    }
-}
-
-impl Study<InputForVarying> {
-    /// Creates a RawFalafels structure by loading and combininig 3 xml files:
-    /// - base (the clusters)
-    /// - constants
-    /// - profiles
-    fn recompose_rf(&self) -> Result<RawFalafels, Box<dyn Error>> {
-        let base_content = fs::read_to_string(&self.input.clusters_path)?;
-        let constants_content = fs::read_to_string(&self.input.constants_path)?;
-        let profiles_content = fs::read_to_string(&self.input.profiles_path)?;
-
-        let base: Clusters = quick_xml::de::from_str(&base_content)?;
-        let constants: Constants = quick_xml::de::from_str(&constants_content)?;
-        let profiles: Profiles = quick_xml::de::from_str(&profiles_content)?;
-
-        Ok(RawFalafels { constants, profiles, clusters: base.list })
+        Study {
+            name,
+            output_dir,
+            outcomes_map: HashMap::new(),
+            outcomes_vec: Vec::new(),
+            x_axis: Vec::new(),
+            input_files,
+        }
     }
 
     pub fn export_to_json(&self) {
@@ -96,9 +90,44 @@ impl Study<InputForVarying> {
         fs::write(format!("{}/study_obj.json", self.output_dir), content).unwrap();
     }
 
+    pub fn load_from_json(study_path: &str) -> Study {
+        let content = String::from_utf8(fs::read(study_path).unwrap()).unwrap();
+        serde_json::from_str(&content).unwrap()
+    }
+
+    /// Creates a RawFalafels structure by loading and combininig 3 xml files:
+    /// - base (the clusters)
+    /// - constants
+    /// - profiles
+    fn recompose_rf(&self) -> Result<RawFalafels, Box<dyn Error>> {
+        let base_content = fs::read_to_string(&self.input_files.clusters_path)?;
+        let constants_content = fs::read_to_string(&self.input_files.constants_path)?;
+        let profiles_content = fs::read_to_string(&self.input_files.profiles_path)?;
+
+        let base: Clusters = quick_xml::de::from_str(&base_content)?;
+        let constants: Constants = quick_xml::de::from_str(&constants_content)?;
+        let profiles: Profiles = quick_xml::de::from_str(&profiles_content)?;
+
+        // Handling optional case when using a PlatformSpecs
+        let platform_specs = match &self.input_files.platform_specs {
+            Some(path) => {
+                let content = fs::read_to_string(path)?;
+                quick_xml::de::from_str(&content)?
+            }
+            None => None,
+        };
+
+        Ok(RawFalafels {
+            constants,
+            profiles,
+            clusters: base.list,
+            platform_specs,
+        })
+    }
+
     pub fn varying_machines_number_sim(&mut self, step: u16, total_number_gen: u16) {
         let base_rf = self.recompose_rf().unwrap();
-        
+
         let mut factory = IndividualFactory::new(base_rf, &self.output_dir);
 
         // let main_cluster = factory.base_rf.clusters.get_mut(0).unwrap();
@@ -119,23 +148,39 @@ impl Study<InputForVarying> {
             let non_hierachical_ind = &individuals.get(0).unwrap();
             let hierarchical_ind = &individuals.last().unwrap();
 
-            let mut platformer = Platformer::new(
-                RawAndFried { rf: &non_hierachical_ind.rf, ff: &non_hierachical_ind.ff } );
+            let mut platformer = Platformer::new(RawAndFried {
+                rf: &non_hierachical_ind.rf,
+                ff: &non_hierachical_ind.ff,
+            });
 
-            let mut platformer_h = Platformer::new(
-                RawAndFried { rf: &hierarchical_ind.rf, ff: &hierarchical_ind.ff } );
+            let mut platformer_h = Platformer::new(RawAndFried {
+                rf: &hierarchical_ind.rf,
+                ff: &hierarchical_ind.ff,
+            });
 
             let platform = platformer.create_star_topology();
             let platform_h = platformer_h.create_star_topology();
-            
-            let platform_path = format!("{}/platform/GEN-{gen_nb}-simgrid-platform.xml", self.output_dir);
-            let platform_path_h = format!("{}/platform/GEN-{gen_nb}-simgrid-platform-hierarchical.xml", self.output_dir);
+
+            let platform_path = format!(
+                "{}/platform/GEN-{gen_nb}-simgrid-platform.xml",
+                self.output_dir
+            );
+            let platform_path_h = format!(
+                "{}/platform/GEN-{gen_nb}-simgrid-platform-hierarchical.xml",
+                self.output_dir
+            );
 
             platformer.write_platform(&platform_path, &platform);
             platformer_h.write_platform(&platform_path_h, &platform_h);
 
-            let environment = Environment { platform, platform_path };
-            let environment_h = Environment { platform: platform_h, platform_path: platform_path_h };
+            let environment = Environment {
+                platform,
+                platform_path,
+            };
+            let environment_h = Environment {
+                platform: platform_h,
+                platform_path: platform_path_h,
+            };
 
             let mut handles = vec![];
 
@@ -152,13 +197,20 @@ impl Study<InputForVarying> {
                 let individual = ind.clone();
 
                 // Launch as much threads as there are individuals
-                handles.push(
-                    thread::spawn(move || {
-                        let outcome = launcher::run_simulation(gen_nb as u32, output_dir, individual, p_path);
-                        println!("{:?}", outcome);
-                        outcome
-                    })
-                );
+                handles.push(thread::spawn(move || {
+                    // Write individial fried file
+                    individual.write_fried();
+
+                    let outcome = launcher::run_simulation(
+                        gen_nb as u32,
+                        output_dir,
+                        individual,
+                        p_path,
+                        false,
+                    );
+                    println!("{:?}", outcome);
+                    outcome
+                }));
             }
 
             // Wait for results and store in the outcome HashMap
@@ -166,17 +218,20 @@ impl Study<InputForVarying> {
                 let outcome = handle.join().unwrap();
 
                 if self.outcomes_map.contains_key(&outcome.individual_name) {
-                    self.outcomes_map.get_mut(&outcome.individual_name).unwrap().push(outcome);
-                }
-                else {
-                    self.outcomes_map.insert(outcome.individual_name.clone(), vec![outcome]);
+                    self.outcomes_map
+                        .get_mut(&outcome.individual_name)
+                        .unwrap()
+                        .push(outcome);
+                } else {
+                    self.outcomes_map
+                        .insert(outcome.individual_name.clone(), vec![outcome]);
                 }
             }
 
             let main_cluster = factory.base_rf.clusters.get_mut(0).unwrap();
             // Add current number of machines to x_axis
             self.x_axis.push(main_cluster.trainers.number);
-            
+
             // self.x_axis.push(number_local_epochs);
             // let args = main_cluster.aggregators.args.as_mut().unwrap();
             // number_local_epochs += 1;
@@ -204,43 +259,72 @@ impl Study<InputForVarying> {
         for (algo_topo, outcomes_vec) in &self.outcomes_map {
             let current_color = *color_map.get(algo_topo.as_str()).unwrap();
 
-            plot.add_trace(Scatter::new(self.x_axis.clone(), outcomes_vec.iter().map(|o| o.total_consumption).collect())
+            plot.add_trace(
+                Scatter::new(
+                    self.x_axis.clone(),
+                    outcomes_vec.iter().map(|o| o.total_consumption).collect(),
+                )
                 .name(format!("{}", algo_topo.clone()))
                 .x_axis("x1")
                 .y_axis("y1")
-                .marker(Marker::new().color(current_color))
+                .marker(Marker::new().color(current_color)),
             );
 
-            plot.add_trace(Scatter::new(self.x_axis.clone(), outcomes_vec.iter().map(|o| o.total_host_consumption).collect())
+            plot.add_trace(
+                Scatter::new(
+                    self.x_axis.clone(),
+                    outcomes_vec
+                        .iter()
+                        .map(|o| o.total_host_consumption)
+                        .collect(),
+                )
                 .name(format!("{}", algo_topo.clone()))
                 .x_axis("x2")
                 .y_axis("y2")
                 .marker(Marker::new().color(current_color))
-                .show_legend(false)
+                .show_legend(false),
             );
 
-            plot.add_trace(Scatter::new(self.x_axis.clone(), outcomes_vec.iter().map(|o| o.total_link_consumption).collect())
+            plot.add_trace(
+                Scatter::new(
+                    self.x_axis.clone(),
+                    outcomes_vec
+                        .iter()
+                        .map(|o| o.total_link_consumption)
+                        .collect(),
+                )
                 .name(format!("{}", algo_topo.clone()))
                 .x_axis("x3")
                 .y_axis("y3")
                 .marker(Marker::new().color(current_color))
-                .show_legend(false)
+                .show_legend(false),
             );
 
-            plot.add_trace(Scatter::new(self.x_axis.clone(), outcomes_vec.iter().map(|o| o.simulation_time).collect())
+            plot.add_trace(
+                Scatter::new(
+                    self.x_axis.clone(),
+                    outcomes_vec.iter().map(|o| o.simulation_time).collect(),
+                )
                 .name(format!("{}", algo_topo.clone()))
                 .x_axis("x4")
                 .y_axis("y4")
                 .marker(Marker::new().color(current_color))
-                .show_legend(false)
+                .show_legend(false),
             );
 
-            plot.add_trace(Scatter::new(self.x_axis.clone(), outcomes_vec.iter().map(|o| o.total_consumption / o.simulation_time).collect())
+            plot.add_trace(
+                Scatter::new(
+                    self.x_axis.clone(),
+                    outcomes_vec
+                        .iter()
+                        .map(|o| o.total_consumption / o.simulation_time)
+                        .collect(),
+                )
                 .name(format!("{}", algo_topo.clone()))
                 .x_axis("x5")
                 .y_axis("y5")
                 .marker(Marker::new().color(current_color))
-                .show_legend(false)
+                .show_legend(false),
             );
         }
 
@@ -257,7 +341,7 @@ impl Study<InputForVarying> {
                 LayoutGrid::new()
                     .rows(2)
                     .columns(3)
-                    .pattern(GridPattern::Independent)
+                    .pattern(GridPattern::Independent),
             )
             .title(Title::new(&self.name));
 
@@ -327,24 +411,106 @@ impl Study<InputForVarying> {
         plot.show();
 
         plot.write_html(format!("{}/out.html", self.output_dir));
-        plot.write_image(format!("{}/out_white.ext", self.output_dir), ImageFormat::PNG, 1920, 1080, 1.0);
+        plot.write_image(
+            format!("{}/out_white.ext", self.output_dir),
+            ImageFormat::PNG,
+            1920,
+            1080,
+            1.0,
+        );
     }
-}
 
-impl Study<InputForEvolution> {
-    /// Creates a RawFalafels structure by loading and combininig 3 xml files:
-    /// - base (the clusters)
-    /// - constants
-    /// - profiles
-    fn recompose_rf(&self) -> Result<(), Box<dyn Error>> {
-        let platform_specs = fs::read_to_string(&self.input.platform_specs)?;
-        let constants_content = fs::read_to_string(&self.input.constants_path)?;
-        let profiles_content = fs::read_to_string(&self.input.profiles_path)?;
+    pub fn evolution_algorithm_sim(&mut self) {
+        let nb_individual_per_category = 10;
+        let nb_iters = 50;
 
-        let : PlatformSpecs = quick_xml::de::from_str(&platform_specs)?;
-        let constants: Constants = quick_xml::de::from_str(&constants_content)?;
-        let profiles: Profiles = quick_xml::de::from_str(&profiles_content)?;
+        let base_rf = self.recompose_rf().unwrap();
 
-        Ok(())
+        // Create one common platform for every individuals
+        let mut platformer = Platformer::new(SpecsAndProfiles {
+            specs: &base_rf.platform_specs.as_ref().unwrap(),
+            profiles: &base_rf.profiles,
+        });
+
+        let platform = platformer.create_star_topology();
+
+        let platform_path = format!("{}/platform/simgrid-platform.xml", self.output_dir);
+
+        platformer.write_platform(&platform_path, &platform);
+
+        let environment = Environment {
+            platform,
+            platform_path,
+        };
+
+        let mut factory = IndividualFactory::new(base_rf, &self.output_dir);
+
+        // Init each category of individual multiple times
+        let mut individuals = (0..nb_individual_per_category)
+            .map(|_| {
+                let mut inds = factory.init_individuals();
+                // Shuffle the names of the nodes so they have random NodeProfiles
+                inds.iter_mut().for_each(|ind| ind.ff.shuffle_node_names());
+                inds
+            })
+            .flatten()
+            .collect();
+
+        for gen_nb in 0..nb_iters {
+            individuals = self.evolution_iteration(&mut individuals, &environment, gen_nb);
+        }
+    }
+
+    fn evolution_iteration(
+        &mut self,
+        individuals: &mut Vec<Individual>,
+        environment: &Environment,
+        gen_nb: u32,
+    ) -> Vec<Individual> {
+        let mut handles = vec![];
+
+        individuals.iter_mut().for_each(|ind| {
+            // Clone the arguments we need to pass to the thread
+            let output_dir = self.output_dir.to_string();
+            let individual = ind.clone();
+            let p_path = environment.platform_path.clone();
+
+            // Run in a thread
+            handles.push(thread::spawn(move || {
+                // Write the FriedFalafels file
+                individual.write_fried();
+
+                // launch simulation
+                let outcome =
+                    launcher::run_simulation(gen_nb, output_dir, individual, p_path, false);
+                println!("{:?}", outcome);
+                outcome
+            }));
+        });
+
+        // Wait for results and store in the outcomes_vec
+        let outcomes = handles
+            .into_iter()
+            .map(|h| h.join().unwrap())
+            .collect::<Vec<_>>();
+
+        // Zip outcomes and individuals together in order to sort individuals by their outcome
+        let mut tmp = outcomes.iter().zip(individuals).collect::<Vec<_>>();
+        tmp.sort_by(|a, b| {
+            // Here we compare simulation time for the sort
+            a.0.simulation_time
+                .partial_cmp(&b.0.simulation_time)
+                .unwrap()
+        });
+
+        // Gets a vector of owned individuals
+        let mut new_individuals = tmp.iter_mut().map(|oi| oi.1.clone()).collect::<Vec<_>>();
+
+        // Delete the worst individuals
+        new_individuals.truncate(new_individuals.len() / 2);
+
+        self.outcomes_vec.push(outcomes);
+
+        new_individuals
     }
 }

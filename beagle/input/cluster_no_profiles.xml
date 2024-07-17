@@ -12,16 +12,9 @@ All of this is done to try to respect the number of each profiles among the diff
 <clusters>
     <cluster topology="ring-uni">
         <aggregators number="1" type="simple">
-            <host-profile-ref name="Precision 7865"/>
-            <link-profile-ref name="fiber"/>
         </aggregators>
 
         <trainers number="100" type="simple">
-            <host-profile-ref name="MSI GP72 7RD Leopard"/>
-            <host-profile-ref name="raspberry Pi 4B"/>
-            <link-profile-ref name="fiber"/>
-            <link-profile-ref name="adsl"/>
         </trainers>
     </cluster>
 </clusters>
-

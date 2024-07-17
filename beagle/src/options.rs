@@ -13,7 +13,13 @@ pub struct Cli {
     pub constants_path: String,
 
     #[arg(short, long, default_value_t = String::from("./input/profiles.xml"))]
-    pub profiles_path: String, 
+    pub profiles_path: String,
+
+    #[arg(short, long, default_value_t = String::from("./input/clusters.xml"))]
+    pub clusters_path: String,
+
+    #[arg(short, long)]
+    pub platform_specs: Option<String>,
 
     #[command(subcommand)]
     pub command: Option<Commands>,
@@ -23,8 +29,6 @@ pub struct Cli {
 pub enum Commands {
     /// Launches a study with varying machine numbers
     Varying {
-        #[arg(short, long, default_value_t = String::from("./input/clusters.xml"))]
-        clusters_path: String,
         #[arg(short, long)]
         step: u16,
         #[arg(short, long)]
@@ -32,8 +36,7 @@ pub enum Commands {
     },
     /// Launches a study with evolution algorithm
     Evolution {
-        /// 
-        #[arg(short, long, default_value_t = String::from("./input/evolution_config.xml"))]
-        evolution_config_path: String,
+        /// Tmp
+        yes: bool,
     },
 }
