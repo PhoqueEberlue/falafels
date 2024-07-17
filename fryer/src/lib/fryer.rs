@@ -260,7 +260,7 @@ impl Fryer {
     }
 
     /// Serialize and write to a file a FriedFalafels structure.
-    pub fn write_fried_falafels(&self, path: &str, ff: &fried::FriedFalafels) {
+    pub fn write_fried_falafels(path: &str, ff: &fried::FriedFalafels) {
         println!("Writing the fried falafels to `{}`...", path);
         let mut result_buffer = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
 

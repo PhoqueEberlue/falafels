@@ -11,7 +11,7 @@ fn main() {
 
     let fried_falafels = fryer.fry(&raw_falafels);
 
-    fryer.write_fried_falafels("../xml/fried-falafels.xml", &fried_falafels);
+    Fryer::write_fried_falafels("../xml/fried-falafels.xml", &fried_falafels);
 
     // Case where we defined the Host and Link profiles directly in the Aggregator and Trainers
     // let raw_and_fried = platformer::RawAndFried { rf: &raw_falafels, ff: &fried_falafels };
