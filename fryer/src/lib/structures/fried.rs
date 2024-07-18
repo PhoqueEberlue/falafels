@@ -174,6 +174,81 @@ impl FriedFalafels {
             None => None,
         }
     }
+
+    /// Add the main aggregator name as a bootstrap-node argument for every node of each cluster.
+    /// It overwrites the value if a previous one existed.
+    pub fn add_booststrap_nodes(&mut self) {
+        self.clusters.iter_mut().for_each(|c| {
+            let aggregator_node = c
+                .nodes
+                .iter()
+                // Find the first aggregator, it should be the main one so we don't check here
+                .find(|n| matches!(n.role, NodeRole::Aggregator(_)));
+
+            // Unpack node name
+            if let Some(Node { name, .. }) = aggregator_node {
+                // Clone to lose borrowing of `c`
+                let main_aggregator_name: String = name.clone();
+
+                c.nodes.iter_mut().for_each(|n| {
+                    // Only add to nodes that aren't the main_aggregator itself
+                    if n.name != main_aggregator_name {
+                        // Set bootstrap-node arg
+                        FriedFalafels::set_arg_value(
+                            &mut n.network_manager.args,
+                            "bootstrap-node",
+                            main_aggregator_name.clone(),
+                        )
+                    }
+                })
+            }
+        });
+    }
+
+    /// Link hierarchical aggregators to the central aggregator (the one that connects every
+    /// subclusters).
+    /// Note that the central aggregator is found in a Hierarchical cluster.
+    pub fn link_hierarchical_aggregators(&mut self) {
+        let mut central_aggregator_name_opt = None;
+
+        // Star by finding the central_aggregator_name
+        for cluster in self.clusters.iter() {
+            // When a cluster has a Hierarchical topology, we link it to every other hierarchical
+            // aggregators
+            if let ClusterTopology::Hierarchical = cluster.topology {
+                // Get the first node (because it should have only one aggregator which is the
+                // central one)
+                let aggregator_some = cluster.nodes.get(0);
+                central_aggregator_name_opt = Some(aggregator_some.unwrap().name.clone());
+            }
+        }
+
+        if let Some(central_aggregator_name) = central_aggregator_name_opt {
+            // Then add a central_aggregator_name to every hierarchical aggregators
+            // Start by iter every fried cluster
+            self.clusters.iter_mut().for_each(
+                // Iter through each node
+                |c| {
+                    c.nodes.iter_mut().for_each(
+                        // If node is aggregator
+                        |n| {
+                            if let NodeRole::Aggregator(a) = n.role.borrow_mut() {
+                                // of type hierarchical
+                                if let AggregatorType::Hierarchical = a.aggregator_type {
+                                    // Add argument with value of the central_aggregator_name
+                                    FriedFalafels::set_arg_value(
+                                        &mut a.args,
+                                        "central_aggregator_name",
+                                        central_aggregator_name.clone(),
+                                    );
+                                }
+                            }
+                        },
+                    )
+                },
+            )
+        }
+    }
 }
 
 #[cfg(test)]
