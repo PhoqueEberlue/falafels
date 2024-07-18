@@ -209,6 +209,7 @@ impl Fryer {
         }
 
         let mut res = Vec::<fried::Node>::new();
+        let mut main_aggregator = false;
 
         // Creating the aggregator(s)
         for _ in 0..cluster_param.aggregators.number {
@@ -217,9 +218,19 @@ impl Fryer {
                 args: cluster_param.aggregators.args.clone(),
             };
 
-            // TODO: Add a function to defines default values and delete default value in Cpp code
             let args = aggregator.args.get_or_insert_with(|| Vec::new());
-            // push argument to enable is_main_aggregator flag
+
+            // Assign one main aggregator (per cluster)
+            if !main_aggregator {
+                // push argument to enable is_main_aggregator flag
+                args.push(Arg {
+                    name: "is_main_aggregator".to_string(),
+                    value: "1".to_string(),
+                });
+                main_aggregator = true;
+            }
+
+            // Add default value of 3 number of local epochs
             args.push(Arg {
                 name: "number_local_epochs".to_string(),
                 value: "3".to_string(),

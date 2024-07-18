@@ -34,6 +34,7 @@
         </node>
         <node name="Node 5">
             <aggregator type="hierarchical">
+                <arg name="is_main_aggregator" value="1"/>
                 <arg name="number_local_epochs" value="3"/>
                 <arg name="central_aggregator_name" value="Node 11"/>
             </aggregator>
@@ -69,6 +70,7 @@
         </node>
         <node name="Node 10">
             <aggregator type="hierarchical">
+                <arg name="is_main_aggregator" value="1"/>
                 <arg name="number_local_epochs" value="3"/>
                 <arg name="central_aggregator_name" value="Node 11"/>
             </aggregator>
@@ -80,6 +82,7 @@
     <cluster topology="hierarchical">
         <node name="Node 11">
             <aggregator type="simple">
+                <arg name="is_main_aggregator" value="1"/>
                 <arg name="number_local_epochs" value="3"/>
             </aggregator>
             <network-manager>
