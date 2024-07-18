@@ -1,6 +1,6 @@
 use crate::structures::{
     common::{AggregatorType, Arg, ClusterTopology},
-    fried::NodeRole,
+    fried::{Aggregator, FriedFalafels, Node, NodeRole, Trainer},
 };
 
 use super::structures::{common, fried, raw};
@@ -65,46 +65,8 @@ impl Fryer {
             fried_clusters.push(fried_cluster);
         }
 
-        for (i, raw_cluster) in rf.clusters.iter().enumerate() {
-            // When a cluster has a Hierarchical topology, we link it to every other hierarchical
-            // aggregators
-            if let ClusterTopology::Hierarchical = &raw_cluster.topology {
-                // Get the corresponding fried clusters with current raw index, and get first
-                // node (because it should have only one aggregator)
-                let aggregator_some = fried_clusters.get(i).unwrap().nodes.get(0);
-                let central_aggregator_name = aggregator_some.unwrap().name.clone();
-
-                // Then add a central_aggregator_name to every hierarchical aggregators
-                // Start by iter every fried cluster
-                fried_clusters.iter_mut().for_each(
-                    // Iter through each node
-                    |c| {
-                        c.nodes.iter_mut().for_each(
-                            // If node is aggregator
-                            |n| {
-                                if let NodeRole::Aggregator(a) = n.role.borrow_mut() {
-                                    // of type hierarchical
-                                    if let AggregatorType::Hierarchical = a.aggregator_type {
-                                        // We add the central_aggregator_name argument
-                                        let args =
-                                            a.args.get_or_insert_with(|| Vec::<common::Arg>::new());
-
-                                        // Add argument with value of the central_aggregator_name
-                                        args.push(common::Arg {
-                                            name: String::from("central_aggregator_name"),
-                                            value: central_aggregator_name.clone(),
-                                        });
-                                    }
-                                }
-                            },
-                        )
-                    },
-                )
-            }
-        }
-
         // Create FriedFalafels
-        let ff = fried::FriedFalafels {
+        let mut ff = fried::FriedFalafels {
             // Setting version, cloning constants (because no processing needed), creating list of node
             version: "0.1".to_string(),
             // Cloning constants because no treatment needed
@@ -113,6 +75,12 @@ impl Fryer {
             clusters: fried_clusters,
         };
 
+        // Link hierarchical aggregators in case we are in a hierarchical scenario
+        Fryer::link_hierarchical_aggregators(&mut ff);
+
+        // Add bootstrap-node arguments
+        Fryer::add_booststrap_nodes(&mut ff);
+
         println!("Falafels ready! 🧆");
 
         // Resets the counter cause fry() can be called multiple times
@@ -120,6 +88,76 @@ impl Fryer {
         // TODO: also reset the name list!
 
         ff
+    }
+
+    /// Add the main aggregator name as a bootstrap-node argument for every node of each cluster.
+    /// It overwrites the value if a previous one existed.
+    fn add_booststrap_nodes(ff: &mut fried::FriedFalafels) {
+        ff.clusters.iter_mut().for_each(|c| {
+            let aggregator_node = c
+                .nodes
+                .iter()
+                // Find the first aggregator, it should be the main one so we don't check here
+                .find(|n| matches!(n.role, NodeRole::Aggregator(_)));
+
+            // Unpack node name
+            if let Some(Node { name, .. }) = aggregator_node {
+                // Clone to lose borrowing of `c`
+                let main_aggregator_name: String = name.clone();
+
+                c.nodes.iter_mut().for_each(|n| {
+                    // Only add to nodes that aren't the main_aggregator itself
+                    if n.name != main_aggregator_name {
+                        Fryer::set_bootstrap_node(n, &main_aggregator_name);
+                    }
+                })
+            }
+        });
+    }
+
+    /// Link hierarchical aggregators to the central aggregator (the one that connects every
+    /// subclusters).
+    /// Note that the central aggregator is found in a Hierarchical cluster.
+    fn link_hierarchical_aggregators(ff: &mut fried::FriedFalafels) {
+        let mut central_aggregator_name_opt = None;
+
+        // Star by finding the central_aggregator_name
+        for cluster in ff.clusters.iter() {
+            // When a cluster has a Hierarchical topology, we link it to every other hierarchical
+            // aggregators
+            if let ClusterTopology::Hierarchical = cluster.topology {
+                // Get the first node (because it should have only one aggregator which is the
+                // central one)
+                let aggregator_some = cluster.nodes.get(0);
+                central_aggregator_name_opt = Some(aggregator_some.unwrap().name.clone());
+            }
+        }
+
+        if let Some(central_aggregator_name) = central_aggregator_name_opt {
+            // Then add a central_aggregator_name to every hierarchical aggregators
+            // Start by iter every fried cluster
+            ff.clusters.iter_mut().for_each(
+                // Iter through each node
+                |c| {
+                    c.nodes.iter_mut().for_each(
+                        // If node is aggregator
+                        |n| {
+                            if let NodeRole::Aggregator(a) = n.role.borrow_mut() {
+                                // of type hierarchical
+                                if let AggregatorType::Hierarchical = a.aggregator_type {
+                                    // Add argument with value of the central_aggregator_name
+                                    FriedFalafels::set_arg_value(
+                                        &mut a.args,
+                                        "central_aggregator_name",
+                                        central_aggregator_name.clone(),
+                                    );
+                                }
+                            }
+                        },
+                    )
+                },
+            )
+        }
     }
 
     /// Count the total number of nodes in every clusters
@@ -140,20 +178,6 @@ impl Fryer {
 
         let mut aggregator_nodes = self.create_aggregator_nodes(cluster);
 
-        // The first aggregator is the main one
-        let main_aggregator_name = aggregator_nodes.first().unwrap().name.clone();
-
-        // Setting bootstrap nodes
-        for trainer_node in trainer_nodes.iter_mut() {
-            // By convention every node knows the main Aggregator at start
-            Fryer::set_bootstrap_node(trainer_node, &main_aggregator_name);
-        }
-
-        for aggregator_node in aggregator_nodes.iter_mut() {
-            // Same for the secondary aggregators
-            Fryer::set_bootstrap_node(aggregator_node, &main_aggregator_name);
-        }
-
         fried_cluster.nodes.append(&mut trainer_nodes);
         fried_cluster.nodes.append(&mut aggregator_nodes);
 
@@ -161,17 +185,11 @@ impl Fryer {
     }
 
     fn set_bootstrap_node(node: &mut fried::Node, bootstrap_node_name: &String) {
-        // Inserts a new array into the Option if its value is None, then returns a mutable
-        // reference to the contained value.
-        let args = node
-            .network_manager
-            .args
-            .get_or_insert_with(|| Vec::<common::Arg>::new());
-
-        args.push(common::Arg {
-            name: "bootstrap-node".to_string(),
-            value: bootstrap_node_name.clone(),
-        });
+        FriedFalafels::set_arg_value(
+            &mut node.network_manager.args,
+            "bootstrap-node",
+            bootstrap_node_name.clone(),
+        )
     }
 
     fn create_trainer_nodes(&mut self, cluster_param: &raw::Cluster) -> Vec<fried::Node> {

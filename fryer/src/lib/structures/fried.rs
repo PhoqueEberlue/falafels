@@ -99,7 +99,7 @@ impl FriedFalafels {
         });
     }
 
-    fn mutate_aggregator(aggregator: &mut Aggregator, rng: &mut StdRng) {
+    pub fn mutate_aggregator(aggregator: &mut Aggregator, rng: &mut StdRng) {
         // Randomly increase/decrease the number of local epochs the aggregator will ask the trainer to do
         FriedFalafels::set_arg_value_with(
             aggregator.args.borrow_mut(),
@@ -129,7 +129,7 @@ impl FriedFalafels {
     /// In this case None is passed to `f` which lets the user
     /// handle this particular case.
     /// The function can capture variables such as rng contexts.
-    fn set_arg_value_with<F>(args_opt: &mut Option<Vec<Arg>>, arg_name: &str, mut f: F)
+    pub fn set_arg_value_with<F>(args_opt: &mut Option<Vec<Arg>>, arg_name: &str, mut f: F)
     where
         F: FnMut(Option<&String>) -> String,
     {
@@ -148,8 +148,26 @@ impl FriedFalafels {
         };
     }
 
+    /// Set an argument value, erase previous value if it existed, otherwise create the argument.
+    pub fn set_arg_value(args_opt: &mut Option<Vec<Arg>>, arg_name: &str, new_value: String)
+    {
+        // Get mutable reference of the Arg vector and intialize it if needed
+        let args = args_opt.get_or_insert_with(|| Vec::new());
+
+        // Find the argument name in the vector
+        match args.iter_mut().find(|a| a.name == arg_name) {
+            // If it exists pass its previous value to `f` and update it with its result
+            Some(arg) => arg.value = new_value,
+            // Otherwise create the argument and pass None to `f`
+            None => args.push(Arg {
+                name: arg_name.to_string(),
+                value: new_value,
+            }),
+        };
+    }
+
     /// Gets an argument reference.
-    fn get_arg<'a>(args_opt: &'a Option<Vec<Arg>>, arg_name: &str) -> Option<&'a Arg> {
+    pub fn get_arg<'a>(args_opt: &'a Option<Vec<Arg>>, arg_name: &str) -> Option<&'a Arg> {
         match args_opt {
             // Find the argument name in the vector
             Some(args) => args.iter().find(|a| a.name == arg_name),
