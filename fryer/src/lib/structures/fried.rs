@@ -1,8 +1,9 @@
 use std::borrow::BorrowMut;
 
 use super::common::{AggregatorType, Arg, ClusterTopology, Constants, NetworkManager, TrainerType};
-use rand::thread_rng;
+use rand::rngs::StdRng;
 use rand::{seq::SliceRandom, Rng};
+use rand::{thread_rng, SeedableRng};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -74,12 +75,11 @@ impl FriedFalafels {
             .collect::<Vec<_>>()
     }
 
-    pub fn shuffle_node_names(&mut self) {
+    pub fn shuffle_node_names(&mut self, rng: &mut StdRng) {
         let mut names = self.get_node_names();
 
         // Shuffle the names
-        let mut rng = thread_rng();
-        names.shuffle(&mut rng);
+        names.shuffle(rng);
 
         self.clusters.iter_mut().for_each(|c| {
             c.nodes
@@ -88,25 +88,25 @@ impl FriedFalafels {
         });
     }
 
-    pub fn mutate_nodes(&mut self) {
+    pub fn mutate_nodes(&mut self, rng: &mut StdRng) {
         self.clusters.iter_mut().for_each(|c| {
             c.nodes.iter_mut().for_each(|n| match n.role.borrow_mut() {
                 NodeRole::Aggregator(a) => {
-                    FriedFalafels::mutate_aggregator(a);
+                    FriedFalafels::mutate_aggregator(a, rng);
                 }
                 _ => {}
             })
         });
     }
 
-    fn mutate_aggregator(aggregator: &mut Aggregator) {
+    fn mutate_aggregator(aggregator: &mut Aggregator, rng: &mut StdRng) {
         // Randomly increase/decrease the number of local epochs the aggregator will ask the trainer to do
         FriedFalafels::set_arg_value_with(
             aggregator.args.borrow_mut(),
             "number_local_epochs",
             |value_opt| {
                 // Generate random variation
-                let incr: i64 = thread_rng().gen_range(-1..1);
+                let incr: i64 = rng.gen_range(-1..1);
                 match value_opt {
                     Some(value) => {
                         let parsed_value = value.parse::<i64>().unwrap();
@@ -128,9 +128,10 @@ impl FriedFalafels {
     /// If the argument (or the argument vector) didn't exist initialize it.
     /// In this case None is passed to `f` which lets the user
     /// handle this particular case.
-    fn set_arg_value_with<F>(args_opt: &mut Option<Vec<Arg>>, arg_name: &str, f: F)
+    /// The function can capture variables such as rng contexts.
+    fn set_arg_value_with<F>(args_opt: &mut Option<Vec<Arg>>, arg_name: &str, mut f: F)
     where
-        F: Fn(Option<&String>) -> String,
+        F: FnMut(Option<&String>) -> String,
     {
         // Get mutable reference of the Arg vector and intialize it if needed
         let args = args_opt.get_or_insert_with(|| Vec::new());
@@ -244,7 +245,6 @@ mod tests {
                     .value,
                 "Default value"
             );
-
         } else {
             panic!("This test is supposed to grab an aggregator")
         }
@@ -256,13 +256,56 @@ mod tests {
             String::from_utf8(fs::read("./tests-files/fried-falafels.xml").unwrap()).unwrap();
         let mut fried: FriedFalafels = quick_xml::de::from_str(&content).unwrap();
 
-        let names = fried.get_node_names();
+        let mut rng = StdRng::seed_from_u64(42);
 
-        fried.shuffle_node_names();
+        fried.shuffle_node_names(&mut rng);
 
         let names_shuffled = fried.get_node_names();
 
-        // I guess there is a small probability that the result is the same?
-        assert_ne!(names, names_shuffled);
+        assert_eq!(
+            names_shuffled,
+            [
+                "Node 2", "Node 6", "Node 3", "Node 5", "Node 7", "Node 9", "Node 1", "Node 10",
+                "Node 11", "Node 4", "Node 8"
+            ]
+        );
+    }
+
+    #[test]
+    fn test_mutate_aggregator() {
+        let content =
+            String::from_utf8(fs::read("./tests-files/fried-falafels.xml").unwrap()).unwrap();
+        let mut fried: FriedFalafels = quick_xml::de::from_str(&content).unwrap();
+
+        let mut rng = StdRng::seed_from_u64(22);
+            
+        // Get a hierarchical aggregator
+        let node = fried.clusters.get_mut(1).unwrap().nodes.get_mut(4).unwrap();
+
+        if let NodeRole::Aggregator(aggregator) = node.role.borrow_mut() {
+            FriedFalafels::mutate_aggregator(aggregator, &mut rng);
+
+            let arg = FriedFalafels::get_arg(&aggregator.args, "number_local_epochs");
+            // The arg get's decreased to 2
+            assert_eq!(arg.unwrap().value, "2");
+
+            FriedFalafels::mutate_aggregator(aggregator, &mut rng);
+
+            let arg = FriedFalafels::get_arg(&aggregator.args, "number_local_epochs");
+            // The arg get's decreased to 1
+            assert_eq!(arg.unwrap().value, "1");
+
+            FriedFalafels::mutate_aggregator(aggregator, &mut rng);
+
+            let arg = FriedFalafels::get_arg(&aggregator.args, "number_local_epochs");
+            // The arg stays at 1
+            assert_eq!(arg.unwrap().value, "1");
+
+            FriedFalafels::mutate_aggregator(aggregator, &mut rng);
+
+            let arg = FriedFalafels::get_arg(&aggregator.args, "number_local_epochs");
+            // Increase at 2
+            assert_eq!(arg.unwrap().value, "2");
+        }
     }
 }
