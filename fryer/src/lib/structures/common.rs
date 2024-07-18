@@ -25,7 +25,7 @@ pub struct Arg {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct NetworkManager {
-    #[serde(rename = "arg")]
+    #[serde(rename = "arg", skip_serializing_if = "Option::is_none")]
     pub args: Option<Vec<Arg>>,
 }
 

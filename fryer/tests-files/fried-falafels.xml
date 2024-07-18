@@ -38,9 +38,7 @@
                 <arg name="number_local_epochs" value="3"/>
                 <arg name="central_aggregator_name" value="Node 11"/>
             </aggregator>
-            <network-manager>
-                <arg name="bootstrap-node" value="Node 5"/>
-            </network-manager>
+            <network-manager/>
         </node>
     </cluster>
     <cluster topology="ring-uni">
@@ -74,9 +72,7 @@
                 <arg name="number_local_epochs" value="3"/>
                 <arg name="central_aggregator_name" value="Node 11"/>
             </aggregator>
-            <network-manager>
-                <arg name="bootstrap-node" value="Node 10"/>
-            </network-manager>
+            <network-manager/>
         </node>
     </cluster>
     <cluster topology="hierarchical">
@@ -85,9 +81,7 @@
                 <arg name="is_main_aggregator" value="1"/>
                 <arg name="number_local_epochs" value="3"/>
             </aggregator>
-            <network-manager>
-                <arg name="bootstrap-node" value="Node 11"/>
-            </network-manager>
+            <network-manager/>
         </node>
     </cluster>
 </fried>

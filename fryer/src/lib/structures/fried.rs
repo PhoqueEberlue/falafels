@@ -149,8 +149,7 @@ impl FriedFalafels {
     }
 
     /// Set an argument value, erase previous value if it existed, otherwise create the argument.
-    pub fn set_arg_value(args_opt: &mut Option<Vec<Arg>>, arg_name: &str, new_value: String)
-    {
+    pub fn set_arg_value(args_opt: &mut Option<Vec<Arg>>, arg_name: &str, new_value: String) {
         // Get mutable reference of the Arg vector and intialize it if needed
         let args = args_opt.get_or_insert_with(|| Vec::new());
 
@@ -218,6 +217,34 @@ mod tests {
         let arg = FriedFalafels::get_arg(&node.network_manager.args, "芝士火锅");
 
         assert!(matches!(arg, None));
+    }
+
+    #[test]
+    fn test_set_arg_value() {
+        let content =
+            String::from_utf8(fs::read("./tests-files/fried-falafels.xml").unwrap()).unwrap();
+        let mut fried: FriedFalafels = quick_xml::de::from_str(&content).unwrap();
+
+        // Get a trainer
+        let node = fried.clusters.get_mut(0).unwrap().nodes.get_mut(0).unwrap();
+
+        // Verify value before modification
+        assert_eq!(
+            FriedFalafels::get_arg(&mut node.network_manager.args, "bootstrap-node").unwrap().value,
+            "Node 5"
+        );
+
+        FriedFalafels::set_arg_value(
+            &mut node.network_manager.args,
+            "bootstrap-node",
+            "Node 6".to_string(),
+        );
+
+        // Verify value after modification
+        assert_eq!(
+            FriedFalafels::get_arg(&mut node.network_manager.args, "bootstrap-node").unwrap().value,
+            "Node 6"
+        );
     }
 
     #[test]
@@ -296,7 +323,7 @@ mod tests {
         let mut fried: FriedFalafels = quick_xml::de::from_str(&content).unwrap();
 
         let mut rng = StdRng::seed_from_u64(22);
-            
+
         // Get a hierarchical aggregator
         let node = fried.clusters.get_mut(1).unwrap().nodes.get_mut(4).unwrap();
 
