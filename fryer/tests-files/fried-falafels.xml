@@ -77,9 +77,10 @@
     </cluster>
     <cluster topology="hierarchical">
         <node name="Node 11">
-            <aggregator type="simple">
+            <aggregator type="asynchronous">
                 <arg name="is_main_aggregator" value="1"/>
                 <arg name="number_local_epochs" value="3"/>
+                <arg name="proportion_threshold" value="0.5"/>
             </aggregator>
             <network-manager/>
         </node>

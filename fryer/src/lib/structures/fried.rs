@@ -1,4 +1,5 @@
 use std::borrow::BorrowMut;
+use std::usize;
 
 use super::common::{AggregatorType, Arg, ClusterTopology, Constants, NetworkManager, TrainerType};
 use rand::rngs::StdRng;
@@ -75,16 +76,48 @@ impl FriedFalafels {
             .collect::<Vec<_>>()
     }
 
+    pub fn get_number_nodes(&self) -> usize {
+        // Count nodes in each cluster and sum
+        self.clusters.iter().map(|c| c.nodes.iter().count()).sum()
+    }
+
     pub fn shuffle_node_names(&mut self, rng: &mut StdRng) {
         let mut names = self.get_node_names();
 
         // Shuffle the names
         names.shuffle(rng);
 
+        let mut count = 0;
         self.clusters.iter_mut().for_each(|c| {
-            c.nodes
-                .iter_mut()
-                .for_each(|n| n.name = names.pop().unwrap())
+            c.nodes.iter_mut().for_each(|n| {
+                n.name = names[count].clone();
+                count += 1;
+            })
+        });
+    }
+
+    pub fn permute_node_names(&mut self, rng: &mut StdRng, nb_permutations: u32) {
+        let mut names = self.get_node_names();
+
+        // Generate `nb_permutations`, a list of tupples containing two usize
+        let permuts = (0..nb_permutations)
+            .map(|_| (rng.gen_range(0..names.len()), rng.gen_range(0..names.len())))
+            .collect::<Vec<_>>();
+
+        // Perform the permutations
+        permuts.into_iter().for_each(|(a, b)| {
+            let tmp = names[a].clone();
+            names[a] = names[b].clone();
+            names[b] = tmp;
+        });
+
+        // Redistribute nodes names
+        let mut count = 0;
+        self.clusters.iter_mut().for_each(|c| {
+            c.nodes.iter_mut().for_each(|n| {
+                n.name = names[count].clone();
+                count += 1;
+            })
         });
     }
 
@@ -122,6 +155,33 @@ impl FriedFalafels {
                 }
             },
         );
+
+        // Randomly increase/decrease the proportion_threshold if it is an asynchronous aggregator
+        if let AggregatorType::Asynchronous = aggregator.aggregator_type {
+            FriedFalafels::set_arg_value_with(
+                aggregator.args.borrow_mut(),
+                "proportion_threshold",
+                |value_opt| {
+                    // Generate random variation either -0.1, 0.0 or 0.1
+                    let mut incr = rng.gen_range(-1..2) as f64;
+                    incr = incr / 10.0;
+                    match value_opt {
+                        Some(value) => {
+                            let parsed_value = value.parse::<f64>().unwrap();
+                            if parsed_value < 0.2 {
+                                return format!("{:.1}", parsed_value + incr.abs());
+                            } else if parsed_value > 0.8 {
+                                return format!("{:.1}", parsed_value - incr.abs());
+                            } else {
+                                return format!("{:.1}", parsed_value + incr);
+                            }
+                        }
+                        // Case the proportion_threshold wasn't initialized, stick to 0.5
+                        None => "0.5".to_string(),
+                    }
+                },
+            );
+        }
     }
 
     /// Set an argument value with a function `f`.
@@ -175,6 +235,7 @@ impl FriedFalafels {
         }
     }
 
+    /// TODO: write tests
     /// Add the main aggregator name as a bootstrap-node argument for every node of each cluster.
     /// It overwrites the value if a previous one existed.
     pub fn add_booststrap_nodes(&mut self) {
@@ -205,6 +266,7 @@ impl FriedFalafels {
         });
     }
 
+    /// TODO: write tests
     /// Link hierarchical aggregators to the central aggregator (the one that connects every
     /// subclusters).
     /// Note that the central aggregator is found in a Hierarchical cluster.
@@ -276,6 +338,17 @@ mod tests {
     }
 
     #[test]
+    fn test_get_number_nodes() {
+        let content =
+            String::from_utf8(fs::read("./tests-files/fried-falafels.xml").unwrap()).unwrap();
+        let fried: FriedFalafels = quick_xml::de::from_str(&content).unwrap();
+
+        let nb = fried.get_number_nodes();
+
+        assert_eq!(nb, 11);
+    }
+
+    #[test]
     fn test_get_arg() {
         let content =
             String::from_utf8(fs::read("./tests-files/fried-falafels.xml").unwrap()).unwrap();
@@ -305,7 +378,9 @@ mod tests {
 
         // Verify value before modification
         assert_eq!(
-            FriedFalafels::get_arg(&mut node.network_manager.args, "bootstrap-node").unwrap().value,
+            FriedFalafels::get_arg(&mut node.network_manager.args, "bootstrap-node")
+                .unwrap()
+                .value,
             "Node 5"
         );
 
@@ -317,7 +392,9 @@ mod tests {
 
         // Verify value after modification
         assert_eq!(
-            FriedFalafels::get_arg(&mut node.network_manager.args, "bootstrap-node").unwrap().value,
+            FriedFalafels::get_arg(&mut node.network_manager.args, "bootstrap-node")
+                .unwrap()
+                .value,
             "Node 6"
         );
     }
@@ -371,7 +448,7 @@ mod tests {
     }
 
     #[test]
-    fn test_shuffle() {
+    fn test_shuffle_node_names() {
         let content =
             String::from_utf8(fs::read("./tests-files/fried-falafels.xml").unwrap()).unwrap();
         let mut fried: FriedFalafels = quick_xml::de::from_str(&content).unwrap();
@@ -385,8 +462,29 @@ mod tests {
         assert_eq!(
             names_shuffled,
             [
-                "Node 2", "Node 6", "Node 3", "Node 5", "Node 7", "Node 9", "Node 1", "Node 10",
-                "Node 11", "Node 4", "Node 8"
+                "Node 8", "Node 4", "Node 11", "Node 10", "Node 1", "Node 9", "Node 7", "Node 5",
+                "Node 3", "Node 6", "Node 2"
+            ]
+        );
+    }
+
+    #[test]
+    fn test_permute_node_names() {
+        let content =
+            String::from_utf8(fs::read("./tests-files/fried-falafels.xml").unwrap()).unwrap();
+        let mut fried: FriedFalafels = quick_xml::de::from_str(&content).unwrap();
+
+        let mut rng = StdRng::seed_from_u64(42);
+
+        fried.permute_node_names(&mut rng, 3);
+
+        let names_shuffled = fried.get_node_names();
+
+        assert_eq!(
+            names_shuffled,
+            [
+                "Node 8", "Node 2", "Node 3", "Node 4", "Node 1", "Node 6", "Node 7", "Node 5",
+                "Node 10", "Node 9", "Node 11"
             ]
         );
     }
@@ -426,6 +524,38 @@ mod tests {
             let arg = FriedFalafels::get_arg(&aggregator.args, "number_local_epochs");
             // Increase at 2
             assert_eq!(arg.unwrap().value, "2");
+        } else {
+            panic!(
+                "This test is supposed to get an aggregator from ./tests-files/fried-falafels.xml"
+            );
+        }
+    }
+
+    #[test]
+    fn test_mutate_async_aggregator() {
+        let content =
+            String::from_utf8(fs::read("./tests-files/fried-falafels.xml").unwrap()).unwrap();
+        let mut fried: FriedFalafels = quick_xml::de::from_str(&content).unwrap();
+
+        let mut rng = StdRng::seed_from_u64(22);
+
+        // Get an async aggregator
+        let node = fried.clusters.get_mut(2).unwrap().nodes.get_mut(0).unwrap();
+
+        if let NodeRole::Aggregator(aggregator) = node.role.borrow_mut() {
+            let results = vec![
+                "0.5", "0.5", "0.6", "0.5", "0.5", "0.4", "0.4", "0.5", "0.6", "0.7", "0.6"
+            ];
+            for res in results {
+                FriedFalafels::mutate_aggregator(aggregator, &mut rng);
+
+                let arg = FriedFalafels::get_arg(&aggregator.args, "proportion_threshold");
+                assert_eq!(arg.unwrap().value, res);
+            }
+        } else {
+            panic!(
+                "This test is supposed to get an aggregator from ./tests-files/fried-falafels.xml"
+            );
         }
     }
 }

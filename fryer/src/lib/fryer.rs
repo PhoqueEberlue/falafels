@@ -114,10 +114,6 @@ impl Fryer {
         fried_cluster
     }
 
-    fn set_bootstrap_node(node: &mut fried::Node, bootstrap_node_name: &String) {
-        
-    }
-
     fn create_trainer_nodes(&mut self, cluster_param: &raw::Cluster) -> Vec<fried::Node> {
         let mut res = Vec::<fried::Node>::new();
 
@@ -179,6 +175,14 @@ impl Fryer {
                 name: "number_local_epochs".to_string(),
                 value: "3".to_string(),
             });
+
+            if let AggregatorType::Asynchronous = aggregator.aggregator_type {
+                // Add default value for proportion_threshold
+                args.push(Arg {
+                    name: "proportion_threshold".to_string(),
+                    value: "0.5".to_string(),
+                });
+            }
 
             let role = fried::NodeRole::Aggregator(aggregator);
 
