@@ -6,14 +6,16 @@ use std::{
     thread::{self, JoinHandle},
 };
 
+use itertools::Itertools;
 use plotly::{
     common::{Anchor, Marker, Title},
     layout::{
         themes::{PLOTLY_DARK, PLOTLY_WHITE},
-        Annotation, Axis, GridPattern, LayoutGrid,
+        Annotation, Axis, BarMode, GridPattern, LayoutGrid,
     },
-    ImageFormat, Layout, Plot, Scatter,
+    Bar, ImageFormat, Layout, Plot, Scatter,
 };
+use rand::{rngs::StdRng, SeedableRng};
 
 use crate::structures::base::Clusters;
 use crate::{individual_factory::IndividualFactory, structures::environment::Environment};
@@ -22,6 +24,7 @@ use fryer::{
     platformer::{Platformer, RawAndFried, SpecsAndProfiles},
     structures::{
         common::{Arg, Constants},
+        fried::FriedFalafels,
         raw::{PlatformSpecs, Profiles, RawFalafels},
     },
 };
@@ -125,7 +128,7 @@ impl Study {
         })
     }
 
-    pub fn varying_machines_number_sim(&mut self, step: u16, total_number_gen: u16) {
+    pub fn varying_machines_number_sim(&mut self, step: u16, total_number_gen: u32) {
         let base_rf = self.recompose_rf().unwrap();
 
         let mut factory = IndividualFactory::new(base_rf, &self.output_dir);
@@ -194,10 +197,11 @@ impl Study {
                 }
 
                 let output_dir = self.output_dir.to_string();
-                let individual = ind.clone();
+                let mut individual = ind.clone();
 
                 // Launch as much threads as there are individuals
                 handles.push(thread::spawn(move || {
+                    individual.gen_nb = gen_nb;
                     // Write individial fried file
                     individual.write_fried();
 
@@ -242,7 +246,7 @@ impl Study {
         }
     }
 
-    pub fn plot_results(&self) {
+    pub fn plot_results_varying(&self) {
         let mut plot = Plot::new();
 
         // Set colors
@@ -420,9 +424,11 @@ impl Study {
         );
     }
 
-    pub fn evolution_algorithm_sim(&mut self) {
+    pub fn evolution_algorithm_sim(&mut self, total_number_gen: u32) {
         let nb_individual_per_category = 10;
-        let nb_iters = 50;
+
+        // Set seed
+        let mut rng = StdRng::seed_from_u64(42);
 
         let base_rf = self.recompose_rf().unwrap();
 
@@ -445,19 +451,29 @@ impl Study {
 
         let mut factory = IndividualFactory::new(base_rf, &self.output_dir);
 
+        let mut number_ind = 0;
         // Init each category of individual multiple times
         let mut individuals = (0..nb_individual_per_category)
             .map(|_| {
                 let mut inds = factory.init_individuals();
-                // Shuffle the names of the nodes so they have random NodeProfiles
-                inds.iter_mut().for_each(|ind| ind.ff.shuffle_node_names());
+                inds.iter_mut().for_each(|ind| {
+                    // Update name of the individual so it has a unique name
+                    ind.name = format!("{}_{}", ind.name, number_ind);
+                    // Shuffle the names of the nodes so they have random NodeProfiles
+                    ind.ff.shuffle_node_names(&mut rng);
+                    // After shuffling we need to recompute the links
+                    ind.ff.add_booststrap_nodes();
+                    ind.ff.link_hierarchical_aggregators();
+                    number_ind += 1;
+                });
                 inds
             })
             .flatten()
             .collect();
 
-        for gen_nb in 0..nb_iters {
-            individuals = self.evolution_iteration(&mut individuals, &environment, gen_nb);
+        for gen_nb in 0..total_number_gen {
+            individuals =
+                self.evolution_iteration(&mut individuals, &environment, &mut rng, gen_nb);
         }
     }
 
@@ -465,6 +481,7 @@ impl Study {
         &mut self,
         individuals: &mut Vec<Individual>,
         environment: &Environment,
+        rng: &mut StdRng,
         gen_nb: u32,
     ) -> Vec<Individual> {
         let mut handles = vec![];
@@ -472,11 +489,12 @@ impl Study {
         individuals.iter_mut().for_each(|ind| {
             // Clone the arguments we need to pass to the thread
             let output_dir = self.output_dir.to_string();
-            let individual = ind.clone();
+            let mut individual = ind.clone();
             let p_path = environment.platform_path.clone();
 
             // Run in a thread
             handles.push(thread::spawn(move || {
+                individual.gen_nb = gen_nb;
                 // Write the FriedFalafels file
                 individual.write_fried();
 
@@ -504,13 +522,62 @@ impl Study {
         });
 
         // Gets a vector of owned individuals
-        let mut new_individuals = tmp.iter_mut().map(|oi| oi.1.clone()).collect::<Vec<_>>();
+        let mut sorted_individuals = tmp.iter_mut().map(|oi| oi.1.clone()).collect::<Vec<_>>();
+        // Gets a vector of owned outcomes
+        let sorted_outcomes = tmp.iter_mut().map(|oi| oi.0.clone()).collect::<Vec<_>>();
 
         // Delete the worst individuals
-        new_individuals.truncate(new_individuals.len() / 2);
+        sorted_individuals.truncate(sorted_individuals.len() / 2);
 
-        self.outcomes_vec.push(outcomes);
+        // Clone the remaining - the best individuals - and mutate them
+        let mut mutated_individuals = sorted_individuals.clone();
 
-        new_individuals
+        mutated_individuals.iter_mut().for_each(|i| {
+            // The name of the mutated individuals become <previous name>_mut_<gen_nb>
+            i.name = format!("{}_mut_{}", i.name, gen_nb);
+            i.ff.mutate_nodes(rng);
+            // Change a small proportion of the roles
+            i.ff.permute_node_names(rng, i.ff.get_number_nodes() as u32 / 5);
+            // Recompute links because of previous permutation
+            i.ff.link_hierarchical_aggregators();
+            i.ff.add_booststrap_nodes();
+        });
+
+        // Add the mutated individuals to the final list
+        sorted_individuals.append(&mut mutated_individuals);
+
+        // Push the results
+        self.outcomes_vec.push(sorted_outcomes);
+
+        sorted_individuals
+    }
+
+    pub fn plot_results_evolution(&self) {
+        let categories = self
+            .outcomes_vec
+            .get(0)
+            .unwrap()
+            .into_iter()
+            .unique_by(|o| o.category.clone())
+            .collect::<Vec<_>>();
+
+        let mut plot = Plot::new();
+
+        // Count the number of individuals of each category
+        for outcomes in self.outcomes_vec {
+            let trace1 = Bar::new(
+                categories.clone(), 
+                outcomes.iter().map(||)
+
+            ).name("SF Zoo");
+
+            let layout = Layout::new().bar_mode(BarMode::Stack);
+
+            plot.add_trace(trace1);
+
+        }
+        plot.set_layout(layout);
+
+        plot.show();
     }
 }

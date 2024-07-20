@@ -9,16 +9,16 @@ pub struct Cli {
     #[arg(short, long)]
     pub simulation_name: String,
 
-    #[arg(short, long, default_value_t = String::from("./input/constants.xml"))]
+    #[arg(long, default_value_t = String::from("./input/constants.xml"))]
     pub constants_path: String,
 
-    #[arg(short, long, default_value_t = String::from("./input/profiles.xml"))]
+    #[arg(long, default_value_t = String::from("./input/profiles.xml"))]
     pub profiles_path: String,
 
-    #[arg(short, long, default_value_t = String::from("./input/clusters.xml"))]
+    #[arg(long, default_value_t = String::from("./input/clusters.xml"))]
     pub clusters_path: String,
 
-    #[arg(short, long)]
+    #[arg(long)]
     pub platform_specs: Option<String>,
 
     #[command(subcommand)]
@@ -29,14 +29,19 @@ pub struct Cli {
 pub enum Commands {
     /// Launches a study with varying machine numbers
     Varying {
-        #[arg(short, long)]
+        #[arg(long)]
         step: u16,
-        #[arg(short, long)]
-        total_number_gen: u16,
+        #[arg(long)]
+        total_number_gen: u32,
     },
     /// Launches a study with evolution algorithm
     Evolution {
         /// Tmp
-        yes: bool,
+        #[arg(long)]
+        total_number_gen: u32,
     },
+    LoadPreviousStudy {
+        #[arg(long)]
+        study_obj_path: String,
+    }
 }

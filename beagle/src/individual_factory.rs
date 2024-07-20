@@ -1,8 +1,7 @@
 use fryer::fryer::Fryer;
 use fryer::structures::{
     common::{AggregatorType, ClusterTopology, TrainerType},
-    fried::FriedFalafels,
-    raw::{Cluster, RawFalafels},
+    raw::RawFalafels,
 };
 
 use crate::structures::individual::Individual;
@@ -100,17 +99,14 @@ impl IndividualFactory {
         // Generate the FriedFalafels
         let ff = self.fryer.fry(&rf);
 
-        // Write it
-        let ff_path = format!(
-            "{}/fried/GEN-{}-{}.xml",
-            self.output_dir, self.generation_number, name
-        );
-
         Individual {
-            name,
+            name: name.clone(),
+            category: name.clone(),
+            // Init at 0
+            gen_nb: 0,
             rf,
             ff,
-            ff_path,
+            ff_dir_path: format!("{}/fried", self.output_dir),
             is_hierarchical: false,
         }
     }
@@ -214,18 +210,15 @@ impl IndividualFactory {
         // Generate the FriedFalafels
         let ff = self.fryer.fry(&rf);
 
-        // Write it
-        let ff_path = format!(
-            "{}/fried/GEN-{}-{}.xml",
-            self.output_dir, self.generation_number, name
-        );
-
         Individual {
-            name,
+            name: name.clone(),
+            category: name.clone(),
+            // Init at 0
+            gen_nb: 0,
             rf,
             ff,
-            ff_path,
-            is_hierarchical: true,
+            ff_dir_path: format!("{}/fried", self.output_dir),
+            is_hierarchical: false,
         }
     }
 }

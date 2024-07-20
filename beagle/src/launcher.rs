@@ -10,6 +10,8 @@ use std::process::Command;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Outcome {
     pub individual_name: String,
+    /// The type of algo / topology used
+    pub category: String,
     pub command: String,
     pub total_host_consumption: f32,
     pub used_host_consumption: f32,
@@ -25,9 +27,9 @@ pub fn run_simulation(
     ind: Individual,
     platform_path: String,
     write_logs: bool
-) -> Outcome {
+) -> Outcome { 
     let output = Command::new("../simulator/build/main")
-        .args([&platform_path, &ind.ff_path])
+        .args([&platform_path, &ind.get_ff_path()])
         .output()
         .expect("failed to execute process");
 
@@ -49,7 +51,8 @@ pub fn run_simulation(
 
     Outcome {
         individual_name: ind.name.clone(),
-        command: format!("../simulator/build/main {} {}", platform_path, &ind.ff_path),
+        category: ind.name.clone(),
+        command: format!("../simulator/build/main {} {}", platform_path, &ind.get_ff_path()),
         total_host_consumption,
         used_host_consumption,
         idle_host_consumption,
