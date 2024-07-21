@@ -1,5 +1,5 @@
 use crate::{
-    motherboard::{KindExec, TaskExec},
+    motherboard::{KindExec, MotherboardTask},
     protocol::{filters::NodeFilter, operations::Operation},
 };
 
@@ -21,10 +21,8 @@ impl TrainerBase {
     }
 
     // Method to run and wait for the training activities in parallel
-    pub fn create_training_task(&self) -> TaskExec {
-        TaskExec {
-            kind: KindExec::Training,
-        }
+    pub fn create_training_task(&self) -> MotherboardTask {
+        MotherboardTask::Exec(KindExec::Training)
     }
 
     // Method to send the local model to aggregator(s)

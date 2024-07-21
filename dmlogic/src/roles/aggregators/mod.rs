@@ -2,7 +2,7 @@ pub mod asynchronous_aggregator;
 pub mod simple_aggregator;
 
 use crate::{
-    motherboard::{KindExec, TaskExec},
+    motherboard::{KindExec, MotherboardTask},
     protocol::{filters::NodeFilter, operations::Operation},
     roles::Role,
 };
@@ -35,10 +35,8 @@ impl AggregatorBase {
     }
 
     /// Create an aggregation task
-    fn create_aggregating_task(&self) -> TaskExec {
-        TaskExec {
-            kind: KindExec::Aggregating,
-        }
+    fn create_aggregating_task(&self) -> MotherboardTask {
+        MotherboardTask::Exec(KindExec::Aggregating)
     }
 
     fn create_send_global_model_event(&self) -> RoleEvent {

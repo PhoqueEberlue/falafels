@@ -1,6 +1,6 @@
-use crate::bridge::ffi::NodeInfo;
 use crate::moms::MOMEvent;
 use crate::protocol::packet::Packet;
+use crate::protocol::NodeInfo;
 use crate::roles::aggregators::simple_aggregator::SimpleAggregator;
 use crate::roles::{Role, RoleEvent};
 
@@ -10,13 +10,14 @@ pub enum KindExec {
     Training,
 }
 
-pub struct TaskExec {
-    pub kind: KindExec,
+pub enum MotherboardTask {
+    Exec(KindExec),
+    Send(Packet), 
+    // Ask the motherboard to send a timeout event in x seconds
+    Timeout(f64),
 }
 
-pub struct TaskSend {
-    pub packet: Packet,
-}
+
 
 pub enum MotherboardEvent {
     /// First emitted event after motherboard initialization
@@ -25,8 +26,9 @@ pub enum MotherboardEvent {
     TaskExecDone,
     /// When a Send Task have been done
     TaskSendDone,
+    TaskTimeoutDone,
     /// Packet have been received by the network
-    PacketReceived,
+    PacketReceived(Packet)
 }
 
 pub enum MotherboardOrMOMEvent {
@@ -35,8 +37,8 @@ pub enum MotherboardOrMOMEvent {
 }
 
 pub enum MotherbroadOrRoleEvent {
+    Motherboard(MotherboardEvent),
     Role(RoleEvent),
-    MOM(MOMEvent),
 }
 
 pub struct Motherboard {

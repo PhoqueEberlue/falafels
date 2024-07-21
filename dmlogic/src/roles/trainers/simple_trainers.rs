@@ -1,6 +1,6 @@
 use crate::{
     moms::MOMEvent,
-    motherboard::{MotherboardEvent, MotherboardOrMOMEvent, TaskExec},
+    motherboard::{MotherboardEvent, MotherboardOrMOMEvent, MotherboardTask},
     protocol::operations::Operation,
     roles::{Role, RoleEvent},
 };
@@ -18,7 +18,7 @@ pub struct SimpleTrainer {
     // Contains common fields and methods for all trainers
     base: TrainerBase,
     state: State,
-    tasks: Vec<TaskExec>,
+    tasks: Vec<MotherboardTask>,
 }
 
 impl SimpleTrainer {
@@ -40,7 +40,7 @@ impl SimpleTrainer {
                 self.base.number_local_epochs = number_local_epochs;
                 self.state = State::Training;
                 // Add training task
-                self.add_task(self.base.create_training_task());
+                self.tasks.push(self.base.create_training_task());
             }
             _ => {}
         }
@@ -71,12 +71,8 @@ impl Role for SimpleTrainer {
         self.run_one_step(event)
     }
 
-    fn pop_task(&mut self) -> Option<TaskExec> {
+    fn pop_task(&mut self) -> Option<MotherboardTask> {
         self.tasks.pop()
-    }
-
-    fn add_task(&mut self, task: TaskExec) {
-        self.tasks.push(task);
     }
 }
 
@@ -103,9 +99,7 @@ mod tests {
 
         assert!(matches!(
             task,
-            Some(TaskExec {
-                kind: KindExec::Training
-            })
+            Some(MotherboardTask::Exec(KindExec::Training))
         ));
 
         let event = trainer.run_one_step(MotherboardOrMOMEvent::Motherboard(

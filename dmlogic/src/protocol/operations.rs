@@ -1,7 +1,8 @@
-use crate::bridge::ffi::NodeInfo;
 use std::fmt;
 use std::fmt::Formatter;
 use std::sync::Arc;
+
+use super::NodeInfo;
 
 #[derive(Clone)]
 pub enum Operation {

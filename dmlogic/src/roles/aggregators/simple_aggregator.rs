@@ -1,6 +1,6 @@
 use super::AggregatorBase;
 use crate::moms::MOMEvent;
-use crate::motherboard::{MotherboardEvent, MotherboardOrMOMEvent, TaskExec};
+use crate::motherboard::{MotherboardEvent, MotherboardOrMOMEvent, MotherboardTask};
 use crate::protocol::operations::Operation;
 use crate::roles::{Role, RoleEvent};
 
@@ -15,7 +15,7 @@ pub struct SimpleAggregator {
     // Contains common fields and methods for all aggregators
     base: AggregatorBase,
     state: State,
-    tasks: Vec<TaskExec>,
+    tasks: Vec<MotherboardTask>,
 }
 
 impl SimpleAggregator {
@@ -53,7 +53,7 @@ impl SimpleAggregator {
 
                 if self.base.number_local_models >= self.base.number_client_training {
                     // Send the aggregation task and change state
-                    self.add_task(self.base.create_aggregating_task());
+                    self.tasks.push(self.base.create_aggregating_task());
                     self.state = State::Aggregating;
                 }
             }
@@ -114,12 +114,8 @@ impl Role for SimpleAggregator {
         self.run_one_step(event)
     }
 
-    fn pop_task(&mut self) -> Option<TaskExec> {
+    fn pop_task(&mut self) -> Option<MotherboardTask> {
         self.tasks.pop()
-    }
-
-    fn add_task(&mut self, task: TaskExec) {
-        self.tasks.push(task);
     }
 }
 
@@ -159,9 +155,7 @@ mod tests {
                 assert!(matches!(sa.state, State::Aggregating));
                 assert!(matches!(
                     sa.pop_task(),
-                    Some(TaskExec {
-                        kind: KindExec::Aggregating
-                    })
+                    Some(MotherboardTask::Exec(KindExec::Aggregating))
                 ));
             } else {
                 // Otherwise it should still be listening for new local models

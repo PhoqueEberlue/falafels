@@ -1,4 +1,4 @@
-use crate::bridge::ffi::{NodeInfo, RoleEnum};
+use super::{NodeInfo, RoleEnum};
 
 #[derive(Debug, Clone)]
 pub enum NodeFilter {
@@ -11,9 +11,9 @@ pub enum NodeFilter {
 impl NodeFilter {
     pub fn filter(&self, node_info: &NodeInfo) -> bool {
         match self {
-            NodeFilter::Trainers => node_info.role == RoleEnum::Trainer,
+            NodeFilter::Trainers => matches!(node_info.role, RoleEnum::Trainer),
             NodeFilter::Aggregators => {
-                node_info.role == RoleEnum::Aggregator || node_info.role == RoleEnum::MainAggregator
+                matches!(node_info.role, RoleEnum::Aggregator | RoleEnum::MainAggregator)
             }
             NodeFilter::TrainersAndAggregators => {
                 matches!(node_info.role, RoleEnum::Trainer | RoleEnum::Aggregator)

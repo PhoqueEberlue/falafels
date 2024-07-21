@@ -8,19 +8,8 @@ use crate::motherboard::{new_motherboard, Motherboard};
 #[cxx::bridge(namespace = "bridge::dml")]
 pub mod ffi {
 
-    // Shared enums and structs with fields visible to both languages.
-    #[derive(Clone)]
-    pub enum RoleEnum {
-        MainAggregator,
-        Aggregator,
-        Trainer,
-    }
-
-    #[derive(Clone)]
-    pub struct NodeInfo {
-        pub name: String,
-        pub role: RoleEnum,
-    }
+    // Shared enums and structs with fields visible to both languages. 
+    //
 
     // Rust types and signatures exposed to C++.
     extern "Rust" {
