@@ -7,6 +7,7 @@ use std::{
 };
 
 use itertools::Itertools;
+use lazy_static::lazy_static;
 use plotly::{
     common::{Anchor, Marker, Title},
     layout::{
@@ -15,7 +16,7 @@ use plotly::{
     },
     Bar, ImageFormat, Layout, Plot, Scatter,
 };
-use rand::{rngs::StdRng, SeedableRng};
+use rand::{rngs::StdRng, seq::SliceRandom, SeedableRng};
 
 use crate::structures::base::Clusters;
 use crate::{individual_factory::IndividualFactory, structures::environment::Environment};
@@ -42,6 +43,21 @@ const COLORS: &'static [&'static str; 10] = &[
     "#636efa", "#EF553B", "#00cc96", "#ab63fa", "#FFA15A", "#19d3f3", "#FF6692", "#B6E880",
     "#FF97FF", "#FECB52",
 ];
+
+lazy_static! {
+    static ref COLOR_MAP: HashMap<&'static str, &'static str> = {
+        let mut color_map = HashMap::new();
+        color_map.insert("StarSimple", COLORS[0]);
+        color_map.insert("StarAsynchronous", COLORS[1]);
+        color_map.insert("RingUniSimple", COLORS[2]);
+        color_map.insert("RingUniAsynchronous", COLORS[3]);
+        color_map.insert("StarStarHierarchical", COLORS[4]);
+        color_map.insert("RingUniRingUniHierarchical", COLORS[5]);
+        color_map.insert("StarStarHierarchicalAsync", COLORS[6]);
+        color_map.insert("RingUniRingUniHierarchicalAsync", COLORS[7]);
+        color_map
+    };
+}
 
 fn create_dir_if_not_exists<P: AsRef<Path>>(path: P) {
     match fs::create_dir(&path) {
@@ -250,18 +266,9 @@ impl Study {
         let mut plot = Plot::new();
 
         // Set colors
-        let mut color_map = HashMap::new();
-        color_map.insert("StarSimple", COLORS[0]);
-        color_map.insert("StarAsynchronous", COLORS[1]);
-        color_map.insert("RingUniSimple", COLORS[2]);
-        color_map.insert("RingUniAsynchronous", COLORS[3]);
-        color_map.insert("StarStarHierarchical", COLORS[4]);
-        color_map.insert("RingUniRingUniHierarchical", COLORS[5]);
-        color_map.insert("StarStarHierarchicalAsync", COLORS[6]);
-        color_map.insert("RingUniRingUniHierarchicalAsync", COLORS[7]);
 
         for (algo_topo, outcomes_vec) in &self.outcomes_map {
-            let current_color = *color_map.get(algo_topo.as_str()).unwrap();
+            let current_color = *COLOR_MAP.get(algo_topo.as_str()).unwrap();
 
             plot.add_trace(
                 Scatter::new(
@@ -425,7 +432,7 @@ impl Study {
     }
 
     pub fn evolution_algorithm_sim(&mut self, total_number_gen: u32) {
-        let nb_individual_per_category = 10;
+        let nb_individual_per_category = 20;
 
         // Set seed
         let mut rng = StdRng::seed_from_u64(42);
@@ -453,7 +460,7 @@ impl Study {
 
         let mut number_ind = 0;
         // Init each category of individual multiple times
-        let mut individuals = (0..nb_individual_per_category)
+        let individuals = (0..nb_individual_per_category)
             .map(|_| {
                 let mut inds = factory.init_individuals();
                 inds.iter_mut().for_each(|ind| {
@@ -468,25 +475,38 @@ impl Study {
                 });
                 inds
             })
-            .flatten()
-            .collect();
+            .collect::<Vec<_>>();
+
+        let mut individuals_by_category = (0..individuals.get(0).unwrap().len())
+            .map(|i| individuals.iter().map(|vec| vec[i].clone()).collect())
+            .collect::<Vec<_>>();
 
         for gen_nb in 0..total_number_gen {
-            individuals =
-                self.evolution_iteration(&mut individuals, &environment, &mut rng, gen_nb);
+            let mut outcomes_gen = vec![];
+
+            for individuals in individuals_by_category.iter_mut() {
+                // Append outcomes
+                outcomes_gen.append(
+                    // Pass the list of individuals and the function will apply modifications on it
+                    &mut self.evolution_iteration(individuals, &environment, &mut rng, gen_nb)
+                );
+            }
+
+            self.outcomes_vec.push(outcomes_gen);
         }
     }
 
+    /// Step one evolution iteration and modifies the individuals vector for the next iteration 
     fn evolution_iteration(
         &mut self,
         individuals: &mut Vec<Individual>,
         environment: &Environment,
         rng: &mut StdRng,
         gen_nb: u32,
-    ) -> Vec<Individual> {
+    ) -> Vec<Outcome> {
         let mut handles = vec![];
 
-        individuals.iter_mut().for_each(|ind| {
+        individuals.iter().for_each(|ind| {
             // Clone the arguments we need to pass to the thread
             let output_dir = self.output_dir.to_string();
             let mut individual = ind.clone();
@@ -498,11 +518,18 @@ impl Study {
                 // Write the FriedFalafels file
                 individual.write_fried();
 
-                // launch simulation
-                let outcome =
-                    launcher::run_simulation(gen_nb, output_dir, individual, p_path, false);
-                println!("{:?}", outcome);
-                outcome
+                match individual.previous_outcome {
+                    // Case previous outcomes exists, it means nothing changed in the config so we
+                    // don't have to compute again
+                    Some(previous) => previous,
+                    // Else, launch simulation
+                    None => {
+                        let outcome =
+                            launcher::run_simulation(gen_nb, output_dir, individual, p_path, false);
+                        println!("{:?}", outcome);
+                        outcome
+                    }
+                }
             }));
         });
 
@@ -513,7 +540,7 @@ impl Study {
             .collect::<Vec<_>>();
 
         // Zip outcomes and individuals together in order to sort individuals by their outcome
-        let mut tmp = outcomes.iter().zip(individuals).collect::<Vec<_>>();
+        let mut tmp = outcomes.iter().zip(individuals.iter()).collect::<Vec<_>>();
         tmp.sort_by(|a, b| {
             // Here we compare simulation time for the sort
             a.0.simulation_time
@@ -522,15 +549,34 @@ impl Study {
         });
 
         // Gets a vector of owned individuals
-        let mut sorted_individuals = tmp.iter_mut().map(|oi| oi.1.clone()).collect::<Vec<_>>();
+        let mut sorted_individuals = tmp
+            .iter_mut()
+            .map(|oi| {
+                let mut i = oi.1.clone();
+                // Save previous outcome to prevent recomputing
+                i.previous_outcome = Some(oi.0.clone());
+                i
+            })
+            .collect::<Vec<_>>();
+
         // Gets a vector of owned outcomes
         let sorted_outcomes = tmp.iter_mut().map(|oi| oi.0.clone()).collect::<Vec<_>>();
 
         // Delete the worst individuals
-        sorted_individuals.truncate(sorted_individuals.len() / 2);
+        let nb_individual_to_delete = sorted_individuals.len() / 2;
+        sorted_individuals.truncate(sorted_individuals.len() - nb_individual_to_delete);
 
-        // Clone the remaining - the best individuals - and mutate them
-        let mut mutated_individuals = sorted_individuals.clone();
+        // Clone a number of `nb_individual_to_delete` by randomly selecting them and mutate them.
+        let mut mutated_individuals = sorted_individuals
+            .choose_multiple(rng, nb_individual_to_delete)
+            .map(|i| {
+                let mut new_i = i.clone();
+                // Erase previous outcome to force recomputing because these individuals will be
+                // mutated
+                new_i.previous_outcome = None;
+                new_i
+            })
+            .collect::<Vec<_>>();
 
         mutated_individuals.iter_mut().for_each(|i| {
             // The name of the mutated individuals become <previous name>_mut_<gen_nb>
@@ -543,41 +589,109 @@ impl Study {
             i.ff.add_booststrap_nodes();
         });
 
-        // Add the mutated individuals to the final list
+        // // Add the mutated individuals to the final list
         sorted_individuals.append(&mut mutated_individuals);
 
-        // Push the results
-        self.outcomes_vec.push(sorted_outcomes);
+        individuals.clear();
+        individuals.append(&mut sorted_individuals);
 
-        sorted_individuals
+        sorted_outcomes
     }
 
     pub fn plot_results_evolution(&self) {
+        // get the different categories
         let categories = self
             .outcomes_vec
             .get(0)
             .unwrap()
             .into_iter()
-            .unique_by(|o| o.category.clone())
+            .unique_by(|o| &o.category)
+            .map(|o| o.category.clone())
             .collect::<Vec<_>>();
 
         let mut plot = Plot::new();
 
-        // Count the number of individuals of each category
-        for outcomes in self.outcomes_vec {
-            let trace1 = Bar::new(
-                categories.clone(), 
-                outcomes.iter().map(||)
+        // Stacked bar plot to show the evolution of categories
+        // for category_name in &categories {
+        //     let current_color = *COLOR_MAP.get(category_name.as_str()).unwrap();
 
-            ).name("SF Zoo");
+        //     let trace = Bar::new(
+        //         (0..self.outcomes_vec.len()).collect(),
+        //         // For each category, get the number of individuals
+        //         self.outcomes_vec
+        //             .iter()
+        //             // Count the number of individuals in the current category
+        //             .map(|outcomes| {
+        //                 outcomes
+        //                     .iter()
+        //                     .filter(|o| &o.category == category_name)
+        //                     .count()
+        //             })
+        //             .collect(),
+        //     )
+        //     .marker(Marker::new().color(current_color))
+        //     .x_axis("x1")
+        //     .y_axis("y1")
+        //     .name(category_name);
 
-            let layout = Layout::new().bar_mode(BarMode::Stack);
+        //     plot.add_trace(trace);
+        // }
 
-            plot.add_trace(trace1);
+        // Plotting the simulation time of the best individals of each category
+        for category_name in &categories {
+            let current_color = *COLOR_MAP.get(category_name.as_str()).unwrap();
 
+            let outcomes_cat = self
+                .outcomes_vec
+                .iter()
+                // Count the number of individuals in the current category
+                .map(|outcomes| {
+                    outcomes
+                        .iter()
+                        .filter(|o| &o.category == category_name)
+                        .collect::<Vec<_>>()
+                })
+                .collect::<Vec<_>>();
+
+            let trace = Scatter::new(
+                (0..self.outcomes_vec.len()).collect(),
+                // For each category, get the number of individuals
+                outcomes_cat
+                    .iter()
+                    .map(|outcomes| outcomes.iter().map(|o| o.simulation_time as u64).min())
+                    .collect(),
+            )
+            .marker(Marker::new().color(current_color))
+            .x_axis("x1")
+            .y_axis("y1")
+            .name(category_name);
+
+            plot.add_trace(trace);
         }
-        plot.set_layout(layout);
 
+        let layout = Layout::new()
+            .template(&*PLOTLY_WHITE)
+            .y_axis(Axis::new().title(Title::new("Total number of individuals")))
+            .x_axis(Axis::new().title(Title::new("Generation number")))
+            .bar_mode(BarMode::Stack)
+            .height(1000)
+            .grid(
+                LayoutGrid::new()
+                    .rows(2)
+                    .columns(1)
+                    .pattern(GridPattern::Independent),
+            );
+
+        plot.set_layout(layout);
         plot.show();
+
+        plot.write_html(format!("{}/out.html", self.output_dir));
+        plot.write_image(
+            format!("{}/out_white.ext", self.output_dir),
+            ImageFormat::PNG,
+            1920,
+            1080,
+            1.0,
+        );
     }
 }

@@ -51,7 +51,7 @@ pub fn run_simulation(
 
     Outcome {
         individual_name: ind.name.clone(),
-        category: ind.name.clone(),
+        category: ind.category.clone(),
         command: format!("../simulator/build/main {} {}", platform_path, &ind.get_ff_path()),
         total_host_consumption,
         used_host_consumption,

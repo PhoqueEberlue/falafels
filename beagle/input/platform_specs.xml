@@ -4,24 +4,20 @@ Describe the specifications of a platform by referencing profiles contained in p
 For now we don't define how they are connected for the sake of simplicity.
 -->
 <platform-specs>
-    <node-profile number="50">
+    <node-profile number="25">
         <host-profile-ref name="raspberry Pi 4B"/>
         <link-profile-ref name="poor-adsl"/>
     </node-profile>
-    <node-profile number="25">
+    <node-profile number="10">
         <host-profile-ref name="raspberry Pi 4B"/>
         <link-profile-ref name="fiber"/>
     </node-profile>
-    <node-profile number="20">
+    <node-profile number="5">
         <host-profile-ref name="MSI GP72 7RD Leopard"/>
         <link-profile-ref name="fiber"/>
     </node-profile>
-    <node-profile number="25">
+    <node-profile number="3">
         <host-profile-ref name="Precision 7865"/>
         <link-profile-ref name="adsl"/>
-    </node-profile>
-    <node-profile number="5">
-        <host-profile-ref name="Precision 7865"/>
-        <link-profile-ref name="poor-adsl"/>
     </node-profile>
 </platform-specs>

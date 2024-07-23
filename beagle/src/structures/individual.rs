@@ -3,6 +3,8 @@ use fryer::{
     structures::{fried::FriedFalafels, raw::RawFalafels},
 };
 
+use crate::launcher::Outcome;
+
 #[derive(Debug, Clone)]
 pub struct Individual {
     // Individual name that describes its specifications (Topo / Algo)
@@ -19,6 +21,8 @@ pub struct Individual {
     pub ff_dir_path: String,
     //
     pub is_hierarchical: bool,
+    //
+    pub previous_outcome: Option<Outcome>,
 }
 
 impl Individual {

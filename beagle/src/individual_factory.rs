@@ -4,6 +4,7 @@ use fryer::structures::{
     raw::RawFalafels,
 };
 
+use crate::launcher::Outcome;
 use crate::structures::individual::Individual;
 
 pub struct IndividualFactory {
@@ -108,6 +109,7 @@ impl IndividualFactory {
             ff,
             ff_dir_path: format!("{}/fried", self.output_dir),
             is_hierarchical: false,
+            previous_outcome: None
         }
     }
 
@@ -219,6 +221,7 @@ impl IndividualFactory {
             ff,
             ff_dir_path: format!("{}/fried", self.output_dir),
             is_hierarchical: false,
+            previous_outcome: None,
         }
     }
 }

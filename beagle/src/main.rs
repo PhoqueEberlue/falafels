@@ -50,6 +50,7 @@ fn main() {
 
                     study.evolution_algorithm_sim(total_number_gen);
                     study.export_to_json();
+                    study.plot_results_evolution();
                 }
                 Commands::LoadPreviousStudy { study_obj_path } => {
                     let study = Study::load_from_json(&study_obj_path);
