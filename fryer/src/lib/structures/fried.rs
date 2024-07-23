@@ -4,7 +4,6 @@ use std::usize;
 use super::common::{AggregatorType, Arg, ClusterTopology, Constants, NetworkManager, TrainerType};
 use rand::rngs::StdRng;
 use rand::{seq::SliceRandom, Rng};
-use rand::{thread_rng, SeedableRng};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -317,6 +316,7 @@ impl FriedFalafels {
 mod tests {
     use core::panic;
     use std::fs;
+    use rand::SeedableRng;
 
     use super::*;
 

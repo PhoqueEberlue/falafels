@@ -4,7 +4,7 @@ use super::common::Prop;
 /// Not everything is available yet.
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename = "platform")]
 pub struct Platform {
     #[serde(rename = "@version")]
@@ -12,7 +12,7 @@ pub struct Platform {
     pub zone: Zone,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Zone {
     #[serde(rename = "@id")]
     pub id: String,
@@ -28,7 +28,7 @@ pub struct Zone {
     pub routes: Vec<Route>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Router {
     #[serde(rename = "@id")]
     pub id: String,
@@ -36,7 +36,7 @@ pub struct Router {
     pub coordinates: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Host {
     #[serde(rename = "@id")]
     pub id: String,
@@ -50,7 +50,7 @@ pub struct Host {
     pub props: Vec<Prop>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Link {
     #[serde(rename = "@id")]
     pub id: String,
@@ -64,7 +64,7 @@ pub struct Link {
     pub props: Vec<Prop>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Route {
     #[serde(rename = "@src")]
     pub src: String,
@@ -74,7 +74,7 @@ pub struct Route {
     pub link_ctn: LinkContainer,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LinkContainer {
     #[serde(rename = "@id")]
     pub id: String,
