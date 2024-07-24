@@ -156,8 +156,11 @@ impl ProfileRefTrait for LinkProfileRef {
 }
 
 impl PlatformSpecs {
-    pub fn incr_random_profile(&mut self, rng: &mut StdRng) {
+    /// Increment a random profile and return by how much it has been incremented
+    pub fn incr_random_profile(&mut self, rng: &mut StdRng) -> u16 {
+        let rand_nb = rng.gen_range(1..5);
         let node_profile = self.node_profiles.choose_mut(rng).unwrap();
-        node_profile.number += rng.gen_range(1..5);
+        node_profile.number += rand_nb;
+        rand_nb
     }
 }

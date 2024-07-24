@@ -26,6 +26,7 @@ use fryer::{
     structures::{
         common::{Arg, Constants},
         fried::FriedFalafels,
+        platform::Platform,
         raw::{PlatformSpecs, Profiles, RawFalafels},
     },
 };
@@ -174,7 +175,7 @@ impl Study {
                 // Launch as much threads as there are individuals
                 handles.push(thread::spawn(move || {
                     individual.content.as_mut().unwrap().gen_nb = gen_nb;
-                    // Write individial fried file
+                    // Write individual fried file
                     individual.write_fried();
 
                     let outcome =
@@ -481,8 +482,8 @@ impl Study {
         let mut tmp = outcomes.iter().zip(individuals.iter()).collect::<Vec<_>>();
         tmp.sort_by(|a, b| {
             // Here we compare simulation time for the sort
-            a.0.simulation_time
-                .partial_cmp(&b.0.simulation_time)
+            a.0.total_consumption
+                .partial_cmp(&b.0.total_consumption)
                 .unwrap()
         });
 
@@ -518,17 +519,19 @@ impl Study {
 
         mutated_individuals.iter_mut().for_each(|i| {
             // The name of the mutated individuals become <previous name>_mut_<gen_nb>
-            i.meta.name = format!("{}_mut_{}", i.meta.name, gen_nb + 1);
+            i.meta.name = format!("{}_{}", i.meta.name, gen_nb + 1);
 
             // Increment the number of machines in the platform
-            i.meta
+            let incr_nb = i
+                .meta
                 .base_rf
                 .platform_specs
                 .as_mut()
                 .unwrap()
                 .incr_random_profile(rng);
+
             // Increase the number of trainers
-            i.meta.base_rf.clusters.get_mut(0).unwrap().trainers.number += 1;
+            i.meta.base_rf.clusters.get_mut(0).unwrap().trainers.number += incr_nb;
 
             // Refresh content after incrementing the number of machines
             i.refresh_content();
@@ -536,16 +539,21 @@ impl Study {
             i.content.as_mut().unwrap().ff.mutate_nodes(rng);
             // Change a small proportion of the roles
             let nb_permut = i.content.as_ref().unwrap().ff.get_number_nodes() as u32 / 5;
-            i.content.as_mut().unwrap().ff.permute_node_names(
-                rng,
-                nb_permut,
-            );
+            i.content
+                .as_mut()
+                .unwrap()
+                .ff
+                .permute_node_names(rng, nb_permut);
 
-            i.content.as_mut().unwrap().ff.link_hierarchical_aggregators();
+            i.content
+                .as_mut()
+                .unwrap()
+                .ff
+                .link_hierarchical_aggregators();
             i.content.as_mut().unwrap().ff.add_booststrap_nodes();
         });
 
-        // // Add the mutated individuals to the final list
+        // Add the mutated individuals to the final list
         sorted_individuals.append(&mut mutated_individuals);
 
         individuals.clear();
@@ -567,8 +575,162 @@ impl Study {
 
         let mut plot = Plot::new();
 
+        // Plot min simulation time per category
+        self.evolution_plot_with(&mut plot, &categories, "x1", "y1", true, |outcomes_cat| {
+            outcomes_cat
+                .iter()
+                .map(|outcomes| {
+                    outcomes
+                        .iter()
+                        .map(|o| o.simulation_time as u64)
+                        .min()
+                        .unwrap() as f64
+                })
+                .collect::<Vec<_>>()
+        });
+
+        // Plot min energy consumption per category
+        self.evolution_plot_with(&mut plot, &categories, "x2", "y2", false, |outcomes_cat| {
+            outcomes_cat
+                .iter()
+                .map(|outcomes| {
+                    outcomes
+                        .iter()
+                        .map(|o| o.total_consumption as u64)
+                        .min()
+                        .unwrap() as f64
+                })
+                .collect::<Vec<_>>()
+        });
+
+        // Plot energy consumption in watts per category
+        // self.evolution_plot_with(&mut plot, &categories, "x3", "y3", false, |outcomes_cat| {
+        //     outcomes_cat
+        //         .iter()
+        //         .map(|outcomes| {
+        //             outcomes
+        //                 .iter()
+        //                 .map(|o| (o.total_consumption / o.simulation_time) as u64)
+        //                 .min()
+        //                 .unwrap() as f64
+        //         })
+        //         .collect::<Vec<_>>()
+        // });
+
+        // Plot mean number of machines in the platforms per category
+        self.evolution_plot_with(&mut plot, &categories, "x3", "y3", false, |outcomes_cat| {
+            outcomes_cat
+                .iter()
+                .enumerate()
+                .map(|(gen_nb, outcomes)| {
+                    let nb_nodes = outcomes
+                        .iter()
+                        .map(|o| {
+                            self.retrieve_ff_by_individual_name(&o.individual_name, gen_nb as u32)
+                                .unwrap()
+                                .count_total_number_nodes()
+                        })
+                        .collect::<Vec<_>>();
+
+                    (nb_nodes.iter().sum::<u16>() / nb_nodes.len() as u16) as f64
+                })
+                .collect::<Vec<_>>()
+        });
+
+        // Plotting average FLOPS per category
+        self.evolution_plot_with(&mut plot, &categories, "x4", "y4", false, |outcomes_cat| {
+            outcomes_cat
+                .iter()
+                .enumerate()
+                .map(|(gen_nb, outcomes)| {
+                    // Vector containing the summed flops of each platforms
+                    let total_flops_platforms = outcomes
+                        .iter()
+                        .map(|o| {
+                            let platform = self
+                                .retrieve_platform_by_individual_name(
+                                    &o.individual_name,
+                                    gen_nb as u32,
+                                )
+                                .unwrap();
+                            // For each hosts in the current platform
+                            platform
+                                .zone
+                                .hosts
+                                .iter()
+                                .map(|h| {
+                                    // Multiply machine flops by its core number
+                                    h.speed.replace("Gf", "").parse::<f64>().unwrap()
+                                        * h.core.as_ref().unwrap().parse::<f64>().unwrap()
+                                })
+                                .sum::<f64>() // then sum every flops together
+                        })
+                        .collect::<Vec<_>>();
+
+                    // Compute the mean number of flops of the platforms of this category
+                    total_flops_platforms.iter().sum::<f64>() / total_flops_platforms.len() as f64
+                })
+                .collect::<Vec<_>>()
+        });
+
+        self.evolution_plot_every_ind_with(&mut plot, &categories, "x5", "y5", false, |o| {
+            o.simulation_time as f64
+        });
+
+        self.evolution_plot_every_ind_with(&mut plot, &categories, "x6", "y6", false, |o| {
+            o.total_consumption as f64
+        });
+
+        let height = 1000;
+
+        let layout = Layout::new()
+            .template(&*PLOTLY_WHITE)
+            .x_axis(Axis::new().title(Title::new("Generation number")))
+            .y_axis(Axis::new().title(Title::new("Simulation time")))
+            .x_axis2(Axis::new().title(Title::new("Generation number")))
+            .y_axis2(Axis::new().title(Title::new("Energy consumption in Joules")))
+            .x_axis3(Axis::new().title(Title::new("Generation number")))
+            .y_axis3(Axis::new().title(Title::new("Avg number of machines")))
+            .x_axis4(Axis::new().title(Title::new("Generation number")))
+            .y_axis4(Axis::new().title(Title::new("Avg number of Gflops in a platform")))
+            .x_axis5(Axis::new().title(Title::new("Generation number")))
+            .y_axis5(Axis::new().title(Title::new("Simulation time")))
+            .x_axis6(Axis::new().title(Title::new("Generation number")))
+            .y_axis6(Axis::new().title(Title::new("Energy consumption in Joules")))
+            .height(height)
+            .grid(
+                LayoutGrid::new()
+                    .rows(3)
+                    .columns(2)
+                    .pattern(GridPattern::Independent),
+            );
+
+        plot.set_layout(layout);
+        plot.show();
+
+        plot.write_html(format!("{}/out.html", self.output_dir));
+        plot.write_image(
+            format!("{}/out_white.ext", self.output_dir),
+            ImageFormat::PNG,
+            1920,
+            height,
+            1.0,
+        );
+    }
+
+    fn evolution_plot_with<F>(
+        &self,
+        plot: &mut Plot,
+        categories: &Vec<String>,
+        x_axis: &str,
+        y_axis: &str,
+        show_legend: bool,
+        mut f: F,
+    ) where
+        F: FnMut(&Vec<Vec<&Outcome>>) -> Vec<f64>,
+    {
         // Plotting the simulation time of the best individals of each category
-        for category_name in &categories {
+        for category_name in categories {
             let current_color = *COLOR_MAP.get(category_name.as_str()).unwrap();
 
             let outcomes_cat = self
@@ -586,21 +748,31 @@ impl Study {
             let trace = Scatter::new(
                 (0..self.outcomes_vec.len()).collect(),
                 // For each category, get the number of individuals
-                outcomes_cat
-                    .iter()
-                    .map(|outcomes| outcomes.iter().map(|o| o.simulation_time as u64).min())
-                    .collect(),
+                f(&outcomes_cat),
             )
             .marker(Marker::new().color(current_color))
-            .x_axis("x1")
-            .y_axis("y1")
-            .name(category_name);
+            .x_axis(x_axis.to_string())
+            .y_axis(y_axis.to_string())
+            .name(category_name)
+            .show_legend(show_legend);
 
             plot.add_trace(trace);
         }
+    }
 
-        // Plotting the simulation time of the best individals of each category
-        for category_name in &categories {
+    fn evolution_plot_every_ind_with<F>(
+        &self,
+        plot: &mut Plot,
+        categories: &Vec<String>,
+        x_axis: &str,
+        y_axis: &str,
+        show_legend: bool,
+        mut f: F,
+    ) where
+        F: FnMut(&Outcome) -> f64,
+    {
+        // Plotting the simulation time of every individuals
+        for category_name in categories {
             let current_color = *COLOR_MAP.get(category_name.as_str()).unwrap();
 
             // Get the outcomes of each generation for the current category only
@@ -638,7 +810,8 @@ impl Study {
                         let res = outcomes
                             .iter()
                             .filter(|o| o.individual_name == ind_name)
-                            .map(|o| o.simulation_time)
+                            // Call the custom user function to select a field
+                            .map(|o| f(o))
                             .collect::<Vec<_>>();
 
                         if !res.is_empty() {
@@ -654,40 +827,42 @@ impl Study {
                     // For each category, get the number of individuals
                     outcomes_ind,
                 )
-                .marker(Marker::new().color(current_color))
-                .x_axis("x2")
-                .y_axis("y2")
+                .marker(Marker::new().color(current_color).opacity(0.5))
+                .x_axis(x_axis.to_string())
+                .y_axis(y_axis.to_string())
                 .name(ind_name.split_once("_").unwrap().1)
-                .show_legend(false);
+                .show_legend(show_legend);
 
                 plot.add_trace(trace);
             }
-
         }
+    }
 
-        let layout = Layout::new()
-            .template(&*PLOTLY_WHITE)
-            .y_axis(Axis::new().title(Title::new("Total number of individuals")))
-            .x_axis(Axis::new().title(Title::new("Generation number")))
-            .bar_mode(BarMode::Stack)
-            .height(1000)
-            .grid(
-                LayoutGrid::new()
-                    .rows(2)
-                    .columns(1)
-                    .pattern(GridPattern::Independent),
-            );
+    pub fn retrieve_ff_by_individual_name(
+        &self,
+        name: &String,
+        gen_nb: u32,
+    ) -> Result<FriedFalafels, Box<dyn Error>> {
+        let file_path = format!("{}/fried/GEN-{}-{}.xml", self.output_dir, gen_nb, name);
+        let ff_content =
+            fs::read_to_string(&file_path).expect(&format!("File not found at: {file_path}"));
 
-        plot.set_layout(layout);
-        plot.show();
+        let ff: FriedFalafels = quick_xml::de::from_str(&ff_content)?;
 
-        plot.write_html(format!("{}/out.html", self.output_dir));
-        plot.write_image(
-            format!("{}/out_white.ext", self.output_dir),
-            ImageFormat::PNG,
-            1920,
-            1080,
-            1.0,
-        );
+        Ok(ff)
+    }
+
+    pub fn retrieve_platform_by_individual_name(
+        &self,
+        name: &String,
+        gen_nb: u32,
+    ) -> Result<Platform, Box<dyn Error>> {
+        let file_path = format!("{}/platform/GEN-{}-{}.xml", self.output_dir, gen_nb, name);
+        let platform_content =
+            fs::read_to_string(&file_path).expect(&format!("File not found at: {file_path}"));
+
+        let platform: Platform = quick_xml::de::from_str(&platform_content)?;
+
+        Ok(platform)
     }
 }

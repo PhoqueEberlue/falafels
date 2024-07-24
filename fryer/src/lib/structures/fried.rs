@@ -310,6 +310,14 @@ impl FriedFalafels {
             )
         }
     }
+
+    /// Count the total number of nodes in every clusters
+    pub fn count_total_number_nodes(&self) -> u16 {
+        self.clusters
+            .iter()
+            .map(|c| c.nodes.len() as u16)
+            .sum::<u16>()
+    }
 }
 
 #[cfg(test)]
