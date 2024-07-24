@@ -1,6 +1,7 @@
 use super::common::{
     AggregatorType, Arg, ClusterTopology, Constants, NetworkManager, Prop, TrainerType,
 };
+use rand::Rng;
 use serde::Deserialize;
 use rand::rngs::StdRng;
 use rand::seq::SliceRandom;
@@ -157,6 +158,6 @@ impl ProfileRefTrait for LinkProfileRef {
 impl PlatformSpecs {
     pub fn incr_random_profile(&mut self, rng: &mut StdRng) {
         let node_profile = self.node_profiles.choose_mut(rng).unwrap();
-        node_profile.number += 1;
+        node_profile.number += rng.gen_range(1..5);
     }
 }
