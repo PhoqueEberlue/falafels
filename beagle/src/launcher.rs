@@ -25,18 +25,17 @@ pub fn run_simulation(
     gen_nb: u32,
     output_dir: String,
     ind: Individual,
-    platform_path: String,
     write_logs: bool
 ) -> Outcome { 
     let output = Command::new("../simulator/build/main")
-        .args([&platform_path, &ind.get_ff_path()])
+        .args([&ind.get_platform_path(), &ind.get_ff_path()])
         .output()
         .expect("failed to execute process");
 
     if write_logs {
         // Writing logs of the output
         let mut file =
-            File::create(format!("{output_dir}/logs/GEN-{gen_nb}-{}.txt", ind.name)).unwrap();
+            File::create(format!("{output_dir}/logs/GEN-{gen_nb}-{}.txt", ind.meta.name)).unwrap();
         file.write_all(&output.stderr).unwrap();
     }
 
@@ -50,9 +49,9 @@ pub fn run_simulation(
     let simulation_time = parse_simulation_time(&logs);
 
     Outcome {
-        individual_name: ind.name.clone(),
-        category: ind.category.clone(),
-        command: format!("../simulator/build/main {} {}", platform_path, &ind.get_ff_path()),
+        individual_name: ind.meta.name.clone(),
+        category: ind.meta.category.clone(),
+        command: format!("../simulator/build/main {} {}", ind.get_platform_path(), ind.get_ff_path()),
         total_host_consumption,
         used_host_consumption,
         idle_host_consumption,

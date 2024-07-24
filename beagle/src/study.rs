@@ -18,8 +18,8 @@ use plotly::{
 };
 use rand::{rngs::StdRng, seq::SliceRandom, SeedableRng};
 
+use crate::individual_factory::IndividualFactory;
 use crate::structures::base::Clusters;
-use crate::{individual_factory::IndividualFactory, structures::environment::Environment};
 use crate::{launcher, structures::individual::Individual};
 use fryer::{
     platformer::{Platformer, RawAndFried, SpecsAndProfiles},
@@ -161,73 +161,24 @@ impl Study {
         for gen_nb in 0..total_number_gen {
             factory.generation_number = gen_nb as u32;
 
-            let individuals = factory.init_individuals();
-
-            // we generate one platform for hierarchical topologies and one for others
-            let non_hierachical_ind = &individuals.get(0).unwrap();
-            let hierarchical_ind = &individuals.last().unwrap();
-
-            let mut platformer = Platformer::new(RawAndFried {
-                rf: &non_hierachical_ind.rf,
-                ff: &non_hierachical_ind.ff,
-            });
-
-            let mut platformer_h = Platformer::new(RawAndFried {
-                rf: &hierarchical_ind.rf,
-                ff: &hierarchical_ind.ff,
-            });
-
-            let platform = platformer.create_star_topology();
-            let platform_h = platformer_h.create_star_topology();
-
-            let platform_path = format!(
-                "{}/platform/GEN-{gen_nb}-simgrid-platform.xml",
-                self.output_dir
-            );
-            let platform_path_h = format!(
-                "{}/platform/GEN-{gen_nb}-simgrid-platform-hierarchical.xml",
-                self.output_dir
-            );
-
-            platformer.write_platform(&platform_path, &platform);
-            platformer_h.write_platform(&platform_path_h, &platform_h);
-
-            let environment = Environment {
-                platform,
-                platform_path,
-            };
-            let environment_h = Environment {
-                platform: platform_h,
-                platform_path: platform_path_h,
-            };
+            let mut individuals = factory.init_individuals();
 
             let mut handles = vec![];
 
-            for ind in &individuals {
-                let p_path;
-
-                if ind.is_hierarchical {
-                    p_path = environment_h.platform_path.clone();
-                } else {
-                    p_path = environment.platform_path.clone();
-                }
+            for ind in individuals.iter_mut() {
+                ind.gen_and_write_platform();
 
                 let output_dir = self.output_dir.to_string();
                 let mut individual = ind.clone();
 
                 // Launch as much threads as there are individuals
                 handles.push(thread::spawn(move || {
-                    individual.gen_nb = gen_nb;
+                    individual.content.as_mut().unwrap().gen_nb = gen_nb;
                     // Write individial fried file
                     individual.write_fried();
 
-                    let outcome = launcher::run_simulation(
-                        gen_nb as u32,
-                        output_dir,
-                        individual,
-                        p_path,
-                        false,
-                    );
+                    let outcome =
+                        launcher::run_simulation(gen_nb as u32, output_dir, individual, false);
                     println!("{:?}", outcome);
                     outcome
                 }));
@@ -432,29 +383,13 @@ impl Study {
     }
 
     pub fn evolution_algorithm_sim(&mut self, total_number_gen: u32) {
-        let nb_individual_per_category = 20;
+        let nb_individual_per_category = 10;
 
         // Set seed
         let mut rng = StdRng::seed_from_u64(42);
 
+        // Base RawFalafels are config files use as a base to construct the individuals
         let base_rf = self.recompose_rf().unwrap();
-
-        // Create one common platform for every individuals
-        let mut platformer = Platformer::new(SpecsAndProfiles {
-            specs: &base_rf.platform_specs.as_ref().unwrap(),
-            profiles: &base_rf.profiles,
-        });
-
-        let platform = platformer.create_star_topology();
-
-        let platform_path = format!("{}/platform/simgrid-platform.xml", self.output_dir);
-
-        platformer.write_platform(&platform_path, &platform);
-
-        let environment = Environment {
-            platform,
-            platform_path,
-        };
 
         let mut factory = IndividualFactory::new(base_rf, &self.output_dir);
 
@@ -462,15 +397,14 @@ impl Study {
         // Init each category of individual multiple times
         let individuals = (0..nb_individual_per_category)
             .map(|_| {
+                // Create a factory with the current base
                 let mut inds = factory.init_individuals();
                 inds.iter_mut().for_each(|ind| {
                     // Update name of the individual so it has a unique name
-                    ind.name = format!("{}_{}", ind.name, number_ind);
+                    ind.meta.name = format!("{}_{}", ind.meta.name, number_ind);
                     // Shuffle the names of the nodes so they have random NodeProfiles
-                    ind.ff.shuffle_node_names(&mut rng);
-                    // After shuffling we need to recompute the links
-                    ind.ff.add_booststrap_nodes();
-                    ind.ff.link_hierarchical_aggregators();
+                    // ind.content.as_mut().unwrap().ff.shuffle_node_names(&mut rng);
+                    // ind.refresh_content();
                     number_ind += 1;
                 });
                 inds
@@ -478,7 +412,12 @@ impl Study {
             .collect::<Vec<_>>();
 
         let mut individuals_by_category = (0..individuals.get(0).unwrap().len())
-            .map(|i| individuals.iter().map(|vec| vec[i].clone()).collect())
+            .map(|i| {
+                individuals
+                    .iter()
+                    .map(|vec| vec[i].clone())
+                    .collect::<Vec<_>>()
+            })
             .collect::<Vec<_>>();
 
         for gen_nb in 0..total_number_gen {
@@ -488,7 +427,7 @@ impl Study {
                 // Append outcomes
                 outcomes_gen.append(
                     // Pass the list of individuals and the function will apply modifications on it
-                    &mut self.evolution_iteration(individuals, &environment, &mut rng, gen_nb)
+                    &mut self.evolution_iteration(individuals, &mut rng, gen_nb),
                 );
             }
 
@@ -496,11 +435,10 @@ impl Study {
         }
     }
 
-    /// Step one evolution iteration and modifies the individuals vector for the next iteration 
+    /// Step one evolution iteration and modifies the individuals vector for the next iteration
     fn evolution_iteration(
         &mut self,
         individuals: &mut Vec<Individual>,
-        environment: &Environment,
         rng: &mut StdRng,
         gen_nb: u32,
     ) -> Vec<Outcome> {
@@ -510,22 +448,22 @@ impl Study {
             // Clone the arguments we need to pass to the thread
             let output_dir = self.output_dir.to_string();
             let mut individual = ind.clone();
-            let p_path = environment.platform_path.clone();
 
             // Run in a thread
             handles.push(thread::spawn(move || {
-                individual.gen_nb = gen_nb;
+                individual.content.as_mut().unwrap().gen_nb = gen_nb;
                 // Write the FriedFalafels file
                 individual.write_fried();
+                individual.gen_and_write_platform();
 
-                match individual.previous_outcome {
+                match &individual.content.as_ref().unwrap().previous_outcome {
                     // Case previous outcomes exists, it means nothing changed in the config so we
                     // don't have to compute again
-                    Some(previous) => previous,
+                    Some(previous) => previous.clone(),
                     // Else, launch simulation
                     None => {
                         let outcome =
-                            launcher::run_simulation(gen_nb, output_dir, individual, p_path, false);
+                            launcher::run_simulation(gen_nb, output_dir, individual, false);
                         println!("{:?}", outcome);
                         outcome
                     }
@@ -554,7 +492,7 @@ impl Study {
             .map(|oi| {
                 let mut i = oi.1.clone();
                 // Save previous outcome to prevent recomputing
-                i.previous_outcome = Some(oi.0.clone());
+                i.content.as_mut().unwrap().previous_outcome = Some(oi.0.clone());
                 i
             })
             .collect::<Vec<_>>();
@@ -573,20 +511,38 @@ impl Study {
                 let mut new_i = i.clone();
                 // Erase previous outcome to force recomputing because these individuals will be
                 // mutated
-                new_i.previous_outcome = None;
+                new_i.content.as_mut().unwrap().previous_outcome = None;
                 new_i
             })
             .collect::<Vec<_>>();
 
         mutated_individuals.iter_mut().for_each(|i| {
             // The name of the mutated individuals become <previous name>_mut_<gen_nb>
-            i.name = format!("{}_mut_{}", i.name, gen_nb);
-            i.ff.mutate_nodes(rng);
+            i.meta.name = format!("{}_mut_{}", i.meta.name, gen_nb + 1);
+
+            // Increment the number of machines in the platform
+            i.meta
+                .base_rf
+                .platform_specs
+                .as_mut()
+                .unwrap()
+                .incr_random_profile(rng);
+            // Increase the number of trainers
+            i.meta.base_rf.clusters.get_mut(0).unwrap().trainers.number += 1;
+
+            // Refresh content after incrementing the number of machines
+            i.refresh_content();
+
+            i.content.as_mut().unwrap().ff.mutate_nodes(rng);
             // Change a small proportion of the roles
-            i.ff.permute_node_names(rng, i.ff.get_number_nodes() as u32 / 5);
-            // Recompute links because of previous permutation
-            i.ff.link_hierarchical_aggregators();
-            i.ff.add_booststrap_nodes();
+            let nb_permut = i.content.as_ref().unwrap().ff.get_number_nodes() as u32 / 5;
+            i.content.as_mut().unwrap().ff.permute_node_names(
+                rng,
+                nb_permut,
+            );
+
+            i.content.as_mut().unwrap().ff.link_hierarchical_aggregators();
+            i.content.as_mut().unwrap().ff.add_booststrap_nodes();
         });
 
         // // Add the mutated individuals to the final list
@@ -610,32 +566,6 @@ impl Study {
             .collect::<Vec<_>>();
 
         let mut plot = Plot::new();
-
-        // Stacked bar plot to show the evolution of categories
-        // for category_name in &categories {
-        //     let current_color = *COLOR_MAP.get(category_name.as_str()).unwrap();
-
-        //     let trace = Bar::new(
-        //         (0..self.outcomes_vec.len()).collect(),
-        //         // For each category, get the number of individuals
-        //         self.outcomes_vec
-        //             .iter()
-        //             // Count the number of individuals in the current category
-        //             .map(|outcomes| {
-        //                 outcomes
-        //                     .iter()
-        //                     .filter(|o| &o.category == category_name)
-        //                     .count()
-        //             })
-        //             .collect(),
-        //     )
-        //     .marker(Marker::new().color(current_color))
-        //     .x_axis("x1")
-        //     .y_axis("y1")
-        //     .name(category_name);
-
-        //     plot.add_trace(trace);
-        // }
 
         // Plotting the simulation time of the best individals of each category
         for category_name in &categories {
@@ -667,6 +597,72 @@ impl Study {
             .name(category_name);
 
             plot.add_trace(trace);
+        }
+
+        // Plotting the simulation time of the best individals of each category
+        for category_name in &categories {
+            let current_color = *COLOR_MAP.get(category_name.as_str()).unwrap();
+
+            // Get the outcomes of each generation for the current category only
+            let outcomes_cat = self
+                .outcomes_vec
+                .iter()
+                .map(|outcomes| {
+                    outcomes
+                        .iter()
+                        .filter(|o| &o.category == category_name)
+                        .collect::<Vec<_>>()
+                })
+                .collect::<Vec<_>>();
+
+            // Get all the unique names in the outcomes
+            let unique_names = outcomes_cat
+                .iter()
+                .map(|outcomes| {
+                    outcomes
+                        .iter()
+                        .map(|o| o.individual_name.clone())
+                        .collect::<Vec<_>>()
+                })
+                .flatten()
+                .unique()
+                .collect::<Vec<_>>();
+
+            for ind_name in unique_names {
+                // add the outcomes indexes gen_nb
+                let mut gen_indexes = vec![];
+                let outcomes_ind = outcomes_cat
+                    .iter()
+                    .enumerate()
+                    .map(|(i, outcomes)| {
+                        let res = outcomes
+                            .iter()
+                            .filter(|o| o.individual_name == ind_name)
+                            .map(|o| o.simulation_time)
+                            .collect::<Vec<_>>();
+
+                        if !res.is_empty() {
+                            gen_indexes.push(i);
+                        }
+                        res
+                    })
+                    .flatten()
+                    .collect::<Vec<_>>();
+
+                let trace = Scatter::new(
+                    gen_indexes,
+                    // For each category, get the number of individuals
+                    outcomes_ind,
+                )
+                .marker(Marker::new().color(current_color))
+                .x_axis("x2")
+                .y_axis("y2")
+                .name(ind_name.split_once("_").unwrap().1)
+                .show_legend(false);
+
+                plot.add_trace(trace);
+            }
+
         }
 
         let layout = Layout::new()
