@@ -4,7 +4,7 @@
         <aggregators number="1" type="simple">
         </aggregators>
 
-        <trainers number="42" type="simple">
+        <trainers number="4" type="simple">
         </trainers>
     </cluster>
 </clusters>
