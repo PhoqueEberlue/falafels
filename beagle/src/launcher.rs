@@ -25,8 +25,8 @@ pub fn run_simulation(
     gen_nb: u32,
     output_dir: String,
     ind: Individual,
-    write_logs: bool
-) -> Outcome { 
+    write_logs: bool,
+) -> Outcome {
     let output = Command::new("../simulator/build/main")
         .args([&ind.get_platform_path(), &ind.get_ff_path()])
         .output()
@@ -34,8 +34,11 @@ pub fn run_simulation(
 
     if write_logs {
         // Writing logs of the output
-        let mut file =
-            File::create(format!("{output_dir}/logs/GEN-{gen_nb}-{}.txt", ind.meta.name)).unwrap();
+        let mut file = File::create(format!(
+            "{output_dir}/logs/GEN-{gen_nb}-{}.txt",
+            ind.meta.name
+        ))
+        .unwrap();
         file.write_all(&output.stderr).unwrap();
     }
 
@@ -51,7 +54,11 @@ pub fn run_simulation(
     Outcome {
         individual_name: ind.meta.name.clone(),
         category: ind.meta.category.clone(),
-        command: format!("../simulator/build/main {} {}", ind.get_platform_path(), ind.get_ff_path()),
+        command: format!(
+            "../simulator/build/main {} {}",
+            ind.get_platform_path(),
+            ind.get_ff_path()
+        ),
         total_host_consumption,
         used_host_consumption,
         idle_host_consumption,
@@ -70,7 +77,10 @@ fn parse_host_energy_results(logs: &String) -> [f32; 3] {
         .lines()
         .rev() // Reverse the iterator because we know the result is at the end
         .find(|l| l.contains("Total energy consumption"))
-        .expect(&format!("{}\n Couldn't find 'Total energy consumption' in the logs.", logs));
+        .expect(&format!(
+            "{}\n Couldn't find 'Total energy consumption' in the logs.",
+            logs
+        ));
 
     // Match every floating numbers with varying digit number
     let re = Regex::new(r"([0-9]+\.[0-9]+)").unwrap();
@@ -107,7 +117,10 @@ fn parse_link_energy_results(logs: &String) -> f32 {
         .lines()
         .rev() // Reverse the iterator because we know the result is at the end
         .find(|l| l.contains("Total energy over all links"))
-        .expect(&format!("{}\n Couldn't find 'Total energy over all links' in the logs.", logs));
+        .expect(&format!(
+            "{}\n Couldn't find 'Total energy over all links' in the logs.",
+            logs
+        ));
 
     // Match every floating numbers with varying digit number
     let re = Regex::new(r"([0-9]+\.[0-9]+)").unwrap();
@@ -139,7 +152,10 @@ fn parse_simulation_time(logs: &String) -> f32 {
         .lines()
         .rev() // Reverse the iterator because we know the result is at the end
         .find(|l| l.contains("Total energy over all links"))
-        .expect(&format!("{}\n Couldn't find 'Total energy over all links' in the logs.", logs));
+        .expect(&format!(
+            "{}\n Couldn't find 'Total energy over all links' in the logs.",
+            logs
+        ));
 
     // Match every floating numbers with varying digit number
     let re = Regex::new(r"([0-9]+\.[0-9]+)").unwrap();

@@ -89,7 +89,7 @@ impl Individual {
         let mut fryer = Fryer::new(None);
         // Generate the FriedFalafels
         let ff = fryer.fry(&self.meta.base_rf);
-        
+
         self.content = Some(Content {
             gen_nb: 0,
             ff,
@@ -98,7 +98,11 @@ impl Individual {
         });
 
         // Regenerate links
-        self.content.as_mut().unwrap().ff.link_hierarchical_aggregators();
+        self.content
+            .as_mut()
+            .unwrap()
+            .ff
+            .link_hierarchical_aggregators();
         self.content.as_mut().unwrap().ff.add_booststrap_nodes();
     }
 
@@ -205,7 +209,11 @@ impl Individual {
         });
 
         // Regenerate links
-        self.content.as_mut().unwrap().ff.link_hierarchical_aggregators();
+        self.content
+            .as_mut()
+            .unwrap()
+            .ff
+            .link_hierarchical_aggregators();
         self.content.as_mut().unwrap().ff.add_booststrap_nodes();
     }
 

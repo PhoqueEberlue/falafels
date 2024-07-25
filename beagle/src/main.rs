@@ -2,14 +2,19 @@ mod individual_factory;
 mod launcher;
 mod options;
 mod structures;
-mod study;
+mod studies;
+
 use clap::Parser;
 
 use options::{Cli, Commands};
-use study::{InputFiles, Study};
+use studies::{
+    evolution::{EvolutionCriteria, EvolutionStudy},
+    varying::VaryingStudy,
+    InputFiles, StudyBase, StudyKind,
+};
 
 fn main() {
-    let args = Cli::parse(); 
+    let args = Cli::parse();
 
     match args.command {
         Some(c) => {
@@ -19,8 +24,7 @@ fn main() {
                     step,
                     total_number_gen,
                 } => {
-
-                    let mut study = Study::new(
+                    let mut study = VaryingStudy::new(StudyBase::new(
                         args.simulation_name.clone(),
                         format!("./records/{}", args.simulation_name.replace(" ", "_")),
                         InputFiles {
@@ -29,45 +33,57 @@ fn main() {
                             profiles_path: args.profiles_path,
                             platform_specs: args.platform_specs,
                         },
-                    );
+                    ));
 
                     study.varying_machines_number_sim(step, total_number_gen);
-                    study.export_to_json();
+                    study
+                        .base
+                        .export_to_json(studies::StudyKind::Varying(study.clone()));
                     study.plot_results_varying();
                 }
                 // Study with evolution algorithm
-                Commands::Evolution { total_number_gen } => {
-                    let mut study = Study::new(
-                        args.simulation_name.clone(),
-                        format!("./records/{}", args.simulation_name.replace(" ", "_")),
-                        InputFiles {
-                            clusters_path: args.clusters_path,
-                            constants_path: args.constants_path,
-                            profiles_path: args.profiles_path,
-                            platform_specs: args.platform_specs,
+                Commands::Evolution {
+                    total_number_gen,
+                    evolution_criteria,
+                } => {
+                    let mut study = EvolutionStudy::new(
+                        StudyBase::new(
+                            args.simulation_name.clone(),
+                            format!("./records/{}", args.simulation_name.replace(" ", "_")),
+                            InputFiles {
+                                clusters_path: args.clusters_path,
+                                constants_path: args.constants_path,
+                                profiles_path: args.profiles_path,
+                                platform_specs: args.platform_specs,
+                            },
+                        ),
+                        match evolution_criteria.as_str() {
+                            "total_consumption" => EvolutionCriteria::TotalConsumption,
+                            "simulation_time" => EvolutionCriteria::SimulationTime,
+                            _ => panic!("Evolution criteria incorrect. Please chose between 'total_consumption' and 'simulation_time'")
                         },
                     );
 
                     study.evolution_algorithm_sim(total_number_gen);
-                    study.export_to_json();
+                    study
+                        .base
+                        .export_to_json(studies::StudyKind::Evolution(study.clone()));
                     study.plot_results_evolution();
                 }
                 Commands::LoadPreviousStudy { study_obj_path } => {
-                    let study = Study::load_from_json(&study_obj_path);
+                    let study_kind = StudyBase::load_from_json(&study_obj_path);
 
-                    if !study.outcomes_vec.is_empty() {
-                        study.plot_results_evolution();
-                    } else if !study.outcomes_map.is_empty() {
-                        study.plot_results_varying();
-                    } else {
-                        panic!("No result to plot for study: {}", study_obj_path);
+                    match study_kind {
+                        StudyKind::Varying(study) => {
+                            study.plot_results_varying();
+                        }
+                        StudyKind::Evolution(study) => {
+                            study.plot_results_evolution();
+                        }
                     }
                 }
             }
         }
         None => println!("Nothing to do, exiting."),
     }
-
-    // TODO: add command to load study objects
-    // Load a previous study
 }

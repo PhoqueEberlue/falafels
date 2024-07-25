@@ -39,9 +39,11 @@ pub enum Commands {
         /// Tmp
         #[arg(long)]
         total_number_gen: u32,
+        #[arg(long)]
+        evolution_criteria: String,
     },
     LoadPreviousStudy {
         #[arg(long)]
         study_obj_path: String,
-    }
+    },
 }
