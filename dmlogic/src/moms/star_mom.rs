@@ -1,4 +1,3 @@
-use core::panic;
 use std::borrow::BorrowMut;
 
 use crate::{
@@ -25,7 +24,6 @@ struct StarMom {
     /// Store NodeInfo of nodes that requested to register
     registration_requests: Vec<NodeInfo>,
     tasks: Vec<MotherboardTask>,
-    timeout_task_sent: bool,
 }
 
 impl StarMom {
@@ -36,7 +34,6 @@ impl StarMom {
             connected_nodes: Vec::new(),
             registration_requests: Vec::new(),
             tasks: Vec::new(),
-            timeout_task_sent: false,
         }
     }
 
@@ -150,6 +147,10 @@ impl StarMom {
                         self.state = State::WaitingRegistrationConfirmation;
                     }
                     RoleEnum::MainAggregator => {
+                        // Add a Timeout task to quit WaitingRegistrationRequests state at a
+                        // certain amount of time
+                        // TODO: add the amount as a parameter
+                        self.tasks.push(MotherboardTask::Timeout(20.0));
                         self.state = State::WaitingRegistrationRequests;
                     }
                     RoleEnum::Aggregator => {
@@ -186,12 +187,6 @@ impl StarMom {
     }
 
     fn waiting_registration_requests(&mut self, event: MotherbroadOrRoleEvent) -> Option<MOMEvent> {
-        // Add a Timeout task to quit this State at a certain amount of time
-        if !self.timeout_task_sent {
-            // TODO: add the amount as a parameter
-            self.tasks.push(MotherboardTask::Timeout(20.0));
-        }
-
         match event {
             // Case we receive a packet
             MotherbroadOrRoleEvent::Motherboard(MotherboardEvent::PacketReceived(packet)) => {
@@ -199,16 +194,15 @@ impl StarMom {
                 if let Operation::RegistrationRequest { node_to_register } = packet.op {
                     self.registration_requests.push(node_to_register);
                 }
+                None
             }
             // Case timeout reached
             MotherbroadOrRoleEvent::Motherboard(MotherboardEvent::TaskTimeoutDone) => {
-                self.handle_registration_requests();
                 self.state = State::Running;
+                Some(self.handle_registration_requests())
             }
-            _ => {}
+            _ => None,
         }
-
-        None
     }
 
     fn running(&mut self, event: MotherbroadOrRoleEvent) -> Option<MOMEvent> {
@@ -255,7 +249,6 @@ impl MOM for StarMom {
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
 
     #[test]
@@ -279,17 +272,21 @@ mod tests {
             MotherboardEvent::MotherboardInitialized,
         ));
 
+        // Changes its state to WaitingRegistrationConfirmation
         assert!(matches!(sm.state, State::WaitingRegistrationConfirmation));
 
         let task = sm.pop_task().unwrap();
 
+        // It should ask to send a packet
         assert!(matches!(task, MotherboardTask::Send(_)));
 
         if let MotherboardTask::Send(packet) = task {
+            // To Node 2
             assert_eq!(packet.dst, "Node 2");
             assert_eq!(packet.final_dst, "Node 2");
         }
 
+        // Pretend that motherboard is handing the confirmation
         let event = sm.put_event(MotherbroadOrRoleEvent::Motherboard(
             MotherboardEvent::PacketReceived(Packet::new(
                 "Node 1".to_string(),
@@ -300,6 +297,7 @@ mod tests {
             )),
         ));
 
+        // The state must be connected and it returned NodeConnected event
         assert!(matches!(sm.state, State::Running));
         assert!(matches!(event, Some(MOMEvent::NodeConnected)));
 
@@ -325,5 +323,117 @@ mod tests {
         ));
     }
 
-    // TODO: add more tests
+    #[test]
+    fn test_typical_workflow_for_aggregator() {
+        let trainers = vec![
+            NodeInfo {
+                name: "Node 2".to_string(),
+                role: RoleEnum::Trainer,
+            },
+            NodeInfo {
+                name: "Node 3".to_string(),
+                role: RoleEnum::Trainer,
+            },
+            NodeInfo {
+                name: "Node 4".to_string(),
+                role: RoleEnum::Trainer,
+            },
+        ];
+
+        let mut sm = StarMom::new(
+            // The node of the MOM
+            NodeInfo {
+                name: "Node 1".to_string(),
+                role: RoleEnum::MainAggregator,
+            },
+            // No bootstrap nodes cause we're an Aggregator
+            vec![],
+        );
+
+        sm.put_event(MotherbroadOrRoleEvent::Motherboard(
+            MotherboardEvent::MotherboardInitialized,
+        ));
+
+        // Here we wait for the requests
+        assert!(matches!(sm.state, State::WaitingRegistrationRequests));
+
+        let task = sm.pop_task().unwrap();
+
+        // And it should give a timeout task to be able to quit the waiting state at some point
+        assert!(matches!(task, MotherboardTask::Timeout(_)));
+
+        if let MotherboardTask::Timeout(timeout) = task {
+            assert_eq!(timeout, 20.0);
+        }
+
+        // Send multiple registration requests to the aggregator
+        for trainer in trainers {
+            let event = sm.put_event(MotherbroadOrRoleEvent::Motherboard(
+                MotherboardEvent::PacketReceived(Packet::new(
+                    "Node 1".to_string(),
+                    "Node 1".to_string(),
+                    Operation::RegistrationRequest {
+                        node_to_register: trainer.clone(),
+                    },
+                )),
+            ));
+
+            // State is not changing
+            assert!(matches!(sm.state, State::WaitingRegistrationRequests));
+        }
+
+        // Send a timeout
+        let event = sm.put_event(MotherbroadOrRoleEvent::Motherboard(
+            MotherboardEvent::TaskTimeoutDone,
+        ));
+
+        // Now we should be in running state and not accepting any other request
+        assert!(matches!(sm.state, State::Running));
+
+        assert_eq!(sm.connected_nodes.len(), 3);
+
+        // And it sends a ClusterConnected event with 3 connected trainers
+        match event.unwrap() {
+            MOMEvent::ClusterConnected(value) => assert_eq!(value, 3),
+            _ => panic!("Expected MOMEvent::ClusterConnected"),
+        }
+
+        // Send global model to trainers
+        sm.put_event(MotherbroadOrRoleEvent::Role(RoleEvent::ToBeSentPacket {
+            // With this filter, it should reroute the packet to Role
+            filter: NodeFilter::Trainers,
+            op: Operation::SendGlobalModel {
+                number_local_epochs: 3,
+            },
+        }));
+
+        let task = sm.pop_task().unwrap();
+
+        // It should produce a Send packet task
+        assert!(matches!(task, MotherboardTask::Send(_)));
+
+        // And still running
+        assert!(matches!(sm.state, State::Running));
+
+        // Then we receive local model
+        let event = sm.put_event(MotherbroadOrRoleEvent::Motherboard(
+            MotherboardEvent::PacketReceived(Packet::new_broadcast(
+                NodeFilter::Aggregators,
+                Operation::SendLocalModel {
+                    number_local_epochs_done: 3,
+                },
+            )),
+        ));
+
+        // And still running
+        assert!(matches!(sm.state, State::Running));
+
+        // And the MOM should route the local model to the Role
+        assert!(matches!(
+            event,
+            Some(MOMEvent::OperationReceived(Operation::SendLocalModel {
+                number_local_epochs_done: 3,
+            }))
+        ));
+    }
 }
