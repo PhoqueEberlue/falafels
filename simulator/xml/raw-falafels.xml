@@ -103,40 +103,41 @@ will receive its corresponding simgrid Host.
     -->
 
     <cluster topology="star">
-        <aggregators number="1" type="hierarchical">
-            <host-profile-ref name="Precision 7865"/>
-            <link-profile-ref name="fiber"/>
-        </aggregators>
-        <trainers number="4" type="simple">
-            <host-profile-ref name="MSI GP72 7RD Leopard"/>
-            <host-profile-ref name="raspberry Pi 4B"/>
-            <link-profile-ref name="fiber"/>
-            <link-profile-ref name="adsl"/>
-        </trainers>
+        <aggregators number="1" type="hierarchical"/>
+        <trainers number="4" type="simple"/>
     </cluster>
 
     <cluster topology="ring-uni">
-        <aggregators number="1" type="hierarchical">
-            <host-profile-ref name="MSI GP72 7RD Leopard"/>
-            <link-profile-ref name="fiber"/>
-        </aggregators>
-        <trainers number="4" type="simple">
-            <host-profile-ref name="raspberry Pi 4B"/>
-            <host-profile-ref name="MSI GP72 7RD Leopard"/>
-            <link-profile-ref name="fiber"/>
-            <link-profile-ref name="adsl"/>
-        </trainers>
+        <aggregators number="1" type="hierarchical"/>
+        <trainers number="4" type="simple"/>
     </cluster>
 
     <cluster topology="hierarchical">
-        <aggregators number="1" type="simple">
-            <host-profile-ref name="Precision 7865"/>
-            <link-profile-ref name="fiber"/>
-        </aggregators>
-        <trainers number="0" type="none">
-            <host-profile-ref name=""/>
-            <link-profile-ref name=""/>
-        </trainers>
+        <aggregators number="1" type="simple"/>
+        <trainers number="0" type="none"/>
     </cluster>
+
+    <platform-specs>
+        <node-profile number="3">
+            <host-profile-ref name="raspberry Pi 4B"/>
+            <link-profile-ref name="poor-adsl"/>
+        </node-profile>
+        <node-profile number="3">
+            <host-profile-ref name="raspberry Pi 4B"/>
+            <link-profile-ref name="fiber"/>
+        </node-profile>
+        <node-profile number="2">
+            <host-profile-ref name="MSI GP72 7RD Leopard"/>
+            <link-profile-ref name="fiber"/>
+        </node-profile>
+        <node-profile number="1">
+            <host-profile-ref name="Precision 7865"/>
+            <link-profile-ref name="adsl"/>
+        </node-profile>
+        <node-profile number="2">
+            <host-profile-ref name="Precision 7865"/>
+            <link-profile-ref name="poor-adsl"/>
+        </node-profile>
+    </platform-specs>
 
 </raw>

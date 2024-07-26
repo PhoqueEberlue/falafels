@@ -3,20 +3,20 @@
 <platform version="4.1">
     <zone id="zone1" routing="Floyd">
         <router id="zone1-router"/>
-        <host id="Node 1" speed="89.6Gf" core="8">
-            <prop id="wattage_per_state" value="20:21.6:59.33"/>
+        <host id="Node 1" speed="14.4Gf" core="4">
+            <prop id="wattage_per_state" value="2.89:3.000:7.28"/>
         </host>
         <host id="Node 2" speed="14.4Gf" core="4">
             <prop id="wattage_per_state" value="2.89:3.000:7.28"/>
         </host>
-        <host id="Node 3" speed="89.6Gf" core="8">
-            <prop id="wattage_per_state" value="20:21.6:59.33"/>
+        <host id="Node 3" speed="14.4Gf" core="4">
+            <prop id="wattage_per_state" value="2.89:3.000:7.28"/>
         </host>
         <host id="Node 4" speed="14.4Gf" core="4">
             <prop id="wattage_per_state" value="2.89:3.000:7.28"/>
         </host>
-        <host id="Node 5" speed="144Gf" core="32">
-            <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+        <host id="Node 5" speed="14.4Gf" core="4">
+            <prop id="wattage_per_state" value="2.89:3.000:7.28"/>
         </host>
         <host id="Node 6" speed="14.4Gf" core="4">
             <prop id="wattage_per_state" value="2.89:3.000:7.28"/>
@@ -24,29 +24,29 @@
         <host id="Node 7" speed="89.6Gf" core="8">
             <prop id="wattage_per_state" value="20:21.6:59.33"/>
         </host>
-        <host id="Node 8" speed="14.4Gf" core="4">
-            <prop id="wattage_per_state" value="2.89:3.000:7.28"/>
-        </host>
-        <host id="Node 9" speed="89.6Gf" core="8">
+        <host id="Node 8" speed="89.6Gf" core="8">
             <prop id="wattage_per_state" value="20:21.6:59.33"/>
         </host>
-        <host id="Node 10" speed="89.6Gf" core="8">
-            <prop id="wattage_per_state" value="20:21.6:59.33"/>
+        <host id="Node 9" speed="144Gf" core="32">
+            <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
+        </host>
+        <host id="Node 10" speed="144Gf" core="32">
+            <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
         </host>
         <host id="Node 11" speed="144Gf" core="32">
             <prop id="wattage_per_state" value="100.0:120.0:200.0"/>
         </host>
-        <link id="1" bandwidth="1.618875GBps" latency="19.98us">
-            <prop id="wattage_range" value="25.0:40.0"/>
-        </link>
-        <link id="2" bandwidth="10.179966MBps" latency="190.98us">
+        <link id="1" bandwidth="0.0179966MBps" latency="570.98us">
             <prop id="wattage_range" value="15.0:30.0"/>
         </link>
-        <link id="3" bandwidth="1.618875GBps" latency="19.98us">
-            <prop id="wattage_range" value="25.0:40.0"/>
-        </link>
-        <link id="4" bandwidth="10.179966MBps" latency="190.98us">
+        <link id="2" bandwidth="0.0179966MBps" latency="570.98us">
             <prop id="wattage_range" value="15.0:30.0"/>
+        </link>
+        <link id="3" bandwidth="0.0179966MBps" latency="570.98us">
+            <prop id="wattage_range" value="15.0:30.0"/>
+        </link>
+        <link id="4" bandwidth="1.618875GBps" latency="19.98us">
+            <prop id="wattage_range" value="25.0:40.0"/>
         </link>
         <link id="5" bandwidth="1.618875GBps" latency="19.98us">
             <prop id="wattage_range" value="25.0:40.0"/>
@@ -54,8 +54,8 @@
         <link id="6" bandwidth="1.618875GBps" latency="19.98us">
             <prop id="wattage_range" value="25.0:40.0"/>
         </link>
-        <link id="7" bandwidth="10.179966MBps" latency="190.98us">
-            <prop id="wattage_range" value="15.0:30.0"/>
+        <link id="7" bandwidth="1.618875GBps" latency="19.98us">
+            <prop id="wattage_range" value="25.0:40.0"/>
         </link>
         <link id="8" bandwidth="1.618875GBps" latency="19.98us">
             <prop id="wattage_range" value="25.0:40.0"/>
@@ -63,11 +63,11 @@
         <link id="9" bandwidth="10.179966MBps" latency="190.98us">
             <prop id="wattage_range" value="15.0:30.0"/>
         </link>
-        <link id="10" bandwidth="1.618875GBps" latency="19.98us">
-            <prop id="wattage_range" value="25.0:40.0"/>
+        <link id="10" bandwidth="0.0179966MBps" latency="570.98us">
+            <prop id="wattage_range" value="15.0:30.0"/>
         </link>
-        <link id="11" bandwidth="1.618875GBps" latency="19.98us">
-            <prop id="wattage_range" value="25.0:40.0"/>
+        <link id="11" bandwidth="0.0179966MBps" latency="570.98us">
+            <prop id="wattage_range" value="15.0:30.0"/>
         </link>
         <route src="Node 1" dst="zone1-router">
             <link_ctn id="1"/>
