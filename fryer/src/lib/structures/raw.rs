@@ -156,11 +156,29 @@ impl ProfileRefTrait for LinkProfileRef {
 }
 
 impl PlatformSpecs {
-    /// Increment a random profile and return by how much it has been incremented
-    pub fn incr_random_profile(&mut self, rng: &mut StdRng) -> u16 {
-        let rand_nb = rng.gen_range(1..5);
+    pub fn get_total_number_nodes(&self) -> u16 {
+        self.node_profiles.iter().map(|np| np.number).sum::<u16>()
+    }
+
+    /// Vary the number of a random profile and return how much machines have been added or removed
+    pub fn vary_random_profiles(&mut self, rng: &mut StdRng) -> i16 {
+        let mut rand_nb: i16 = rng.gen_range(-2..=2);
+
+        let total_number = self.get_total_number_nodes();
         let node_profile = self.node_profiles.choose_mut(rng).unwrap();
-        node_profile.number += rand_nb;
+
+        // If the total number of profiles would be less than 5 or if the given profile would be
+        // inferior to 0
+        if total_number as i16 + rand_nb < 5 || node_profile.number as i16 + rand_nb < 0 {
+            rand_nb = rand_nb.abs();
+        }
+
+        if rand_nb < 0 {
+            node_profile.number -= rand_nb.abs() as u16;
+        } else {
+            node_profile.number += rand_nb as u16;
+        }
+
         rand_nb
     }
 }
