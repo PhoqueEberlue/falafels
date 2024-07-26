@@ -1,8 +1,8 @@
 use plotly::{
-    common::{Marker, Title},
+    common::{Mode, Title},
     layout::{
-        themes::{PLOTLY_DARK, PLOTLY_WHITE},
-        Axis, GridPattern, LayoutGrid,
+        themes::PLOTLY_WHITE,
+        Axis, GridPattern, LayoutGrid
     },
     ImageFormat, Layout, Plot, Scatter,
 };
@@ -10,6 +10,7 @@ use plotly::{
 use rand::{rngs::StdRng, seq::SliceRandom, SeedableRng};
 
 use itertools::Itertools;
+use std::fmt;
 use std::{cmp::Ordering, thread};
 
 use serde::{Deserialize, Serialize};
@@ -26,6 +27,19 @@ use super::StudyBase;
 pub enum EvolutionCriteria {
     TotalConsumption,
     SimulationTime,
+}
+
+impl fmt::Display for EvolutionCriteria {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::SimulationTime => {
+                write!(f, "simulation_time")
+            }
+            Self::TotalConsumption => {
+                write!(f, "total_consumption")
+            }
+        }
+    }
 }
 
 impl EvolutionCriteria {
@@ -47,14 +61,21 @@ pub struct EvolutionStudy {
     pub base: StudyBase,
     pub outcomes_vec: Vec<Vec<Outcome>>,
     pub evolution_criteria: EvolutionCriteria,
+    // The denominator used to delete a proportion of individuals each generation
+    pub delete_denominator: usize,
 }
 
 impl EvolutionStudy {
-    pub fn new(base: StudyBase, evolution_criteria: EvolutionCriteria) -> EvolutionStudy {
+    pub fn new(
+        base: StudyBase,
+        evolution_criteria: EvolutionCriteria,
+        delete_denominator: usize,
+    ) -> EvolutionStudy {
         EvolutionStudy {
             base,
             outcomes_vec: vec![],
             evolution_criteria,
+            delete_denominator,
         }
     }
 
@@ -201,10 +222,14 @@ impl EvolutionStudy {
                 .platform_specs
                 .as_mut()
                 .unwrap()
-                .incr_random_profile(rng);
+                .vary_random_profiles(rng);
 
             // Increase the number of trainers
-            i.meta.base_rf.clusters.get_mut(0).unwrap().trainers.number += incr_nb;
+            if incr_nb < 0 {
+                i.meta.base_rf.clusters.get_mut(0).unwrap().trainers.number -= incr_nb.abs() as u16;
+            } else {
+                i.meta.base_rf.clusters.get_mut(0).unwrap().trainers.number += incr_nb as u16;
+            }
 
             // Refresh content after incrementing the number of machines
             i.refresh_content();
@@ -236,6 +261,11 @@ impl EvolutionStudy {
     }
 
     pub fn plot_results_evolution(&self) {
+        self.plot_best_individuals();
+        self.plot_top_individuals();
+    }
+
+    fn plot_best_individuals(&self) {
         // Separate the outcomes into different categories
         let categories = self
             .outcomes_vec
@@ -309,130 +339,26 @@ impl EvolutionStudy {
                 .sum::<f64>() // then sum every flops together
         });
 
-        // Plot mean simulation time per category
-        self.evolution_plot_with(&mut plot, &categories, "x5", "y5", false, |outcomes_cat| {
-            outcomes_cat
-                .iter()
-                .map(|outcomes| {
-                    // Get simulation times of each outcome
-                    let simulation_times = outcomes
-                        .iter()
-                        .map(|o| o.simulation_time)
-                        .collect::<Vec<_>>();
-
-                    // Make the mean
-                    (simulation_times.iter().sum::<f32>() / simulation_times.len() as f32) as f64
-                })
-                .collect::<Vec<_>>()
-        });
-
-        // Plotting mean total consumption per category
-        self.evolution_plot_with(&mut plot, &categories, "x6", "y6", false, |outcomes_cat| {
-            outcomes_cat
-                .iter()
-                .map(|outcomes| {
-                    // Get total consumptions of each outcome
-                    let simulation_times = outcomes
-                        .iter()
-                        .map(|o| o.total_consumption)
-                        .collect::<Vec<_>>();
-
-                    // Make the mean
-                    (simulation_times.iter().sum::<f32>() / simulation_times.len() as f32) as f64
-                })
-                .collect::<Vec<_>>()
-        });
-
-        // Plot mean number of machines in the platforms per category
-        self.evolution_plot_with(&mut plot, &categories, "x7", "y7", false, |outcomes_cat| {
-            outcomes_cat
-                .iter()
-                .enumerate()
-                .map(|(gen_nb, outcomes)| {
-                    let nb_nodes = outcomes
-                        .iter()
-                        .map(|o| {
-                            self.base
-                                .retrieve_ff_by_individual_name(&o.individual_name, gen_nb as u32)
-                                .unwrap()
-                                .count_total_number_nodes()
-                        })
-                        .collect::<Vec<_>>();
-
-                    (nb_nodes.iter().sum::<u16>() / nb_nodes.len() as u16) as f64
-                })
-                .collect::<Vec<_>>()
-        });
-
-        // Plotting average FLOPS per category
-        self.evolution_plot_with(&mut plot, &categories, "x8", "y8", false, |outcomes_cat| {
-            outcomes_cat
-                .iter()
-                .enumerate()
-                .map(|(gen_nb, outcomes)| {
-                    // Vector containing the summed flops of each platforms
-                    let total_flops_platforms = outcomes
-                        .iter()
-                        .map(|o| {
-                            let platform = self
-                                .base
-                                .retrieve_platform_by_individual_name(
-                                    &o.individual_name,
-                                    gen_nb as u32,
-                                )
-                                .unwrap();
-                            // For each hosts in the current platform
-                            platform
-                                .zone
-                                .hosts
-                                .iter()
-                                .map(|h| {
-                                    // Multiply machine flops by its core number
-                                    h.speed.replace("Gf", "").parse::<f64>().unwrap()
-                                        * h.core.as_ref().unwrap().parse::<f64>().unwrap()
-                                })
-                                .sum::<f64>() // then sum every flops together
-                        })
-                        .collect::<Vec<_>>();
-
-                    // Compute the mean number of flops of the platforms of this category
-                    total_flops_platforms.iter().sum::<f64>() / total_flops_platforms.len() as f64
-                })
-                .collect::<Vec<_>>()
-        });
-
-        self.evolution_plot_every_ind_with(&mut plot, &categories, "x5", "y5", false, |o| {
-            o.simulation_time as f64
-        });
-
-        self.evolution_plot_every_ind_with(&mut plot, &categories, "x6", "y6", false, |o| {
-            o.total_consumption as f64
-        });
-
-        let height = 1000;
+        let height = 1500;
 
         let layout = Layout::new()
             .template(&*PLOTLY_WHITE)
             .x_axis(Axis::new().title(Title::new("Generation number")))
-            .y_axis(Axis::new().title(Title::new("Simulation time")))
+            .y_axis(Axis::new().title(Title::new("Simulation time in seconds")))
             .x_axis2(Axis::new().title(Title::new("Generation number")))
             .y_axis2(Axis::new().title(Title::new("Energy consumption in Joules")))
             .x_axis3(Axis::new().title(Title::new("Generation number")))
             .y_axis3(Axis::new().title(Title::new("Number of machines")))
             .x_axis4(Axis::new().title(Title::new("Generation number")))
-            .y_axis4(Axis::new().title(Title::new("Avg number of Gflops in a platform")))
-            .x_axis3(Axis::new().title(Title::new("Generation number")))
-            .y_axis3(Axis::new().title(Title::new("Avg number of machines")))
-            .x_axis4(Axis::new().title(Title::new("Generation number")))
-            .y_axis4(Axis::new().title(Title::new("Avg number of Gflops in a platform")))
-            .x_axis5(Axis::new().title(Title::new("Generation number")))
-            .y_axis5(Axis::new().title(Title::new("Simulation time")))
-            .x_axis6(Axis::new().title(Title::new("Generation number")))
-            .y_axis6(Axis::new().title(Title::new("Energy consumption in Joules")))
+            .y_axis4(Axis::new().title(Title::new("Cumulated Gflops in the platform")))
             .height(height)
+            .title(Title::new(
+                &format!("Evolution simulation, results of the best individual for each category with {} evolution criteria", 
+                self.evolution_criteria),
+            ))
             .grid(
                 LayoutGrid::new()
-                    .rows(5)
+                    .rows(4)
                     .columns(2)
                     .pattern(GridPattern::Independent),
             );
@@ -440,9 +366,176 @@ impl EvolutionStudy {
         plot.set_layout(layout);
         plot.show();
 
-        plot.write_html(format!("{}/out.html", self.base.output_dir));
+        plot.write_html(format!("{}/out_best_inds.html", self.base.output_dir));
         plot.write_image(
-            format!("{}/out_white.ext", self.base.output_dir),
+            format!("{}/out_best_inds.ext", self.base.output_dir),
+            ImageFormat::SVG,
+            1920,
+            height,
+            1.0,
+        );
+    }
+
+    pub fn plot_top_individuals(&self) {
+        // Separate the outcomes into different categories
+        let categories = self
+            .outcomes_vec
+            .get(0)
+            .unwrap()
+            .into_iter()
+            .unique_by(|o| &o.category)
+            .map(|o| o.category.clone())
+            .collect::<Vec<_>>();
+
+        let mut plot = Plot::new();
+
+        // Get the top X percent individuals for each generation for each category
+        // X is determined by the delete_denominator, which means that we do not take into account
+        // mutated individuals that performed worse.
+        let top_inds = categories
+            .iter()
+            // Loop through category
+            .map(|category_name| {
+                // Return category name and best individuals for each generation of this category
+                (
+                    category_name,
+                    self.outcomes_vec
+                        .iter()
+                        .map(|outcomes| {
+                            let mut tmp = outcomes
+                                .iter()
+                                // Only select individuals from the current category
+                                .filter(|o| &o.category == category_name)
+                                // Get the best one according to the defined criteria
+                                .collect::<Vec<_>>();
+
+                            // Sort individuals
+                            tmp.sort_by(|a, b| self.evolution_criteria.compare(a, b));
+                            // NOTE: In fact the plots are better WITHOUT deleting the worse
+                            // individuals, because otherwise it is way to close to the plots of
+                            // the best individual.
+                            //
+                            // Delete the last part of the vector that contains the worse
+                            // individuals
+                            // tmp.truncate(tmp.len() / self.delete_denominator);
+                            tmp
+                        })
+                        .collect::<Vec<_>>(),
+                )
+            })
+            .collect::<Vec<_>>();
+
+        // Plot the mean simulation time of the top individuals (for each category)
+        self.evolution_plot_top_ind_with(&mut plot, &top_inds, "x1", "y1", true, |outcomes, _| {
+            // Get simulation times of each outcome
+            let simulation_times = outcomes
+                .iter()
+                .map(|o| o.simulation_time)
+                .collect::<Vec<_>>();
+
+            // Make the mean
+            (simulation_times.iter().sum::<f32>() / simulation_times.len() as f32) as f64
+        });
+
+        // Plot the mean total consumption of the top individuals (for each category)
+        self.evolution_plot_top_ind_with(&mut plot, &top_inds, "x2", "y2", false, |outcomes, _| {
+            // Get total consumptions of each outcome
+            let simulation_times = outcomes
+                .iter()
+                .map(|o| o.total_consumption)
+                .collect::<Vec<_>>();
+
+            // Make the mean
+            (simulation_times.iter().sum::<f32>() / simulation_times.len() as f32) as f64
+        });
+
+        // Plot the mean number of machines in each platforms of the top individuals (for each category)
+        self.evolution_plot_top_ind_with(
+            &mut plot,
+            &top_inds,
+            "x3",
+            "y3",
+            false,
+            |outcomes, gen_nb| {
+                let nb_nodes = outcomes
+                    .iter()
+                    .map(|o| {
+                        self.base
+                            .retrieve_ff_by_individual_name(&o.individual_name, gen_nb as u32)
+                            .unwrap()
+                            .count_total_number_nodes()
+                    })
+                    .collect::<Vec<_>>();
+
+                (nb_nodes.iter().sum::<u16>() / nb_nodes.len() as u16) as f64
+            },
+        );
+
+        // Plot the mean GFLOPS (cumulated) of the top individuals (for each category)
+        self.evolution_plot_top_ind_with(
+            &mut plot,
+            &top_inds,
+            "x4",
+            "y4",
+            false,
+            |outcomes, gen_nb| {
+                // Vector containing the summed flops of each platforms
+                let total_flops_platforms = outcomes
+                    .iter()
+                    .map(|o| {
+                        let platform = self
+                            .base
+                            .retrieve_platform_by_individual_name(&o.individual_name, gen_nb as u32)
+                            .unwrap();
+                        // For each hosts in the current platform
+                        platform
+                            .zone
+                            .hosts
+                            .iter()
+                            .map(|h| {
+                                // Multiply machine flops by its core number
+                                h.speed.replace("Gf", "").parse::<f64>().unwrap()
+                                    * h.core.as_ref().unwrap().parse::<f64>().unwrap()
+                            })
+                            .sum::<f64>() // then sum every flops together
+                    })
+                    .collect::<Vec<_>>();
+
+                // Compute the mean number of flops of the platforms of this category
+                total_flops_platforms.iter().sum::<f64>() / total_flops_platforms.len() as f64
+            },
+        );
+
+        let height = 1500;
+
+        let layout = Layout::new()
+            .template(&*PLOTLY_WHITE)
+            .x_axis(Axis::new().title(Title::new("Generation number")))
+            .y_axis(Axis::new().title(Title::new("Simulation time in seconds")))
+            .x_axis2(Axis::new().title(Title::new("Generation number")))
+            .y_axis2(Axis::new().title(Title::new("Energy consumption in Joules")))
+            .x_axis3(Axis::new().title(Title::new("Generation number")))
+            .y_axis3(Axis::new().title(Title::new("Number of machines")))
+            .x_axis4(Axis::new().title(Title::new("Generation number")))
+            .y_axis4(Axis::new().title(Title::new("Cumulated Gflops in the platform")))
+            .height(height)
+            .title(Title::new(&format!(
+                "Evolution simulation, Mean results with {} evolution criteria",
+                self.evolution_criteria
+            )))
+            .grid(
+                LayoutGrid::new()
+                    .rows(4)
+                    .columns(2)
+                    .pattern(GridPattern::Independent),
+            );
+
+        plot.set_layout(layout);
+        plot.show();
+
+        plot.write_html(format!("{}/out_top_inds.html", self.base.output_dir));
+        plot.write_image(
+            format!("{}/out_top_inds.ext", self.base.output_dir),
             ImageFormat::PNG,
             1920,
             height,
@@ -461,10 +554,7 @@ impl EvolutionStudy {
     ) where
         F: FnMut(&Outcome, usize) -> f64,
     {
-        // Plotting the simulation time of the best individals of each category
         for (category_name, gen_outcomes) in best_ind_per_gen_per_cat {
-            let current_color = *super::COLOR_MAP.get(category_name.as_str()).unwrap();
-
             let trace = Scatter::new(
                 (0..self.outcomes_vec.len()).collect(),
                 gen_outcomes
@@ -476,7 +566,9 @@ impl EvolutionStudy {
                     })
                     .collect(),
             )
-            .marker(Marker::new().color(current_color))
+            .mode(Mode::LinesMarkers)
+            .line(self.base.get_line(category_name))
+            .marker(self.base.get_marker(category_name))
             .x_axis(x_axis.to_string())
             .y_axis(y_axis.to_string())
             .name(category_name)
@@ -486,37 +578,29 @@ impl EvolutionStudy {
         }
     }
 
-    fn evolution_plot_with<F>(
+    fn evolution_plot_top_ind_with<F>(
         &self,
         plot: &mut Plot,
-        categories: &Vec<String>,
+        top_ind_per_gen_per_cat: &Vec<(&String, Vec<Vec<&Outcome>>)>,
         x_axis: &str,
         y_axis: &str,
         show_legend: bool,
         mut f: F,
     ) where
-        F: FnMut(&Vec<Vec<&Outcome>>) -> Vec<f64>,
+        F: FnMut(&Vec<&Outcome>, usize) -> f64,
     {
-        for category_name in categories {
-            let current_color = *super::COLOR_MAP.get(category_name.as_str()).unwrap();
-
-            let outcomes_cat = self
-                .outcomes_vec
-                .iter()
-                .map(|outcomes| {
-                    outcomes
-                        .iter()
-                        .filter(|o| &o.category == category_name)
-                        .collect::<Vec<_>>()
-                })
-                .collect::<Vec<_>>();
-
+        for (category_name, gen_vec_outcomes) in top_ind_per_gen_per_cat {
             let trace = Scatter::new(
                 (0..self.outcomes_vec.len()).collect(),
-                // For each category, get the number of individuals
-                f(&outcomes_cat),
+                gen_vec_outcomes
+                    .iter()
+                    .enumerate()
+                    .map(|(gen_nb, outcomes)| f(outcomes, gen_nb))
+                    .collect(),
             )
-            .marker(Marker::new().color(current_color))
+            .mode(Mode::LinesMarkers)
+            .line(self.base.get_line(category_name))
+            .marker(self.base.get_marker(category_name))
             .x_axis(x_axis.to_string())
             .y_axis(y_axis.to_string())
             .name(category_name)
@@ -539,8 +623,6 @@ impl EvolutionStudy {
     {
         // Plotting the simulation time of every individuals
         for category_name in categories {
-            let current_color = *super::COLOR_MAP.get(category_name.as_str()).unwrap();
-
             // Get the outcomes of each generation for the current category only
             let outcomes_cat = self
                 .outcomes_vec
@@ -593,7 +675,9 @@ impl EvolutionStudy {
                     // For each category, get the number of individuals
                     outcomes_ind,
                 )
-                .marker(Marker::new().color(current_color).opacity(0.5))
+                .mode(Mode::LinesMarkers)
+                .line(self.base.get_line(category_name))
+                .marker(self.base.get_marker(category_name))
                 .x_axis(x_axis.to_string())
                 .y_axis(y_axis.to_string())
                 .name(ind_name.split_once("_").unwrap().1)

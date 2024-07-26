@@ -107,18 +107,17 @@ impl VaryingStudy {
 
         // Set colors
 
-        for (algo_topo, outcomes_vec) in &self.outcomes_map {
-            let current_color = *super::COLOR_MAP.get(algo_topo.as_str()).unwrap();
-
+        for (category_name, outcomes_vec) in &self.outcomes_map {
             plot.add_trace(
                 Scatter::new(
                     self.x_axis.clone(),
                     outcomes_vec.iter().map(|o| o.total_consumption).collect(),
                 )
-                .name(format!("{}", algo_topo.clone()))
+                .name(format!("{}", category_name.clone()))
                 .x_axis("x1")
                 .y_axis("y1")
-                .marker(Marker::new().color(current_color)),
+                .line(self.base.get_line(category_name))
+                .marker(self.base.get_marker(category_name))
             );
 
             plot.add_trace(
@@ -129,10 +128,11 @@ impl VaryingStudy {
                         .map(|o| o.total_host_consumption)
                         .collect(),
                 )
-                .name(format!("{}", algo_topo.clone()))
+                .name(format!("{}", category_name.clone()))
                 .x_axis("x2")
                 .y_axis("y2")
-                .marker(Marker::new().color(current_color))
+                .line(self.base.get_line(category_name))
+                .marker(self.base.get_marker(category_name))
                 .show_legend(false),
             );
 
@@ -144,10 +144,11 @@ impl VaryingStudy {
                         .map(|o| o.total_link_consumption)
                         .collect(),
                 )
-                .name(format!("{}", algo_topo.clone()))
+                .name(format!("{}", category_name.clone()))
                 .x_axis("x3")
                 .y_axis("y3")
-                .marker(Marker::new().color(current_color))
+                .line(self.base.get_line(category_name))
+                .marker(self.base.get_marker(category_name))
                 .show_legend(false),
             );
 
@@ -156,10 +157,11 @@ impl VaryingStudy {
                     self.x_axis.clone(),
                     outcomes_vec.iter().map(|o| o.simulation_time).collect(),
                 )
-                .name(format!("{}", algo_topo.clone()))
+                .name(format!("{}", category_name.clone()))
                 .x_axis("x4")
                 .y_axis("y4")
-                .marker(Marker::new().color(current_color))
+                .line(self.base.get_line(category_name))
+                .marker(self.base.get_marker(category_name))
                 .show_legend(false),
             );
 
@@ -171,10 +173,11 @@ impl VaryingStudy {
                         .map(|o| o.total_consumption / o.simulation_time)
                         .collect(),
                 )
-                .name(format!("{}", algo_topo.clone()))
+                .name(format!("{}", category_name.clone()))
                 .x_axis("x5")
                 .y_axis("y5")
-                .marker(Marker::new().color(current_color))
+                .line(self.base.get_line(category_name))
+                .marker(self.base.get_marker(category_name))
                 .show_legend(false),
             );
         }

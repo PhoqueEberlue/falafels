@@ -27,6 +27,7 @@
     
 
 
+    <!-- TODO: revert this value to 10000 -->
     <constant name="END_CONDITION_TOTAL_NUMBER_LOCAL_EPOCHS" value="1000"/>
     <constant name="REGISTRATION_TIMEOUT" value="20"/>
 </constants>

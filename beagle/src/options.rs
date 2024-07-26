@@ -36,11 +36,13 @@ pub enum Commands {
     },
     /// Launches a study with evolution algorithm
     Evolution {
-        /// Tmp
         #[arg(long)]
         total_number_gen: u32,
         #[arg(long)]
         evolution_criteria: String,
+        #[arg(long, default_value_t = 2)]
+        /// The denominator used to delete a proportion of individuals each generation
+        delete_denominator: usize,
     },
     LoadPreviousStudy {
         #[arg(long)]

@@ -1,4 +1,4 @@
-use std::{error::Error, fs};
+use std::{collections::HashMap, error::Error, fs};
 
 use evolution::EvolutionStudy;
 use fryer::structures::{
@@ -7,41 +7,14 @@ use fryer::structures::{
     platform::Platform,
     raw::{Profiles, RawFalafels},
 };
+use plotly::common::{DashType, Line, Marker, MarkerSymbol};
 use serde::{Deserialize, Serialize};
 use varying::VaryingStudy;
 
 use crate::structures::base::Clusters;
-use lazy_static::lazy_static;
 
 pub mod evolution;
 pub mod varying;
-
-// Colors for dark mode
-// const COLORS: &'static [&'static str; 10] = &[
-//     "#636efa", "#EF553B", "#00cc96", "#ab63fa", "#FFA15A", "#19d3f3", "#FF6692", "#B6E880",
-//     "#FF97FF", "#FECB52",
-// ];
-
-// Colors for white mode
-const COLORS: &'static [&'static str; 10] = &[
-    "#636efa", "#EF553B", "#00cc96", "#ab63fa", "#FFA15A", "#19d3f3", "#FF6692", "#B6E880",
-    "#FF97FF", "#FECB52",
-];
-
-lazy_static! {
-    static ref COLOR_MAP: std::collections::HashMap<&'static str, &'static str> = {
-        let mut color_map = std::collections::HashMap::new();
-        color_map.insert("StarSimple", COLORS[0]);
-        color_map.insert("StarAsynchronous", COLORS[1]);
-        color_map.insert("RingUniSimple", COLORS[2]);
-        color_map.insert("RingUniAsynchronous", COLORS[3]);
-        color_map.insert("StarStarHierarchical", COLORS[4]);
-        color_map.insert("RingUniRingUniHierarchical", COLORS[5]);
-        color_map.insert("StarStarHierarchicalAsync", COLORS[6]);
-        color_map.insert("RingUniRingUniHierarchicalAsync", COLORS[7]);
-        color_map
-    };
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum StudyKind {
@@ -63,6 +36,7 @@ pub struct StudyBase {
     pub input_files: InputFiles,
     pub name: String,
     pub output_dir: String,
+    pub color_map: HashMap<String, String>
 }
 
 impl StudyBase {
@@ -76,7 +50,42 @@ impl StudyBase {
             name,
             output_dir,
             input_files,
+            color_map: StudyBase::init_color_map()
         }
+    }
+
+    pub fn init_color_map() -> HashMap<String, String> {
+        // Colors for dark mode
+        // let colors = vec![
+        //     "#636efa", "#EF553B", "#00cc96", "#ab63fa", "#FFA15A", "#19d3f3", "#FF6692", "#B6E880",
+        //     "#FF97FF", "#FECB52",
+        // ];
+
+        // Colors for white mode
+        // let colors = vec![
+        //     "#636efa", "#EF553B", "#00cc96", "#ab63fa", "#FFA15A", "#19d3f3", "#FF6692", "#B6E880",
+        //     "#FF97FF", "#FECB52",
+        // ];
+
+        // Colorblind-friendly colors
+        let colors = vec![
+            "#a6cee3",
+            "#1f78b4",
+            "#b2df8a",
+            "#33a02c",
+        ];
+
+        let mut color_map = HashMap::new();
+
+        color_map.insert("StarSimple".to_string(), colors[0].to_string());
+        color_map.insert("StarAsynchronous".to_string(), colors[0].to_string());
+        color_map.insert("RingUniSimple".to_string(), colors[1].to_string());
+        color_map.insert("RingUniAsynchronous".to_string(), colors[1].to_string());
+        color_map.insert("StarStarHierarchical".to_string(), colors[2].to_string());
+        color_map.insert("StarStarHierarchicalAsync".to_string(), colors[2].to_string());
+        color_map.insert("RingUniRingUniHierarchical".to_string(), colors[3].to_string());
+        color_map.insert("RingUniRingUniHierarchicalAsync".to_string(), colors[3].to_string());
+        color_map
     }
 
     fn create_dir_if_not_exists<P: AsRef<std::path::Path>>(path: P) {
@@ -154,5 +163,24 @@ impl StudyBase {
         let platform: Platform = quick_xml::de::from_str(&platform_content)?;
 
         Ok(platform)
+    }
+
+    /// Get plotly marker with style infered by the category name
+    pub fn get_marker(&self, category_name: &String) -> Marker {
+        let color = self.color_map.get(category_name.as_str()).unwrap();
+        
+        Marker::new().color(color.clone()).symbol(MarkerSymbol::Circle)
+    }
+
+    /// Get plotly line with style infered by the category name
+    pub fn get_line(&self, category_name: &String) -> Line {
+        match category_name.contains("Async") {
+            true => {
+                Line::new().dash(DashType::DashDot)
+            },
+            false => {
+                Line::new().dash(DashType::Solid)
+            }
+        }
     }
 }

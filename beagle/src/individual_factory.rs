@@ -69,20 +69,20 @@ impl IndividualFactory {
             "StarStarHierarchical".to_string(),
             self.output_dir.clone(),
         ));
+ 
+        individuals.push(Individual::new(
+            self.base_rf.clone(),
+            vec![ClusterTopology::Star, ClusterTopology::Star],
+            AggregatorType::Asynchronous,
+            "StarStarHierarchicalAsync".to_string(),
+            self.output_dir.clone(),
+        ));
 
         individuals.push(Individual::new(
             self.base_rf.clone(),
             vec![ClusterTopology::RingUni, ClusterTopology::RingUni],
             AggregatorType::Simple,
             "RingUniRingUniHierarchical".to_string(),
-            self.output_dir.clone(),
-        ));
-
-        individuals.push(Individual::new(
-            self.base_rf.clone(),
-            vec![ClusterTopology::Star, ClusterTopology::Star],
-            AggregatorType::Asynchronous,
-            "StarStarHierarchicalAsync".to_string(),
             self.output_dir.clone(),
         ));
 

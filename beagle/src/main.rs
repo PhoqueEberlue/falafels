@@ -45,6 +45,7 @@ fn main() {
                 Commands::Evolution {
                     total_number_gen,
                     evolution_criteria,
+                    delete_denominator,
                 } => {
                     let mut study = EvolutionStudy::new(
                         StudyBase::new(
@@ -62,6 +63,7 @@ fn main() {
                             "simulation_time" => EvolutionCriteria::SimulationTime,
                             _ => panic!("Evolution criteria incorrect. Please chose between 'total_consumption' and 'simulation_time'")
                         },
+                        delete_denominator
                     );
 
                     study.evolution_algorithm_sim(total_number_gen);
