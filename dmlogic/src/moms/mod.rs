@@ -1,4 +1,4 @@
-mod star_mom;
+pub mod star_mom;
 
 use crate::motherboard::{MotherboardTask, MotherbroadOrRoleEvent};
 use crate::protocol::operations::Operation;

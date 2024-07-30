@@ -17,7 +17,7 @@ enum State {
     Killing,
 }
 
-struct StarMom {
+pub struct StarMom {
     base: MOMBase,
     state: State,
     connected_nodes: Vec<NodeInfo>,
@@ -27,7 +27,7 @@ struct StarMom {
 }
 
 impl StarMom {
-    fn new(my_node_info: NodeInfo, bootstrap_nodes: Vec<NodeInfo>) -> Self {
+    pub fn new(my_node_info: NodeInfo, bootstrap_nodes: Vec<NodeInfo>) -> Self {
         Self {
             base: MOMBase::new(my_node_info, bootstrap_nodes),
             state: State::Initializing,

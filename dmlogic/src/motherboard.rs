@@ -1,4 +1,7 @@
-use crate::moms::MOMEvent;
+use std::collections::VecDeque;
+
+use crate::moms::star_mom::StarMom;
+use crate::moms::{MOMEvent, MOM};
 use crate::protocol::packet::Packet;
 use crate::protocol::NodeInfo;
 use crate::roles::aggregators::simple_aggregator::SimpleAggregator;
@@ -44,18 +47,25 @@ pub enum MotherbroadOrRoleEvent {
 pub struct Motherboard {
     my_node_info: NodeInfo,
     role: Box<dyn Role>,
+    mom: Box<dyn MOM>,
+    role_event_queue: VecDeque<RoleEvent>,
+    mom_event_queue: VecDeque<MOMEvent>,
 }
 
-pub fn new_motherboard(node_info: NodeInfo) -> Box<Motherboard> {
-    Box::new(Motherboard {
-        my_node_info: node_info,
-        role: Box::new(SimpleAggregator::new()),
-    })
-}
+impl Motherboard {
+    pub fn new(node_info: NodeInfo) -> Motherboard {
+        Motherboard {
+            my_node_info: node_info,
+            role: Box::new(SimpleAggregator::new()),
+            // TODO: add bootstrap nodes
+            mom: Box::new(StarMom::new(node_info, vec![])),
+            role_event_queue: VecDeque::new(),
+            mom_event_queue: VecDeque::new(),
+        }
+    }
 
-// impl Motherboard {
-//     pub fn put_event(&mut self, event_wrapper: EventWrapper) -> TaskWrapper {
-//         self.role.put_event(MotherboardOrMOMEvent::Motherboard(event_wrapper.event));
-//         unimplemented!()
-//     }
-// }
+    pub fn put_event(&mut self, event: MotherboardEvent) -> Option<MotherboardTask> {
+        self.role.put_event();
+        unimplemented!()
+    }
+}
