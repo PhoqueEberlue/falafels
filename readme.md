@@ -22,25 +22,22 @@ Federated Learning Frugality and Efficiency via Simulation (FaLaFEℓS 🧆).
 
 The `beagle` and the `fryer` are built with Cargo which is Rust's package manager.
 
-See [Rust installation](https://www.rust-lang.org/tools/install) and hit `cargo build` in the respective folders `beagle/` and `fryer/`.
+The `simulator` is developed in C++ and we use CMake to build it. 
 
-The simulator is developed in C++ so we use docker to build it smoothly. However if you want to build it on your host you only have to deal with installing the correct version of Simgrid.
+You can either use docker and docker-compose to build everything, or build it from source.
 
 ### Building in docker
 
-Using buildx:
+Using docker-compose:
 
 ```sh
-cd simulator
-docker buildx build . -t falafels
+cd falafels
+docker-compose build
 ```
 
-Then try running
-```sh
-docker run -ti falafels:latest
-```
+Two images will be built: `falafels-simulator` that only contains the simulator itself, and `falafels-beagle` that packages the `simulator`, the `fryer` and the `beagle`.
 
-### Building from source
+### Building the simulator from source
 
 Download Simgrid directly from their repository and checkout this specific commit:
 ```sh
@@ -56,7 +53,7 @@ Here we only use mandatory ones.
 Then compile and install:
 ```sh
 cmake . \
-  -DCMAKE_INSTALL_PREFIX=/opt/simgrid \
+  -DCMAKE_INSTALL_PREFIX=/usr \
   -Denable_compile_optimizations=ON \
   -Denable_lto=OFF \
   -Denable_smpi=OFF \
@@ -67,19 +64,31 @@ make -j $(nproc)
 make install
 
 # You may have to re-link libraries
-ldconfig
+sudo ldconfig
 ```
 
 Build the simulator:
 ```sh
-cd falafels
+cd simulator
 mkdir build
 cd build
 cmake ..
 make
+make install
 ```
 
 Test a run:
 ```sh
 make && ./main ../xml/simgrid-platform.xml ../xml/fried-falafels.xml
+```
+
+### Building the beagle from source
+
+See [Rust installation](https://www.rust-lang.org/tools/install) to install Rust and Cargo.
+
+The following dependencies are required to build the beagle: `pkg-config` `libssl-dev`
+
+```sh
+cd beagle
+cargo install --path .
 ```
