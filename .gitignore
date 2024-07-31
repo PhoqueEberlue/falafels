@@ -38,6 +38,5 @@ build/
 # ------ Rust ------
 target/
 
-# Beagle
-beagle/records
-beagle/records_archive
+# Experiments output
+experiments/**/output

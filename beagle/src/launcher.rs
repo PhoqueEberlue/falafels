@@ -27,7 +27,7 @@ pub fn run_simulation(
     ind: Individual,
     write_logs: bool,
 ) -> Outcome {
-    let output = Command::new("../simulator/build/main")
+    let output = Command::new("falafels-simulator")
         .args([&ind.get_platform_path(), &ind.get_ff_path()])
         .output()
         .expect("failed to execute process");

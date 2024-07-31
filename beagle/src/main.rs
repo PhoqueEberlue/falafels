@@ -26,7 +26,7 @@ fn main() {
                 } => {
                     let mut study = VaryingStudy::new(StudyBase::new(
                         args.simulation_name.clone(),
-                        format!("./records/{}", args.simulation_name.replace(" ", "_")),
+                        args.output_dir,
                         InputFiles {
                             clusters_path: args.clusters_path,
                             constants_path: args.constants_path,
@@ -39,7 +39,7 @@ fn main() {
                     study
                         .base
                         .export_to_json(studies::StudyKind::Varying(study.clone()));
-                    study.plot_results_varying();
+                    study.plot_results_varying(args.show_plot);
                 }
                 // Study with evolution algorithm
                 Commands::Evolution {
@@ -50,7 +50,7 @@ fn main() {
                     let mut study = EvolutionStudy::new(
                         StudyBase::new(
                             args.simulation_name.clone(),
-                            format!("./records/{}", args.simulation_name.replace(" ", "_")),
+                            args.output_dir,
                             InputFiles {
                                 clusters_path: args.clusters_path,
                                 constants_path: args.constants_path,
@@ -70,17 +70,17 @@ fn main() {
                     study
                         .base
                         .export_to_json(studies::StudyKind::Evolution(study.clone()));
-                    study.plot_results_evolution();
+                    study.plot_results_evolution(args.show_plot);
                 }
                 Commands::LoadPreviousStudy { study_obj_path } => {
                     let study_kind = StudyBase::load_from_json(&study_obj_path);
 
                     match study_kind {
                         StudyKind::Varying(study) => {
-                            study.plot_results_varying();
+                            study.plot_results_varying(args.show_plot);
                         }
                         StudyKind::Evolution(study) => {
-                            study.plot_results_evolution();
+                            study.plot_results_evolution(args.show_plot);
                         }
                     }
                 }

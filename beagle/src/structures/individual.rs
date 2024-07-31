@@ -62,7 +62,7 @@ impl Individual {
                 base_rf,
                 output_dir_path,
                 category: name.clone(),
-                is_hierarchical: topo.len() <= 1,
+                is_hierarchical: topo.len() > 1,
             },
             content: None,
         };
@@ -73,9 +73,9 @@ impl Individual {
 
     pub fn refresh_content(&mut self) {
         if self.meta.is_hierarchical {
-            self.init_content_normal();
-        } else {
             self.init_content_hierarchical();
+        } else {
+            self.init_content_normal();
         }
     }
 
@@ -200,6 +200,9 @@ impl Individual {
         // Generate the FriedFalafels
         let mut fryer = Fryer::new(None);
         let ff = fryer.fry(&rf);
+
+        // Set the new rf as the base
+        self.meta.base_rf = rf;
 
         self.content = Some(Content {
             gen_nb: 0,

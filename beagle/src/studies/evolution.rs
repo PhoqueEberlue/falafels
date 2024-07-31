@@ -260,12 +260,12 @@ impl EvolutionStudy {
         sorted_outcomes
     }
 
-    pub fn plot_results_evolution(&self) {
-        self.plot_best_individuals();
-        self.plot_top_individuals();
+    pub fn plot_results_evolution(&self, show_plot: bool) {
+        self.plot_best_individuals(show_plot);
+        self.plot_top_individuals(show_plot);
     }
 
-    fn plot_best_individuals(&self) {
+    fn plot_best_individuals(&self, show_plot: bool) {
         // Separate the outcomes into different categories
         let categories = self
             .outcomes_vec
@@ -364,7 +364,10 @@ impl EvolutionStudy {
             );
 
         plot.set_layout(layout);
-        plot.show();
+
+        if show_plot {
+            plot.show();
+        }
 
         plot.write_html(format!("{}/out_best_inds.html", self.base.output_dir));
         plot.write_image(
@@ -376,7 +379,7 @@ impl EvolutionStudy {
         );
     }
 
-    pub fn plot_top_individuals(&self) {
+    pub fn plot_top_individuals(&self, show_plot: bool) {
         // Separate the outcomes into different categories
         let categories = self
             .outcomes_vec
@@ -531,7 +534,10 @@ impl EvolutionStudy {
             );
 
         plot.set_layout(layout);
-        plot.show();
+
+        if show_plot {
+            plot.show();
+        }
 
         plot.write_html(format!("{}/out_top_inds.html", self.base.output_dir));
         plot.write_image(

@@ -9,6 +9,9 @@ pub struct Cli {
     #[arg(short, long)]
     pub simulation_name: String,
 
+    #[arg(long)]
+    pub output_dir: String,
+
     #[arg(long, default_value_t = String::from("./input/constants.xml"))]
     pub constants_path: String,
 
@@ -20,6 +23,9 @@ pub struct Cli {
 
     #[arg(long)]
     pub platform_specs: Option<String>,
+
+    #[arg(long, default_value_t = false)]
+    pub show_plot: bool,
 
     #[command(subcommand)]
     pub command: Option<Commands>,

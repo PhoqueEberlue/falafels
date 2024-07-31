@@ -50,12 +50,13 @@ impl VaryingStudy {
         for gen_nb in 0..total_number_gen {
             factory.generation_number = gen_nb as u32;
 
+            // TODO: before beagle rework we had to init individuals each gen, now you could simply
+            // varying every ind parameters and regenerate them.
             let mut individuals = factory.init_individuals();
 
             let mut handles = vec![];
 
             for ind in individuals.iter_mut() {
-                ind.gen_and_write_platform();
 
                 let output_dir = self.base.output_dir.to_string();
                 let mut individual = ind.clone();
@@ -65,6 +66,8 @@ impl VaryingStudy {
                     individual.content.as_mut().unwrap().gen_nb = gen_nb;
                     // Write individual fried file
                     individual.write_fried();
+                    // Also write and generate the platform
+                    individual.gen_and_write_platform();
 
                     let outcome =
                         launcher::run_simulation(gen_nb as u32, output_dir, individual, false);
@@ -102,7 +105,7 @@ impl VaryingStudy {
         }
     }
 
-    pub fn plot_results_varying(&self) {
+    pub fn plot_results_varying(&self, show_plot: bool) {
         let mut plot = Plot::new();
 
         // Set colors
@@ -262,7 +265,9 @@ impl VaryingStudy {
 
         plot.set_layout(layout);
         // plot.set_configuration(Configuration::new().responsive(true));
-        plot.show();
+        if show_plot {
+            plot.show();
+        }
 
         plot.write_html(format!("{}/out.html", self.base.output_dir));
         plot.write_image(
