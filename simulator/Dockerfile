@@ -12,7 +12,7 @@ WORKDIR /simgrid
 RUN git reset --hard 534ecd55c0558492fff7560baa516b78f971f20a
 
 RUN cmake . \
-  -DCMAKE_INSTALL_PREFIX=/opt/simgrid \
+  -DCMAKE_INSTALL_PREFIX=/usr \
   -Denable_compile_optimizations=ON \
   -Denable_lto=OFF \
   -Denable_smpi=OFF \
@@ -23,7 +23,9 @@ RUN make -j $(nproc)
 RUN make install
 
 # For some reason include folder isn't generated correctly, so we have to copy it manually
-RUN cp -r include/ /opt/simgrid/
+RUN rm -r /usr/include/simgrid/
+RUN cp -r include/* /usr/include/
+RUN ls  /usr/include/simgrid/
 RUN ldconfig
 # ---------------------------------------------------------------------------
 
@@ -34,6 +36,7 @@ COPY src/ ./src/
 COPY xml/ ./xml/
 COPY cmake/ ./cmake/
 
-RUN (mkdir build && cd build && cmake .. && make)
+RUN (mkdir build && cd build && cmake .. && make && make install)
 
-CMD ["build/main", "xml/simgrid-platform.xml", "xml/fried-falafels.xml"]
+ENTRYPOINT ["falafels-simulator"]
+CMD ["xml/platform.xml", "xml/falafels-deployment.xml"]

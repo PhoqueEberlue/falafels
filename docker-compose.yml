@@ -1,0 +1,16 @@
+services:
+  # Stand alone simulator
+  falafels-simulator:
+    container_name: simulator 
+    build: ./simulator/
+    image: falafels-simulator:latest
+
+  # Beagle + the simulator in it
+  falafels-beagle:
+    depends_on: 
+      - falafels-simulator # The beagle is built using simulator image
+    container_name: beagle 
+    build: 
+      context: .
+      dockerfile: ./beagle/Dockerfile
+    image: falafels-beagle:latest
