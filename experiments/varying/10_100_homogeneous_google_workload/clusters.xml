@@ -1,0 +1,25 @@
+<?xml version='1.0'?>
+<!-- 
+This file serves as a base for generating the clusters in the varying simulations.
+
+Note that it is also used to generate Hierarchical architectures, and for the sake of the simulation
+we assign the profiles from the trainers to the hierarchical aggregators.
+By convention, they will take the first profile, so you might put the best profile first.
+Then, the sub clusters trainers will have their profiles list reverse to take into account that we
+already used one profile for the hierarchical aggregator.
+All of this is done to try to respect the number of each profiles among the different simulations.
+-->
+<clusters>
+    <cluster topology="ring-uni">
+        <aggregators number="1" type="simple">
+            <host-profile-ref name="Precision 7865"/>
+            <link-profile-ref name="fiber"/>
+        </aggregators>
+
+        <trainers number="10" type="simple">
+            <host-profile-ref name="MSI GP72 7RD Leopard"/>
+            <link-profile-ref name="fiber"/>
+        </trainers>
+    </cluster>
+</clusters>
+
