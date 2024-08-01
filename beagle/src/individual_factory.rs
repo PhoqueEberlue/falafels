@@ -10,7 +10,6 @@ pub struct IndividualFactory {
     pub fryer: Fryer,
     // Used as a base to generate mulitple ff files
     pub base_rf: RawFalafels,
-    pub generation_number: u32,
     pub output_dir: String,
 }
 
@@ -22,7 +21,6 @@ impl IndividualFactory {
         IndividualFactory {
             fryer,
             base_rf,
-            generation_number: 0,
             output_dir: output_dir.to_string(),
         }
     }

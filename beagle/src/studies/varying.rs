@@ -48,8 +48,6 @@ impl VaryingStudy {
         // factory.base_rf.clusters.list.get_mut(0).unwrap().trainers.as_mut().unwrap().number = start_number;
 
         for gen_nb in 0..total_number_gen {
-            factory.generation_number = gen_nb as u32;
-
             // TODO: before beagle rework we had to init individuals each gen, now you could simply
             // varying every ind parameters and regenerate them.
             let mut individuals = factory.init_individuals();

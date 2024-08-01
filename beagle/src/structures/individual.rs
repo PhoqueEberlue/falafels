@@ -72,20 +72,23 @@ impl Individual {
     }
 
     pub fn refresh_content(&mut self) {
-        if self.meta.is_hierarchical {
-            self.init_content_hierarchical();
-        } else {
-            self.init_content_normal();
+        match self.content {
+            // Case content doesn't exists yet
+            None => {
+                if self.meta.is_hierarchical {
+                    // Create a hierarchical rf and ff
+                    self.init_hierarchical_from_base();
+                } else {
+                    // Create a normal rf and ff
+                    self.init_normal_from_base();
+                }
+            },
+            // Else refresh
+            Some(_) => self.refresh(),
         }
     }
 
-    pub fn init_content_normal(&mut self) {
-        let main_cluster = self.meta.base_rf.clusters.get_mut(0).unwrap();
-
-        // Tweak the parameters
-        main_cluster.topology = self.meta.topo.get(0).unwrap().clone();
-        main_cluster.aggregators.aggregator_type = self.meta.agg_type.clone();
-
+    fn refresh(&mut self) {
         let mut fryer = Fryer::new(None);
         // Generate the FriedFalafels
         let ff = fryer.fry(&self.meta.base_rf);
@@ -103,10 +106,26 @@ impl Individual {
             .unwrap()
             .ff
             .link_hierarchical_aggregators();
+
+        // Add the booststrap nodes 
         self.content.as_mut().unwrap().ff.add_booststrap_nodes();
     }
 
-    pub fn init_content_hierarchical(&mut self) {
+    /// Create a normal RawFalafels and FriedFalafels from the base
+    fn init_normal_from_base(&mut self) {
+        let main_cluster = self.meta.base_rf.clusters.get_mut(0).unwrap();
+
+        // Assign the topology that the individual is supposed to use by modifying the provided
+        // base
+        main_cluster.topology = self.meta.topo.get(0).unwrap().clone();
+        main_cluster.aggregators.aggregator_type = self.meta.agg_type.clone();
+        
+        self.refresh();
+    } 
+
+    /// Create a hierarchical RawFalafels and FriedFalafels from the base which is a non 
+    /// hierarchical.
+    pub fn init_hierarchical_from_base(&mut self) {
         // Start by cloning the base RawFalafels
         let mut rf = self.meta.base_rf.clone();
 
@@ -197,27 +216,10 @@ impl Individual {
         // Push the central cluster
         rf.clusters.push(central_cluster);
 
-        // Generate the FriedFalafels
-        let mut fryer = Fryer::new(None);
-        let ff = fryer.fry(&rf);
-
         // Set the new rf as the base
         self.meta.base_rf = rf;
 
-        self.content = Some(Content {
-            gen_nb: 0,
-            ff,
-            previous_outcome: None,
-            platform: None,
-        });
-
-        // Regenerate links
-        self.content
-            .as_mut()
-            .unwrap()
-            .ff
-            .link_hierarchical_aggregators();
-        self.content.as_mut().unwrap().ff.add_booststrap_nodes();
+        self.refresh();
     }
 
     /// Writes the FriedFalafels `ff` at `ff_file_path`
