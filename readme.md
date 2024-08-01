@@ -92,3 +92,14 @@ The following dependencies are required to build the beagle: `pkg-config` `libss
 cd beagle
 cargo install --path .
 ```
+
+## Running
+
+Some experiments can be found in the folder `experiments` and you can run them yourself.
+
+```sh
+cd experiments/evolution/simulation_time_criteria/
+./exec-w-docker.sh
+# or without docker
+./exec.sh
+```
