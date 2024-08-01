@@ -1,0 +1,11 @@
+<?xml version='1.0'?>
+<!-- 
+Here we do not specify any profiles on the trainers/aggregators because we will use 
+the platform_specs file
+-->
+<clusters>
+    <cluster topology="ring-uni">
+        <aggregators number="1" type="simple"/>
+        <trainers number="4" type="simple"/>
+    </cluster>
+</clusters>
