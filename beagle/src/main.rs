@@ -61,6 +61,7 @@ fn main() {
                         match evolution_criteria.as_str() {
                             "total_consumption" => EvolutionCriteria::TotalConsumption,
                             "simulation_time" => EvolutionCriteria::SimulationTime,
+                            "power_rate" => EvolutionCriteria::PowerRate,
                             _ => panic!("Evolution criteria incorrect. Please chose between 'total_consumption' and 'simulation_time'")
                         },
                         delete_denominator

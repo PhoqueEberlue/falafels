@@ -1,9 +1,6 @@
 use plotly::{
     common::{Mode, Title},
-    layout::{
-        themes::PLOTLY_WHITE,
-        Axis, GridPattern, LayoutGrid
-    },
+    layout::{themes::PLOTLY_WHITE, Axis, GridPattern, LayoutGrid},
     ImageFormat, Layout, Plot, Scatter,
 };
 
@@ -27,6 +24,7 @@ use super::StudyBase;
 pub enum EvolutionCriteria {
     TotalConsumption,
     SimulationTime,
+    PowerRate,
 }
 
 impl fmt::Display for EvolutionCriteria {
@@ -37,6 +35,9 @@ impl fmt::Display for EvolutionCriteria {
             }
             Self::TotalConsumption => {
                 write!(f, "total_consumption")
+            }
+            Self::PowerRate => {
+                write!(f, "power_rate")
             }
         }
     }
@@ -52,6 +53,13 @@ impl EvolutionCriteria {
                 .total_consumption
                 .partial_cmp(&b.total_consumption)
                 .unwrap(),
+            EvolutionCriteria::PowerRate => {
+                let power_a = a.total_consumption / a.simulation_time;
+                let power_b = b.total_consumption / b.simulation_time;
+
+                // here we compare in reverse order because we want to maximize power
+                power_b.partial_cmp(&power_a).unwrap()
+            }
         }
     }
 }
@@ -509,6 +517,18 @@ impl EvolutionStudy {
             },
         );
 
+        // Plot the mean power rate of the top individuals (for each category)
+        self.evolution_plot_top_ind_with(&mut plot, &top_inds, "x5", "y5", false, |outcomes, _| {
+            // Get simulation times of each outcome
+            let power_rates = outcomes
+                .iter()
+                .map(|o| o.total_consumption / o.simulation_time)
+                .collect::<Vec<_>>();
+
+            // Make the mean
+            (power_rates.iter().sum::<f32>() / power_rates.len() as f32) as f64
+        });
+
         let height = 1500;
 
         let layout = Layout::new()
@@ -521,6 +541,8 @@ impl EvolutionStudy {
             .y_axis3(Axis::new().title(Title::new("Number of machines")))
             .x_axis4(Axis::new().title(Title::new("Generation number")))
             .y_axis4(Axis::new().title(Title::new("Cumulated Gflops in the platform")))
+            .x_axis5(Axis::new().title(Title::new("Generation number")))
+            .y_axis5(Axis::new().title(Title::new("Power in Watts")))
             .height(height)
             .title(Title::new(&format!(
                 "Evolution simulation, Mean results with {} evolution criteria",
@@ -528,7 +550,7 @@ impl EvolutionStudy {
             )))
             .grid(
                 LayoutGrid::new()
-                    .rows(4)
+                    .rows(5)
                     .columns(2)
                     .pattern(GridPattern::Independent),
             );
