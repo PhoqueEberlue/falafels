@@ -1,0 +1,62 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" version="24.7.7">
+  <diagram name="Page-1" id="VZhvdZ_iOxEHKRR_BR3-">
+    <mxGraphModel dx="910" dy="473" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="zfAT_wPLxUreWq3P0kpd-22" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#613E20;strokeWidth=2;" edge="1" parent="1" source="zfAT_wPLxUreWq3P0kpd-1" target="zfAT_wPLxUreWq3P0kpd-20">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="zfAT_wPLxUreWq3P0kpd-30" value="NetworkEvent::&lt;div&gt;ClusterConnected&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="zfAT_wPLxUreWq3P0kpd-22">
+          <mxGeometry x="0.26" y="-2" relative="1" as="geometry">
+            <mxPoint x="-10" y="18" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="zfAT_wPLxUreWq3P0kpd-1" value="INITIALIZING" style="ellipse;whiteSpace=wrap;html=1;strokeColor=#613E20;fillColor=#D7E884;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="180" y="360" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="zfAT_wPLxUreWq3P0kpd-26" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#613E20;strokeWidth=2;" edge="1" parent="1" source="zfAT_wPLxUreWq3P0kpd-20" target="zfAT_wPLxUreWq3P0kpd-25">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="zfAT_wPLxUreWq3P0kpd-27" value="nb models &amp;gt;= nb clients" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="zfAT_wPLxUreWq3P0kpd-26">
+          <mxGeometry x="0.2733" y="2" relative="1" as="geometry">
+            <mxPoint x="-17" y="12" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="zfAT_wPLxUreWq3P0kpd-20" value="WAITING&lt;br&gt;LOCAL&lt;br&gt;MODELS" style="ellipse;whiteSpace=wrap;html=1;strokeColor=#613E20;fillColor=#D7E884;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="380" y="360" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="zfAT_wPLxUreWq3P0kpd-23" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0;entryDx=0;entryDy=0;strokeColor=#613E20;strokeWidth=2;" edge="1" parent="1" source="zfAT_wPLxUreWq3P0kpd-20" target="zfAT_wPLxUreWq3P0kpd-20">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="440" y="340" />
+              <mxPoint x="482" y="340" />
+              <mxPoint x="482" y="350" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="zfAT_wPLxUreWq3P0kpd-24" value="Packet::SEND_GLOBAL_MODEL" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="zfAT_wPLxUreWq3P0kpd-23">
+          <mxGeometry x="-0.1556" y="2" relative="1" as="geometry">
+            <mxPoint x="11" y="-8" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="zfAT_wPLxUreWq3P0kpd-28" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;strokeColor=#613E20;strokeWidth=2;" edge="1" parent="1" source="zfAT_wPLxUreWq3P0kpd-25" target="zfAT_wPLxUreWq3P0kpd-20">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="680" y="460" />
+              <mxPoint x="440" y="460" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="zfAT_wPLxUreWq3P0kpd-29" value="Task ended" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="zfAT_wPLxUreWq3P0kpd-28">
+          <mxGeometry x="-0.0921" y="-3" relative="1" as="geometry">
+            <mxPoint x="-22" y="-7" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="zfAT_wPLxUreWq3P0kpd-25" value="AGGREGATING" style="ellipse;whiteSpace=wrap;html=1;strokeColor=#613E20;fillColor=#D7E884;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="620" y="360" width="120" height="80" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

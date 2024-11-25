@@ -1,0 +1,39 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36" version="24.7.7">
+  <diagram name="Page-1" id="VZhvdZ_iOxEHKRR_BR3-">
+    <mxGraphModel dx="1092" dy="568" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="xXJH2tOY_rQB3pzrhLIR-6" value="Simgrid execution environment" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;dashed=1;dashPattern=12 12;strokeColor=#613E20;strokeWidth=2;" parent="1" vertex="1">
+          <mxGeometry x="230" y="140" width="390" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="xXJH2tOY_rQB3pzrhLIR-5" value="Host" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;verticalAlign=top;strokeColor=#613E20;strokeWidth=2;" parent="1" vertex="1">
+          <mxGeometry x="255" y="165" width="340" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="xXJH2tOY_rQB3pzrhLIR-1" value="Actor" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;verticalAlign=top;dashPattern=1 4;strokeColor=#613E20;strokeWidth=2;" parent="1" vertex="1">
+          <mxGeometry x="280" y="190" width="130" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="xXJH2tOY_rQB3pzrhLIR-2" value="Role" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#D7E884;strokeColor=#613E20;strokeWidth=2;" parent="1" vertex="1">
+          <mxGeometry x="310" y="220" width="70" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="xXJH2tOY_rQB3pzrhLIR-3" value="Actor" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;verticalAlign=top;dashPattern=1 4;strokeColor=#613E20;strokeWidth=2;" parent="1" vertex="1">
+          <mxGeometry x="436" y="190" width="130" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="xXJH2tOY_rQB3pzrhLIR-4" value="NetworkManager" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#D7E884;strokeColor=#613E20;strokeWidth=2;" parent="1" vertex="1">
+          <mxGeometry x="446" y="220" width="110" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="xXJH2tOY_rQB3pzrhLIR-8" value="" style="endArrow=classic;startArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#613E20;strokeWidth=2;" parent="1" source="xXJH2tOY_rQB3pzrhLIR-2" target="xXJH2tOY_rQB3pzrhLIR-4" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="440" y="250" as="sourcePoint" />
+            <mxPoint x="490" y="200" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="xXJH2tOY_rQB3pzrhLIR-9" value="Comm&lt;div&gt;via&lt;/div&gt;&lt;div&gt;MessageQueue&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=default;labelBackgroundColor=none;" parent="xXJH2tOY_rQB3pzrhLIR-8" vertex="1" connectable="0">
+          <mxGeometry x="0.209" y="-1" relative="1" as="geometry">
+            <mxPoint y="30" as="offset" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

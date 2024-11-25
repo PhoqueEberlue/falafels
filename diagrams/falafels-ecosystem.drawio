@@ -1,0 +1,74 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36" version="24.7.7">
+  <diagram name="Page-1" id="VZhvdZ_iOxEHKRR_BR3-">
+    <mxGraphModel dx="874" dy="454" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="drJVJyYPGjy8G6QRevCB-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#613E20;strokeWidth=2;" edge="1" parent="1" source="drJVJyYPGjy8G6QRevCB-3" target="drJVJyYPGjy8G6QRevCB-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="drJVJyYPGjy8G6QRevCB-18" value="Call the fryer via Rust API&lt;div&gt;to generate files&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="drJVJyYPGjy8G6QRevCB-7">
+          <mxGeometry x="-0.0716" y="2" relative="1" as="geometry">
+            <mxPoint x="-76" y="-1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="drJVJyYPGjy8G6QRevCB-20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#613E20;strokeWidth=2;" edge="1" parent="1" source="drJVJyYPGjy8G6QRevCB-3" target="drJVJyYPGjy8G6QRevCB-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="drJVJyYPGjy8G6QRevCB-21" value="Call the Simulator via CMD to execute experiments" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="drJVJyYPGjy8G6QRevCB-20">
+          <mxGeometry x="-0.3504" y="3" relative="1" as="geometry">
+            <mxPoint x="31" y="13" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="drJVJyYPGjy8G6QRevCB-3" value="Beagle" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#D7E884;strokeColor=#613E20;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="579" y="300" width="110" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="drJVJyYPGjy8G6QRevCB-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#613E20;strokeWidth=2;" edge="1" parent="1" source="drJVJyYPGjy8G6QRevCB-4" target="drJVJyYPGjy8G6QRevCB-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="drJVJyYPGjy8G6QRevCB-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#613E20;strokeWidth=2;" edge="1" parent="1" source="drJVJyYPGjy8G6QRevCB-4" target="drJVJyYPGjy8G6QRevCB-10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="drJVJyYPGjy8G6QRevCB-17" value="output files" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="drJVJyYPGjy8G6QRevCB-12">
+          <mxGeometry x="-0.0593" y="1" relative="1" as="geometry">
+            <mxPoint x="-14" y="32" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="drJVJyYPGjy8G6QRevCB-4" value="Fryer" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#D7E884;strokeColor=#613E20;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="579" y="385" width="110" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="drJVJyYPGjy8G6QRevCB-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#613E20;strokeWidth=2;" edge="1" parent="1" source="drJVJyYPGjy8G6QRevCB-5" target="drJVJyYPGjy8G6QRevCB-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="drJVJyYPGjy8G6QRevCB-16" value="Input&lt;div&gt;file&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="drJVJyYPGjy8G6QRevCB-6">
+          <mxGeometry x="-0.2011" y="-1" relative="1" as="geometry">
+            <mxPoint y="19" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="drJVJyYPGjy8G6QRevCB-5" value="raw-falafels.xml" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D7E884;strokeColor=#613E20;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="425" y="385" width="110" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="drJVJyYPGjy8G6QRevCB-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#613E20;strokeWidth=2;" edge="1" parent="1" source="drJVJyYPGjy8G6QRevCB-9" target="drJVJyYPGjy8G6QRevCB-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="drJVJyYPGjy8G6QRevCB-9" value="simgrid-platform.xml" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D7E884;strokeColor=#613E20;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="729" y="355" width="126" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="drJVJyYPGjy8G6QRevCB-15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#613E20;strokeWidth=2;" edge="1" parent="1" source="drJVJyYPGjy8G6QRevCB-10" target="drJVJyYPGjy8G6QRevCB-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="drJVJyYPGjy8G6QRevCB-19" value="inputs for&amp;nbsp;&lt;div&gt;Simulator&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="drJVJyYPGjy8G6QRevCB-15">
+          <mxGeometry x="0.5393" y="-1" relative="1" as="geometry">
+            <mxPoint y="49" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="drJVJyYPGjy8G6QRevCB-10" value="fried-falafels.xml" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D7E884;strokeColor=#613E20;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="737" y="415" width="110" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="drJVJyYPGjy8G6QRevCB-13" value="Simulator" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#D7E884;strokeColor=#613E20;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="910" y="385" width="110" height="40" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
