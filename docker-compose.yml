@@ -1,7 +1,7 @@
 services:
   # Stand alone simulator
   falafels-simulator:
-    container_name: simulator 
+    container_name: falafels-simulator 
     build: ./simulator/
     image: falafels-simulator:latest
 
